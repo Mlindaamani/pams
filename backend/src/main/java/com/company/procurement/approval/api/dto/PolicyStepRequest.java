@@ -17,5 +17,6 @@ public record PolicyStepRequest(
     UUID approverUserId,
     @Min(value = 1, message = "slaHours must be positive") int slaHours,
     @Min(value = 1, message = "stage must be positive") Integer stage,
+    @Min(value = 1, message = "minApprovals must be positive") Integer minApprovals,
     ApprovalConditionType conditionType,
     UUID conditionDepartmentId) {}

@@ -2485,6 +2485,8 @@ export interface components {
             slaHours?: number;
             /** Format: int32 */
             stage?: number;
+            /** Format: int32 */
+            minApprovals?: number;
             /** @enum {string} */
             conditionType?: "ALWAYS" | "BUDGET_EXCEPTION" | "DEPARTMENT";
             /** Format: uuid */
@@ -2528,6 +2530,8 @@ export interface components {
             approverUserId?: string;
             /** Format: int32 */
             slaHours?: number;
+            /** Format: int32 */
+            minApprovals?: number;
             /** @enum {string} */
             conditionType?: "ALWAYS" | "BUDGET_EXCEPTION" | "DEPARTMENT";
             /** Format: uuid */

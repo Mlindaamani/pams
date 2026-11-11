@@ -93,6 +93,7 @@ public class ApprovalPolicy extends SoftDeletableEntity {
       UUID userId,
       int slaHours,
       int stage,
+      int minApprovals,
       ApprovalConditionType conditionType,
       UUID conditionDepartmentId) {
     if (stage < 1) {
@@ -108,6 +109,7 @@ public class ApprovalPolicy extends SoftDeletableEntity {
             role,
             userId,
             slaHours,
+            minApprovals,
             conditionType,
             conditionDepartmentId));
   }

@@ -106,7 +106,8 @@ public class ApprovalInstance extends TenantEntity {
               draft.approverType(),
               draft.approverRole(),
               draft.assigneeUserId(),
-              now.plusSeconds(draft.slaHours() * 3600L)));
+              now.plusSeconds(draft.slaHours() * 3600L),
+              draft.minApprovals()));
     }
     this.currentSequence = firstStage(now);
   }
@@ -115,7 +116,10 @@ public class ApprovalInstance extends TenantEntity {
       UUID stepId, String actorSubject, String actorName, String comment, Instant now) {
     ApprovalStep step = requireCurrentStep(stepId);
     step.approve(actorSubject, actorName, comment, now);
-    if (currentSteps().isEmpty()) {
+    if (quorumMet()) {
+      skipRemaining("Quorum met", now);
+      advance(now);
+    } else if (currentSteps().isEmpty()) {
       advance(now);
     }
   }
@@ -213,6 +217,36 @@ public class ApprovalInstance extends TenantEntity {
     }
     throw new BusinessRuleException(
         "Approval chain has no eligible approver (requester cannot approve their own request)");
+  }
+
+  private boolean quorumMet() {
+    if (currentSequence == null) {
+      return false;
+    }
+    int required =
+        steps.stream()
+            .filter(step -> step.getSequence() == currentSequence)
+            .mapToInt(ApprovalStep::getMinApprovals)
+            .max()
+            .orElse(1);
+    long eligible =
+        steps.stream()
+            .filter(step -> step.getSequence() == currentSequence)
+            .filter(step -> step.getStatus() != ApprovalStepStatus.SKIPPED)
+            .count();
+    long approved =
+        steps.stream()
+            .filter(step -> step.getSequence() == currentSequence)
+            .filter(step -> step.getStatus() == ApprovalStepStatus.APPROVED)
+            .count();
+    return approved >= Math.min(required, eligible);
+  }
+
+  private void skipRemaining(String reason, Instant now) {
+    steps.stream()
+        .filter(step -> step.getSequence() == currentSequence)
+        .filter(ApprovalStep::isPending)
+        .forEach(step -> step.skip(reason, now));
   }
 
   private void skipSelfApprovals(int stage, Instant now) {

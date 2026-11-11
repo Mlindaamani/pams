@@ -59,6 +59,9 @@ public class ApprovalStep extends TenantEntity {
   @Column(name = "sla_due_at", nullable = false)
   private Instant slaDueAt;
 
+  @Column(name = "min_approvals", nullable = false)
+  private int minApprovals;
+
   @Column(name = "reminder_sent_at")
   private Instant reminderSentAt;
 
@@ -77,7 +80,8 @@ public class ApprovalStep extends TenantEntity {
       ApproverType approverType,
       String assigneeRole,
       UUID assigneeUserId,
-      Instant slaDueAt) {
+      Instant slaDueAt,
+      int minApprovals) {
     super(organizationId);
     this.instance = Objects.requireNonNull(instance, "instance");
     this.sequence = sequence;
@@ -86,6 +90,7 @@ public class ApprovalStep extends TenantEntity {
     this.assigneeRole = assigneeRole;
     this.assigneeUserId = assigneeUserId;
     this.slaDueAt = Objects.requireNonNull(slaDueAt, "slaDueAt");
+    this.minApprovals = minApprovals;
     this.status = ApprovalStepStatus.PENDING;
   }
 
@@ -180,6 +185,10 @@ public class ApprovalStep extends TenantEntity {
 
   public Instant getSlaDueAt() {
     return slaDueAt;
+  }
+
+  public int getMinApprovals() {
+    return minApprovals;
   }
 
   public Instant getReminderSentAt() {

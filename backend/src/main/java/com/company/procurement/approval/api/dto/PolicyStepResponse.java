@@ -12,5 +12,6 @@ public record PolicyStepResponse(
     String approverRole,
     UUID approverUserId,
     int slaHours,
+    int minApprovals,
     ApprovalConditionType conditionType,
     UUID conditionDepartmentId) {}

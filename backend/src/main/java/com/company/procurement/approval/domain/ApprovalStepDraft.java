@@ -8,4 +8,5 @@ public record ApprovalStepDraft(
     String approverRole,
     UUID assigneeUserId,
     int slaHours,
-    int stage) {}
+    int stage,
+    int minApprovals) {}

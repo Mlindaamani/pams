@@ -71,7 +71,9 @@ export function WorkflowPoliciesTab() {
                 const stage = step.sequence ?? 1;
                 stages.set(stage, [
                   ...(stages.get(stage) ?? []),
-                  step.approverRole ?? step.approverUserId ?? step.name ?? 'Approver',
+                  step.approverType === 'REQUESTER_MANAGER'
+                    ? 'Requester manager'
+                    : (step.approverRole ?? step.approverUserId ?? step.name ?? 'Approver'),
                 ]);
               });
               return [...stages.entries()]

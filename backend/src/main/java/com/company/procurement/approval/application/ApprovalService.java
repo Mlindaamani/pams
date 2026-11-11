@@ -515,8 +515,33 @@ public class ApprovalService {
       throw new BusinessRuleException("An approval policy needs at least one step");
     }
     int nextStage = 1;
+    Map<Integer, List<PolicyStepCommand>> byStage = new java.util.LinkedHashMap<>();
     for (PolicyStepCommand command : commands) {
       int stage = command.stage() == null ? nextStage : command.stage();
+      byStage.computeIfAbsent(stage, ignored -> new java.util.ArrayList<>()).add(command);
+      nextStage = Math.max(nextStage, stage + 1);
+    }
+    Map<Integer, Integer> quorumByStage = new java.util.HashMap<>();
+    for (Map.Entry<Integer, List<PolicyStepCommand>> entry : byStage.entrySet()) {
+      List<Integer> configured =
+          entry.getValue().stream()
+              .map(PolicyStepCommand::minApprovals)
+              .filter(java.util.Objects::nonNull)
+              .distinct()
+              .toList();
+      if (configured.size() > 1) {
+        throw new BusinessRuleException("A stage must have a single quorum value");
+      }
+      int quorum = configured.isEmpty() ? entry.getValue().size() : configured.get(0);
+      if (quorum > entry.getValue().size()) {
+        throw new BusinessRuleException("Stage quorum cannot exceed its approver count");
+      }
+      quorumByStage.put(entry.getKey(), quorum);
+    }
+    int stageCounter = 1;
+    for (PolicyStepCommand command : commands) {
+      int stage = command.stage() == null ? stageCounter : command.stage();
+      stageCounter = Math.max(stageCounter, stage + 1);
       policy.addStep(
           command.name(),
           command.approverType(),
@@ -524,9 +549,9 @@ public class ApprovalService {
           command.approverUserId(),
           command.slaHours(),
           stage,
+          quorumByStage.get(stage),
           command.conditionType(),
           command.conditionDepartmentId());
-      nextStage = Math.max(nextStage, stage + 1);
     }
   }
 

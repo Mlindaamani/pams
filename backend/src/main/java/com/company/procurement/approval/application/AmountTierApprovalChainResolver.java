@@ -43,7 +43,7 @@ public class AmountTierApprovalChainResolver implements ApprovalChainResolver {
     if (budgetException) {
       steps.add(
           new ApprovalStepDraft(
-              "Finance (budget exception)", ApproverType.ROLE, "FINANCE", null, 24, 0));
+              "Finance (budget exception)", ApproverType.ROLE, "FINANCE", null, 24, 0, 1));
     }
     for (ApprovalPolicyStep step : policy.getSteps()) {
       if (!matchesCondition(step, budgetException, departmentId)) {
@@ -68,7 +68,8 @@ public class AmountTierApprovalChainResolver implements ApprovalChainResolver {
               step.getApproverRole(),
               assignee,
               step.getSlaHours(),
-              step.getSequence()));
+              step.getSequence(),
+              step.getMinApprovals()));
     }
     if (steps.isEmpty()) {
       throw new BusinessRuleException("Approval policy resolved to no eligible steps");

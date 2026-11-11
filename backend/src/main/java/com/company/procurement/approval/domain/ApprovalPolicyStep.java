@@ -42,6 +42,9 @@ public class ApprovalPolicyStep extends TenantEntity {
   @Column(name = "sla_hours", nullable = false)
   private int slaHours;
 
+  @Column(name = "min_approvals", nullable = false)
+  private int minApprovals;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "condition_type", nullable = false, length = 30)
   private ApprovalConditionType conditionType;
@@ -62,6 +65,7 @@ public class ApprovalPolicyStep extends TenantEntity {
       String role,
       UUID userId,
       int slaHours,
+      int minApprovals,
       ApprovalConditionType conditionType,
       UUID conditionDepartmentId) {
     super(organizationId);
@@ -70,6 +74,10 @@ public class ApprovalPolicyStep extends TenantEntity {
     this.name = requireText(name, "name");
     this.approverType = Objects.requireNonNull(approverType, "approverType");
     this.slaHours = slaHours;
+    this.minApprovals = minApprovals;
+    if (minApprovals < 1) {
+      throw new IllegalArgumentException("minApprovals must be positive");
+    }
     this.conditionType = conditionType == null ? ApprovalConditionType.ALWAYS : conditionType;
     this.conditionDepartmentId = conditionDepartmentId;
     if (this.conditionType == ApprovalConditionType.DEPARTMENT && conditionDepartmentId == null) {
@@ -109,6 +117,10 @@ public class ApprovalPolicyStep extends TenantEntity {
 
   public int getSlaHours() {
     return slaHours;
+  }
+
+  public int getMinApprovals() {
+    return minApprovals;
   }
 
   public ApprovalConditionType getConditionType() {

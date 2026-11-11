@@ -1592,3 +1592,28 @@ relevant, and administrators needed to see the resulting workflow before saving.
 **Consequences.** Policies can target specific departments and budget exceptions while preserving
 historical approval records. Quorum rules and a fully visual drag-and-drop builder remain follow-up
 increments.
+
+---
+
+## ADR-083 — Stage quorum and requester-manager actors
+
+**Context.** Parallel stages required every approver by default. Tenants also needed to model a
+stage that completes after a configured number of approvals, and policies could not target the
+requester's manager or a specific user from the UI.
+
+**Decision.**
+- Add `min_approvals` to policy steps and snapshot it onto request and purchase-order approval steps
+  (`V35`).
+- Existing stages are backfilled with the number of approvers in the stage, preserving “all must
+  approve”.
+- A stage completes when approved count reaches the effective quorum, after which remaining pending
+  steps are skipped with “Quorum met”.
+- Effective quorum is capped by the number of non-skipped steps so self-approval skips cannot create
+  an impossible stage.
+- Expose actor types in the workflow form: role, requester's manager and specific user.
+- Expand role actors to REQUESTER, APPROVER, FINANCE, ADMIN, PROCUREMENT_OFFICER and AUDITOR.
+- Do not allow a requester to approve their own request; the existing domain guard remains.
+- Add request and PO quorum integration tests.
+
+**Consequences.** Workflow stages can model M-of-N approval, and policies can target managers and
+named users. Drag-and-drop polishing and a full visual canvas remain follow-up work.

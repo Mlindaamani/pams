@@ -126,6 +126,12 @@ public class PurchaseOrderApprovalService {
         Timestamp.from(now),
         currentUser.username(),
         step.id());
+    int required = requiredApprovalsAt(approval.id(), step.sequence());
+    int eligible = eligibleCountAt(approval.id(), step.sequence());
+    int approved = approvedCountAt(approval.id(), step.sequence());
+    if (approved >= Math.min(required, eligible)) {
+      skipRemainingAt(approval.id(), step.sequence(), "Quorum met", now);
+    }
     if (hasPendingAt(approval.id(), step.sequence())) {
       audit.recordCurrentActor(
           "purchase_order",
@@ -287,8 +293,9 @@ public class PurchaseOrderApprovalService {
           """
           insert into purchase_order_approval_step
               (id, organization_id, approval_id, sequence, name, approver_type, approver_role,
-               assignee_user_id, status, sla_due_at, created_at, created_by, updated_at, updated_by)
-          values (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?)
+               assignee_user_id, status, sla_due_at, min_approvals, created_at, created_by,
+               updated_at, updated_by)
+          values (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
           """,
           UUID.randomUUID(),
           organizationId,
@@ -299,6 +306,7 @@ public class PurchaseOrderApprovalService {
           step.approverRole(),
           step.assigneeUserId(),
           Timestamp.from(now.plus(Duration.ofHours(step.slaHours()))),
+          step.minApprovals(),
           Timestamp.from(now),
           currentUser.username(),
           Timestamp.from(now),
@@ -413,6 +421,46 @@ public class PurchaseOrderApprovalService {
             approvalId,
             sequence);
     return count != null && count > 0;
+  }
+
+  private int requiredApprovalsAt(UUID approvalId, int sequence) {
+    Integer value =
+        jdbc.queryForObject(
+            "select coalesce(max(min_approvals), 1) from purchase_order_approval_step where approval_id = ? and sequence = ?",
+            Integer.class,
+            approvalId,
+            sequence);
+    return value == null ? 1 : value;
+  }
+
+  private int approvedCountAt(UUID approvalId, int sequence) {
+    Integer value =
+        jdbc.queryForObject(
+            "select count(*) from purchase_order_approval_step where approval_id = ? and sequence = ? and status = 'APPROVED'",
+            Integer.class,
+            approvalId,
+            sequence);
+    return value == null ? 0 : value;
+  }
+
+  private int eligibleCountAt(UUID approvalId, int sequence) {
+    Integer value =
+        jdbc.queryForObject(
+            "select count(*) from purchase_order_approval_step where approval_id = ? and sequence = ? and status <> 'SKIPPED'",
+            Integer.class,
+            approvalId,
+            sequence);
+    return value == null ? 0 : value;
+  }
+
+  private void skipRemainingAt(UUID approvalId, int sequence, String reason, Instant now) {
+    jdbc.update(
+        "update purchase_order_approval_step set status = 'SKIPPED', comment = ?, acted_by = 'system', acted_at = ?, updated_at = now(), updated_by = ? where approval_id = ? and sequence = ? and status = 'PENDING'",
+        reason,
+        Timestamp.from(now),
+        currentUser.username(),
+        approvalId,
+        sequence);
   }
 
   private Integer nextPendingSequence(UUID approvalId, int currentSequence) {

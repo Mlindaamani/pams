@@ -11,5 +11,6 @@ public record PolicyStepCommand(
     UUID approverUserId,
     int slaHours,
     Integer stage,
+    Integer minApprovals,
     ApprovalConditionType conditionType,
     UUID conditionDepartmentId) {}

@@ -212,6 +212,81 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void quorumCompletesStageAfterConfiguredApprovals() throws Exception {
+    createPolicyBody(
+        "Quorum",
+        List.of(
+            Map.of(
+                "name",
+                "Approver",
+                "approverType",
+                "ROLE",
+                "approverRole",
+                "APPROVER",
+                "slaHours",
+                24,
+                "stage",
+                1,
+                "minApprovals",
+                2),
+            Map.of(
+                "name",
+                "Finance",
+                "approverType",
+                "ROLE",
+                "approverRole",
+                "FINANCE",
+                "slaHours",
+                24,
+                "stage",
+                1,
+                "minApprovals",
+                2),
+            Map.of(
+                "name",
+                "Admin",
+                "approverType",
+                "ROLE",
+                "approverRole",
+                "ADMIN",
+                "slaHours",
+                24,
+                "stage",
+                1,
+                "minApprovals",
+                2)));
+    UUID requestId = createRequest("Quorum request", "500.00");
+    UUID approverStep = stepIdForRole(requestId, "APPROVER");
+    UUID financeStep = stepIdForRole(requestId, "FINANCE");
+    UUID adminStep = stepIdForRole(requestId, "ADMIN");
+
+    mockMvc
+        .perform(
+            post("/api/v1/approvals/{stepId}/approve", approverStep)
+                .with(tokenSubject("approver-user", org, "APPROVER"))
+                .header(IDEMPOTENCY, "quorum-approver")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/approvals/{stepId}/approve", financeStep)
+                .with(tokenSubject("finance-user", org, "FINANCE"))
+                .header(IDEMPOTENCY, "quorum-finance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("APPROVED"));
+
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "select status from approval_step where id = ?", String.class, adminStep))
+        .isEqualTo("SKIPPED");
+  }
+
+  @Test
   void departmentConditionsIncludeOnlyMatchingSteps() throws Exception {
     UUID operations = createDepartment(org, "Operations");
     createPolicyBody(

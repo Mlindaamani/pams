@@ -21,15 +21,20 @@ import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
 import { Loading, PageHeader } from '@/components/Page';
 import { listDepartments } from '@/features/reference/api';
+import { listUsers } from './usersApi';
 import { createPolicy, getPolicy, updatePolicy } from './api';
 
 type ConditionType = 'ALWAYS' | 'BUDGET_EXCEPTION' | 'DEPARTMENT';
+type ApproverType = 'ROLE' | 'REQUESTER_MANAGER' | 'USER';
 
 interface StepForm {
   name: string;
+  approverType: ApproverType;
   approverRole: string;
+  approverUserId: string;
   slaHours: number;
   stage: number;
+  minApprovals: string;
   conditionType: ConditionType;
   conditionDepartmentId: string;
 }
@@ -37,9 +42,12 @@ interface StepForm {
 const initialSteps: StepForm[] = [
   {
     name: 'Approver',
+    approverType: 'ROLE',
     approverRole: 'APPROVER',
+    approverUserId: '',
     slaHours: 24,
     stage: 1,
+    minApprovals: '',
     conditionType: 'ALWAYS',
     conditionDepartmentId: '',
   },
@@ -55,6 +63,11 @@ export function WorkflowPolicyFormPage() {
     enabled: Boolean(id),
   });
   const departments = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
+  const users = useQuery({
+    queryKey: ['users', 'workflow-policy'],
+    queryFn: () => listUsers({ active: true, size: 100 }),
+    enabled: !id || Boolean(policy.data),
+  });
   const [entityType, setEntityType] = useState('PURCHASE_REQUEST');
   const [name, setName] = useState('');
   const [amountMin, setAmountMin] = useState('0');
@@ -71,9 +84,12 @@ export function WorkflowPolicyFormPage() {
     setSteps(
       (policy.data.steps ?? []).map((step) => ({
         name: step.name ?? 'Approver',
-        approverRole: step.approverRole ?? 'APPROVER',
+        approverType: step.approverType ?? 'ROLE',
+        approverRole: step.approverRole ?? '',
+        approverUserId: step.approverUserId ?? '',
         slaHours: step.slaHours ?? 24,
         stage: step.sequence ?? 1,
+        minApprovals: step.minApprovals == null ? '' : String(step.minApprovals),
         conditionType: step.conditionType ?? 'ALWAYS',
         conditionDepartmentId: step.conditionDepartmentId ?? '',
       })),
@@ -90,10 +106,13 @@ export function WorkflowPolicyFormPage() {
         amountMax: amountMax ? Number(amountMax) : undefined,
         steps: steps.map((step) => ({
           name: step.name,
-          approverType: 'ROLE' as const,
-          approverRole: step.approverRole,
+          approverType: step.approverType,
+          approverRole: step.approverType === 'ROLE' ? step.approverRole || undefined : undefined,
+          approverUserId:
+            step.approverType === 'USER' ? step.approverUserId || undefined : undefined,
           slaHours: step.slaHours,
           stage: step.stage,
+          minApprovals: step.minApprovals ? Number(step.minApprovals) : undefined,
           conditionType: step.conditionType,
           conditionDepartmentId:
             step.conditionType === 'DEPARTMENT'
@@ -205,9 +224,13 @@ export function WorkflowPolicyFormPage() {
                       ...steps,
                       {
                         name: 'Approver',
+                        approverType: 'ROLE',
                         approverRole: 'APPROVER',
+                        approverUserId: '',
                         slaHours: 24,
                         stage,
+                        minApprovals:
+                          steps.find((item) => item.stage === stage)?.minApprovals ?? '',
                         conditionType: 'ALWAYS',
                         conditionDepartmentId: '',
                       },
@@ -224,9 +247,13 @@ export function WorkflowPolicyFormPage() {
                       ...steps,
                       {
                         name: 'Approver',
+                        approverType: 'ROLE',
                         approverRole: 'APPROVER',
+                        approverUserId: '',
                         slaHours: 24,
                         stage,
+                        minApprovals:
+                          steps.find((item) => item.stage === stage)?.minApprovals ?? '',
                         conditionType: 'ALWAYS',
                         conditionDepartmentId: '',
                       },
@@ -238,7 +265,17 @@ export function WorkflowPolicyFormPage() {
               </Stack>
             </Stack>
 
-            <WorkflowPreview steps={steps} departments={departments.data?.content ?? []} />
+            <WorkflowPreview
+              steps={steps}
+              departments={departments.data?.content ?? []}
+              onQuorumChange={(stage, value) =>
+                setSteps((current) =>
+                  current.map((step) =>
+                    step.stage === stage ? { ...step, minApprovals: value } : step,
+                  ),
+                )
+              }
+            />
 
             <Stack spacing={2} sx={{ mt: 2 }}>
               {steps.map((step, index) => (
@@ -274,20 +311,69 @@ export function WorkflowPolicyFormPage() {
                       />
                       <TextField
                         select
-                        label="Role"
-                        value={step.approverRole}
+                        label="Actor type"
+                        value={step.approverType}
+                        sx={{ minWidth: 180 }}
                         onChange={(event) => {
                           const next = [...steps];
-                          next[index] = { ...step, approverRole: event.target.value };
+                          next[index] = {
+                            ...step,
+                            approverType: event.target.value as ApproverType,
+                            approverRole: event.target.value === 'ROLE' ? 'APPROVER' : '',
+                            approverUserId: '',
+                          };
                           setSteps(next);
                         }}
                       >
-                        {['APPROVER', 'FINANCE', 'ADMIN'].map((role) => (
-                          <MenuItem key={role} value={role}>
-                            {role}
-                          </MenuItem>
-                        ))}
+                        <MenuItem value="ROLE">Role</MenuItem>
+                        <MenuItem value="REQUESTER_MANAGER">Requester&apos;s manager</MenuItem>
+                        <MenuItem value="USER">Specific user</MenuItem>
                       </TextField>
+                      {step.approverType === 'ROLE' && (
+                        <TextField
+                          select
+                          label="Role"
+                          value={step.approverRole}
+                          sx={{ minWidth: 180 }}
+                          onChange={(event) => {
+                            const next = [...steps];
+                            next[index] = { ...step, approverRole: event.target.value };
+                            setSteps(next);
+                          }}
+                        >
+                          {[
+                            'REQUESTER',
+                            'APPROVER',
+                            'FINANCE',
+                            'ADMIN',
+                            'PROCUREMENT_OFFICER',
+                            'AUDITOR',
+                          ].map((role) => (
+                            <MenuItem key={role} value={role}>
+                              {role}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      )}
+                      {step.approverType === 'USER' && (
+                        <TextField
+                          select
+                          label="User"
+                          value={step.approverUserId}
+                          sx={{ minWidth: 220 }}
+                          onChange={(event) => {
+                            const next = [...steps];
+                            next[index] = { ...step, approverUserId: event.target.value };
+                            setSteps(next);
+                          }}
+                        >
+                          {(users.data?.content ?? []).map((user) => (
+                            <MenuItem key={user.id} value={user.id}>
+                              {user.displayName} ({user.email})
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      )}
                       <TextField
                         label="SLA hours"
                         type="number"
@@ -374,9 +460,11 @@ export function WorkflowPolicyFormPage() {
 function WorkflowPreview({
   steps,
   departments,
+  onQuorumChange,
 }: {
   steps: StepForm[];
   departments: { id?: string; name?: string }[];
+  onQuorumChange: (stage: number, value: string) => void;
 }) {
   const stages = new Map<number, StepForm[]>();
   steps.forEach((step) => stages.set(step.stage, [...(stages.get(step.stage) ?? []), step]));
@@ -398,13 +486,23 @@ function WorkflowPreview({
                 <Stack spacing={0.5}>
                   {stageSteps.map((step, stepIndex) => (
                     <Chip
-                      key={`${step.approverRole}-${stepIndex}`}
+                      key={`${step.name}-${stepIndex}`}
                       size="small"
-                      label={`${step.approverRole} · ${conditionLabel(step, departments)}`}
+                      label={`${actorLabel(step)} · ${conditionLabel(step, departments)}`}
                       variant={step.conditionType === 'ALWAYS' ? 'outlined' : 'filled'}
                     />
                   ))}
                 </Stack>
+                <TextField
+                  size="small"
+                  label="Quorum"
+                  type="number"
+                  placeholder="All"
+                  value={stageSteps[0]?.minApprovals ?? ''}
+                  sx={{ mt: 1, width: 120 }}
+                  slotProps={{ htmlInput: { min: 1, max: stageSteps.length } }}
+                  onChange={(event) => onQuorumChange(stage, event.target.value)}
+                />
                 {stageSteps.length > 1 && (
                   <Typography variant="caption" color="text.secondary">
                     Parallel
@@ -416,6 +514,12 @@ function WorkflowPreview({
       </Stack>
     </Box>
   );
+}
+
+function actorLabel(step: StepForm): string {
+  if (step.approverType === 'REQUESTER_MANAGER') return 'Requester manager';
+  if (step.approverType === 'USER') return 'Specific user';
+  return step.approverRole;
 }
 
 function conditionLabel(step: StepForm, departments: { id?: string; name?: string }[]): string {
