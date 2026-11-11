@@ -201,8 +201,8 @@ public class ApprovalService {
     ApprovalInstance instance = instanceForStep(stepId);
     ApprovalStep step = currentStep(instance, stepId);
     UserProfile actor = verifyEligibility(instance, step);
-    instance.approveCurrent(
-        currentUser.subject(), currentUser.username(), comment, clock.instant());
+    instance.approveStep(
+        stepId, currentUser.subject(), currentUser.username(), comment, clock.instant());
     instances.save(instance);
 
     audit.record(
@@ -242,7 +242,8 @@ public class ApprovalService {
     ApprovalInstance instance = instanceForStep(stepId);
     ApprovalStep step = currentStep(instance, stepId);
     verifyEligibility(instance, step);
-    instance.rejectCurrent(currentUser.subject(), currentUser.username(), comment, clock.instant());
+    instance.rejectStep(
+        stepId, currentUser.subject(), currentUser.username(), comment, clock.instant());
     instances.save(instance);
 
     audit.record(
@@ -264,7 +265,7 @@ public class ApprovalService {
     ApprovalInstance instance = instanceForStep(stepId);
     ApprovalStep step = currentStep(instance, stepId);
     verifyEligibility(instance, step);
-    instance.requestChanges(comment);
+    instance.requestChanges(stepId, comment);
     instances.save(instance);
 
     audit.record(
@@ -306,12 +307,11 @@ public class ApprovalService {
         || instance.get().getRequesterSubject().equals(currentUser.subject())) {
       return Optional.empty();
     }
-    Optional<ApprovalStep> step = instance.get().currentStep();
-    if (step.isEmpty()) {
-      return Optional.empty();
-    }
     Optional<UserProfile> profile = userProfiles.findBySubject(currentUser.subject());
-    return isEligible(step.get(), profile, clock.instant()) ? step : Optional.empty();
+    Instant now = clock.instant();
+    return instance.get().currentSteps().stream()
+        .filter(step -> isEligible(step, profile, now))
+        .findFirst();
   }
 
   @Transactional(readOnly = true)
@@ -424,7 +424,7 @@ public class ApprovalService {
         continue;
       }
       if (step.getReminderSentAt() == null) {
-        instance.markReminderOnCurrent(now);
+        instance.markReminder(step.getId(), now);
         instances.save(instance);
         audit.recordCurrentActor(
             "purchase_request",
@@ -433,7 +433,7 @@ public class ApprovalService {
             Map.of("stepId", step.getId().toString()));
         publisher.publishEvent(new ReminderSent(instance.getPurchaseRequestId(), step.getId()));
       } else if (step.getEscalatedAt() == null) {
-        instance.escalateCurrent(now);
+        instance.escalateStep(step.getId(), now);
         instances.save(instance);
         audit.recordCurrentActor(
             "purchase_request",
@@ -512,13 +512,17 @@ public class ApprovalService {
     if (commands == null || commands.isEmpty()) {
       throw new BusinessRuleException("An approval policy needs at least one step");
     }
+    int nextStage = 1;
     for (PolicyStepCommand command : commands) {
+      int stage = command.stage() == null ? nextStage : command.stage();
       policy.addStep(
           command.name(),
           command.approverType(),
           command.approverRole(),
           command.approverUserId(),
-          command.slaHours());
+          command.slaHours(),
+          stage);
+      nextStage = Math.max(nextStage, stage + 1);
     }
   }
 

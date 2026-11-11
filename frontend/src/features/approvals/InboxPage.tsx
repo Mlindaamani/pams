@@ -96,7 +96,7 @@ export function ApprovalInboxPage() {
             {
               key: 'step',
               label: 'Step',
-              render: (step) => `${step.sequence}. ${step.name}`,
+              render: (step) => `Stage ${step.sequence} · ${step.name}`,
             },
             { key: 'total', label: 'Total', render: (step) => money(step.total) },
             {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -10,6 +11,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Typography,
 } from '@mui/material';
 import { DataTable } from '@/components/DataTable';
 import { toast } from '@/components/Toast';
@@ -23,6 +25,7 @@ interface StepForm {
   name: string;
   approverRole: string;
   slaHours: number;
+  stage: number;
 }
 
 export function PoliciesPage() {
@@ -36,7 +39,7 @@ export function PoliciesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
   const [steps, setSteps] = useState<StepForm[]>([
-    { name: 'Approver', approverRole: 'APPROVER', slaHours: 24 },
+    { name: 'Approver', approverRole: 'APPROVER', slaHours: 24, stage: 1 },
   ]);
 
   const remove = useMutation({
@@ -60,6 +63,7 @@ export function PoliciesPage() {
           approverType: 'ROLE' as const,
           approverRole: step.approverRole,
           slaHours: step.slaHours,
+          stage: step.stage,
         })),
       };
       return editingId ? updatePolicy(editingId, body) : createPolicy(body);
@@ -121,11 +125,21 @@ export function PoliciesPage() {
             { key: 'active', label: 'Active', render: (policy) => (policy.active ? 'Yes' : 'No') },
             {
               key: 'steps',
-              label: 'Steps',
-              render: (policy) =>
-                (policy.steps ?? [])
-                  .map((step) => `${step.approverRole ?? step.approverUserId}`)
-                  .join(' → '),
+              label: 'Stages',
+              render: (policy) => {
+                const stages = new Map<number, string[]>();
+                (policy.steps ?? []).forEach((step) => {
+                  const stage = step.sequence ?? 1;
+                  stages.set(stage, [
+                    ...(stages.get(stage) ?? []),
+                    step.approverRole ?? step.approverUserId ?? step.name ?? 'Approver',
+                  ]);
+                });
+                return [...stages.entries()]
+                  .sort(([left], [right]) => left - right)
+                  .map(([stage, approvers]) => `Stage ${stage}: ${approvers.join(' + ')}`)
+                  .join(' → ');
+              },
             },
             {
               key: 'actions',
@@ -146,6 +160,7 @@ export function PoliciesPage() {
                           name: step.name ?? 'Approver',
                           approverRole: step.approverRole ?? 'APPROVER',
                           slaHours: step.slaHours ?? 24,
+                          stage: step.sequence ?? 1,
                         })),
                       );
                       setOpen(true);
@@ -210,18 +225,54 @@ export function PoliciesPage() {
               />
             </Stack>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <strong>Steps</strong>
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() =>
-                  setSteps([...steps, { name: 'Approver', approverRole: 'APPROVER', slaHours: 24 }])
-                }
-              >
-                Add step
-              </Button>
+              <Box>
+                <strong>Stages and approvers</strong>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Approvers in the same stage act in parallel. Later stages start only after every
+                  current stage step is approved.
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    const stage = steps.at(-1)?.stage ?? 1;
+                    setSteps([
+                      ...steps,
+                      { name: 'Approver', approverRole: 'APPROVER', slaHours: 24, stage },
+                    ]);
+                  }}
+                >
+                  Add approver
+                </Button>
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    const stage = Math.max(0, ...steps.map((step) => step.stage)) + 1;
+                    setSteps([
+                      ...steps,
+                      { name: 'Approver', approverRole: 'APPROVER', slaHours: 24, stage },
+                    ]);
+                  }}
+                >
+                  Add stage
+                </Button>
+              </Stack>
             </Stack>
             {steps.map((step, index) => (
               <Stack direction="row" spacing={1} key={`${index}-${step.approverRole}`}>
+                <TextField
+                  label="Stage"
+                  type="number"
+                  value={step.stage}
+                  sx={{ width: 90 }}
+                  slotProps={{ htmlInput: { min: 1 } }}
+                  onChange={(event) => {
+                    const next = [...steps];
+                    next[index] = { ...step, stage: Math.max(1, Number(event.target.value)) };
+                    setSteps(next);
+                  }}
+                />
                 <TextField
                   label="Step name"
                   value={step.name}

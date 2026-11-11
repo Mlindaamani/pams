@@ -14,4 +14,5 @@ public record PolicyStepRequest(
     @NotNull(message = "approverType is required") ApproverType approverType,
     @Size(max = 50, message = "approverRole must be at most 50 characters") String approverRole,
     UUID approverUserId,
-    @Min(value = 1, message = "slaHours must be positive") int slaHours) {}
+    @Min(value = 1, message = "slaHours must be positive") int slaHours,
+    @Min(value = 1, message = "stage must be positive") Integer stage) {}

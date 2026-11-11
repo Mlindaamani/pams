@@ -96,42 +96,44 @@ public class ApprovalInstance extends TenantEntity {
     if (drafts.isEmpty()) {
       throw new BusinessRuleException("Approval chain resolved to no steps");
     }
-    int sequence = 1;
     for (ApprovalStepDraft draft : drafts) {
       steps.add(
           new ApprovalStep(
               organizationId,
               this,
-              sequence,
+              draft.stage(),
               draft.name(),
               draft.approverType(),
               draft.approverRole(),
               draft.assigneeUserId(),
               now.plusSeconds(draft.slaHours() * 3600L)));
-      sequence++;
     }
-    this.currentSequence = firstStepSequence(now);
+    this.currentSequence = firstStage(now);
   }
 
-  public void approveCurrent(String actorSubject, String actorName, String comment, Instant now) {
-    ApprovalStep step = requireCurrentStep();
+  public void approveStep(
+      UUID stepId, String actorSubject, String actorName, String comment, Instant now) {
+    ApprovalStep step = requireCurrentStep(stepId);
     step.approve(actorSubject, actorName, comment, now);
-    advance(now);
+    if (currentSteps().isEmpty()) {
+      advance(now);
+    }
   }
 
-  public void rejectCurrent(String actorSubject, String actorName, String comment, Instant now) {
-    ApprovalStep step = requireCurrentStep();
+  public void rejectStep(
+      UUID stepId, String actorSubject, String actorName, String comment, Instant now) {
+    ApprovalStep step = requireCurrentStep(stepId);
     step.reject(actorSubject, actorName, comment, now);
     this.status = ApprovalInstanceStatus.REJECTED;
     this.lastComment = comment;
     this.completedAt = now;
   }
 
-  public void requestChanges(String comment) {
+  public void requestChanges(UUID stepId, String comment) {
     if (comment == null || comment.isBlank()) {
       throw new BusinessRuleException("A comment is required when requesting changes");
     }
-    requireCurrentStep();
+    requireCurrentStep(stepId);
     this.status = ApprovalInstanceStatus.CHANGES_REQUESTED;
     this.lastComment = comment;
   }
@@ -144,73 +146,100 @@ public class ApprovalInstance extends TenantEntity {
     this.status = ApprovalInstanceStatus.CANCELLED;
   }
 
-  public void markReminderOnCurrent(Instant now) {
-    requireCurrentStep().markReminder(now);
+  public void markReminder(UUID stepId, Instant now) {
+    requireCurrentStep(stepId).markReminder(now);
   }
 
-  public void escalateCurrent(Instant now) {
-    ApprovalStep step = requireCurrentStep();
+  public void escalateStep(UUID stepId, Instant now) {
+    ApprovalStep step = requireCurrentStep(stepId);
     step.markEscalated(now);
     step.skip("Escalated after SLA breach", now);
-    advance(now);
+    if (currentSteps().isEmpty()) {
+      advance(now);
+    }
   }
 
-  public Optional<ApprovalStep> currentStep() {
+  public List<ApprovalStep> currentSteps() {
     if (currentSequence == null) {
-      return Optional.empty();
+      return List.of();
     }
     return steps.stream()
         .filter(step -> step.getSequence() == currentSequence)
         .filter(ApprovalStep::isPending)
-        .findFirst();
+        .toList();
+  }
+
+  public Optional<ApprovalStep> currentStep() {
+    return currentSteps().stream().findFirst();
   }
 
   public boolean isCurrentStep(ApprovalStep step) {
     return currentSequence != null && currentSequence == step.getSequence() && step.isPending();
   }
 
-  private ApprovalStep requireCurrentStep() {
-    return currentStep()
-        .orElseThrow(() -> new IllegalStateTransitionException("There is no active approval step"));
+  private ApprovalStep requireCurrentStep(UUID stepId) {
+    return steps.stream()
+        .filter(step -> step.getId().equals(stepId))
+        .filter(this::isCurrentStep)
+        .findFirst()
+        .orElseThrow(
+            () -> new IllegalStateTransitionException("Approval step is not the active stage"));
   }
 
   private void advance(Instant now) {
-    Optional<ApprovalStep> next = nextPendingAfter(currentSequence);
-    while (next.isPresent()
-        && next.get().getApproverType() == ApproverType.USER
-        && Objects.equals(next.get().getAssigneeUserId(), requesterUserId)) {
-      next.get().skip("Requester cannot approve their own request", now);
-      next = nextPendingAfter(currentSequence);
+    Integer next = nextStageAfter(currentSequence);
+    while (next != null) {
+      skipSelfApprovals(next, now);
+      if (hasPendingAt(next)) {
+        this.currentSequence = next;
+        return;
+      }
+      next = nextStageAfter(next);
     }
-    if (next.isPresent()) {
-      this.currentSequence = next.get().getSequence();
-    } else {
-      this.currentSequence = null;
-      this.status = ApprovalInstanceStatus.APPROVED;
-      this.completedAt = now;
-    }
+    this.currentSequence = null;
+    this.status = ApprovalInstanceStatus.APPROVED;
+    this.completedAt = now;
   }
 
-  private Integer firstStepSequence(Instant now) {
-    Optional<ApprovalStep> first = steps.stream().filter(ApprovalStep::isPending).findFirst();
-    while (first.isPresent()
-        && first.get().getApproverType() == ApproverType.USER
-        && Objects.equals(first.get().getAssigneeUserId(), requesterUserId)) {
-      first.get().skip("Requester cannot approve their own request", now);
-      first = steps.stream().filter(ApprovalStep::isPending).findFirst();
+  private Integer firstStage(Instant now) {
+    Integer stage =
+        steps.stream().map(ApprovalStep::getSequence).min(Integer::compareTo).orElse(null);
+    while (stage != null) {
+      skipSelfApprovals(stage, now);
+      if (hasPendingAt(stage)) {
+        return stage;
+      }
+      stage = nextStageAfter(stage);
     }
-    if (first.isEmpty()) {
-      throw new BusinessRuleException(
-          "Approval chain has no eligible approver (requester cannot approve their own request)");
-    }
-    return first.get().getSequence();
+    throw new BusinessRuleException(
+        "Approval chain has no eligible approver (requester cannot approve their own request)");
   }
 
-  private Optional<ApprovalStep> nextPendingAfter(Integer sequence) {
-    return steps.stream()
-        .filter(step -> sequence == null || step.getSequence() > sequence)
+  private void skipSelfApprovals(int stage, Instant now) {
+    steps.stream()
+        .filter(step -> step.getSequence() == stage)
         .filter(ApprovalStep::isPending)
-        .findFirst();
+        .filter(this::isSelfApproval)
+        .forEach(step -> step.skip("Requester cannot approve their own request", now));
+  }
+
+  private boolean isSelfApproval(ApprovalStep step) {
+    return step.getAssigneeUserId() != null
+        && Objects.equals(step.getAssigneeUserId(), requesterUserId);
+  }
+
+  private boolean hasPendingAt(int stage) {
+    return steps.stream()
+        .filter(step -> step.getSequence() == stage)
+        .anyMatch(ApprovalStep::isPending);
+  }
+
+  private Integer nextStageAfter(Integer stage) {
+    return steps.stream()
+        .map(ApprovalStep::getSequence)
+        .filter(candidate -> stage == null || candidate > stage)
+        .min(Integer::compareTo)
+        .orElse(null);
   }
 
   public UUID getPurchaseRequestId() {

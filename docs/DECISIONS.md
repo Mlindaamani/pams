@@ -1544,3 +1544,28 @@ directly to Keycloak, and there was no way to present pricing or capture demos.
 
 **Consequences.** Prospects can evaluate PAMS and request a demo without an account. Self-serve
 signup, lead administration, rate limiting and CAPTCHA are follow-up increments.
+
+---
+
+## ADR-081 — Parallel approval stages
+
+**Context.** Approval policies could express only a single approver at each sequence. Real
+procurement workflows often require several approvers to review the same stage concurrently, for
+example Procurement and Finance before an order reaches an administrator.
+
+**Decision.**
+- Treat the existing `sequence` value as the stage number and allow multiple steps to share it.
+- Drop the per-step uniqueness constraints on request, policy and purchase-order approval steps and
+  replace them with non-unique stage indexes (`V33`).
+- A request or purchase order remains on the current stage until every pending step in that stage is
+  approved. Rejection or change requests short-circuit the remaining stage.
+- Skip self-approval steps without blocking the rest of the stage; advance only after the stage has no
+  pending steps.
+- Add an optional `stage` field to approval-policy step requests. Omitted stages remain sequential.
+- Update policy and approval UIs to show grouped stages and allow adding a parallel approver or a new
+  stage.
+- Cover parallel request and purchase-order approval paths with integration tests.
+
+**Consequences.** Tenants can model parallel review stages for both purchase requests and purchase
+orders. Non-amount conditions, quorum rules and a fully visual workflow builder remain follow-up
+increments.

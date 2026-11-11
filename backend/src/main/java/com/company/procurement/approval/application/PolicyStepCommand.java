@@ -8,4 +8,5 @@ public record PolicyStepCommand(
     ApproverType approverType,
     String approverRole,
     UUID approverUserId,
-    int slaHours) {}
+    int slaHours,
+    Integer stage) {}

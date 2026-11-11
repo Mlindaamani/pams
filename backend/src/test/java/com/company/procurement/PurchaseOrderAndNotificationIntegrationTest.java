@@ -417,6 +417,46 @@ class PurchaseOrderAndNotificationIntegrationTest {
   }
 
   @Test
+  void purchaseOrderParallelStageWaitsForEveryApprover() throws Exception {
+    createParallelPurchaseOrderPolicy();
+    UUID requestId = createApprovedRequest("Parallel PO approval", "75.00");
+    MvcResult created = createPurchaseOrder(requestId);
+    UUID poId = UUID.fromString(JsonPath.read(created.getResponse().getContentAsString(), "$.id"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/purchase-orders/{id}/approval/approve", poId)
+                .with(tokenSubject("approver-user", org, "APPROVER"))
+                .header(IDEMPOTENCY, "parallel-po-approver")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PENDING"))
+        .andExpect(jsonPath("$.currentSequence").value(1));
+
+    mockMvc
+        .perform(
+            post("/api/v1/purchase-orders/{id}/approval/approve", poId)
+                .with(tokenSubject("finance-user", org, "FINANCE"))
+                .header(IDEMPOTENCY, "parallel-po-finance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PENDING"))
+        .andExpect(jsonPath("$.currentSequence").value(2));
+
+    mockMvc
+        .perform(
+            post("/api/v1/purchase-orders/{id}/approval/approve", poId)
+                .with(token(org, "ADMIN"))
+                .header(IDEMPOTENCY, "parallel-po-admin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("APPROVED"));
+  }
+
+  @Test
   void recordsPartialAndCompleteGoodsReceipts() throws Exception {
     UUID requestId = createApprovedRequest("Receive me", "40.00", 4);
     MvcResult created = createPurchaseOrder(requestId);
@@ -1175,6 +1215,44 @@ class PurchaseOrderAndNotificationIntegrationTest {
                 .content("{}"))
         .andExpect(status().isOk());
     return requestId;
+  }
+
+  private void createParallelPurchaseOrderPolicy() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/approval-policies")
+                .with(token(org, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "name",
+                            "PO parallel approval",
+                            "entityType",
+                            "PURCHASE_ORDER",
+                            "amountMin",
+                            0,
+                            "steps",
+                            List.of(
+                                Map.of(
+                                    "name", "Approver",
+                                    "approverType", "ROLE",
+                                    "approverRole", "APPROVER",
+                                    "slaHours", 24,
+                                    "stage", 1),
+                                Map.of(
+                                    "name", "Finance",
+                                    "approverType", "ROLE",
+                                    "approverRole", "FINANCE",
+                                    "slaHours", 24,
+                                    "stage", 1),
+                                Map.of(
+                                    "name", "Admin",
+                                    "approverType", "ROLE",
+                                    "approverRole", "ADMIN",
+                                    "slaHours", 24,
+                                    "stage", 2))))))
+        .andExpect(status().isCreated());
   }
 
   private void createPurchaseOrderPolicy() throws Exception {

@@ -148,6 +148,70 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void parallelStageWaitsForEveryApproverBeforeAdvancing() throws Exception {
+    createPolicyBody(
+        "Parallel stage",
+        List.of(
+            Map.of(
+                "name", "Approver",
+                "approverType", "ROLE",
+                "approverRole", "APPROVER",
+                "slaHours", 24,
+                "stage", 1),
+            Map.of(
+                "name", "Finance",
+                "approverType", "ROLE",
+                "approverRole", "FINANCE",
+                "slaHours", 24,
+                "stage", 1),
+            Map.of(
+                "name", "Admin",
+                "approverType", "ROLE",
+                "approverRole", "ADMIN",
+                "slaHours", 24,
+                "stage", 2)));
+    UUID requestId = createRequest("Parallel request", "500.00");
+    MvcResult timeline = timeline(requestId);
+    String body = timeline.getResponse().getContentAsString();
+    UUID approverStep = stepIdForRole(requestId, "APPROVER");
+    UUID financeStep = stepIdForRole(requestId, "FINANCE");
+    UUID adminStep = stepIdForRole(requestId, "ADMIN");
+    assertThat((Integer) JsonPath.read(body, "$.currentSequence")).isEqualTo(1);
+
+    mockMvc
+        .perform(
+            post("/api/v1/approvals/{stepId}/approve", approverStep)
+                .with(tokenSubject("approver-user", org, "APPROVER"))
+                .header(IDEMPOTENCY, "parallel-approver")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+        .andExpect(jsonPath("$.currentSequence").value(1));
+
+    mockMvc
+        .perform(
+            post("/api/v1/approvals/{stepId}/approve", financeStep)
+                .with(tokenSubject("finance-user", org, "FINANCE"))
+                .header(IDEMPOTENCY, "parallel-finance")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+        .andExpect(jsonPath("$.currentSequence").value(2));
+
+    mockMvc
+        .perform(
+            post("/api/v1/approvals/{stepId}/approve", adminStep)
+                .with(token(org, "ADMIN"))
+                .header(IDEMPOTENCY, "parallel-admin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("APPROVED"));
+  }
+
+  @Test
   void adminCanApproveAnyRoleStepAsFallback() throws Exception {
     createPolicy("Admin fallback", "APPROVER", "FINANCE");
     UUID requestId = createRequest("Admin fallback request", "500.00");
@@ -631,6 +695,20 @@ class ApprovalWorkflowIntegrationTest {
             get("/api/v1/purchase-requests/{id}/approval", requestId).with(token(org, "ADMIN")))
         .andExpect(status().isOk())
         .andReturn();
+  }
+
+  private UUID stepIdForRole(UUID requestId, String role) {
+    return jdbcTemplate.queryForObject(
+        """
+        select s.id
+          from approval_step s
+          join approval_instance i on i.id = s.instance_id
+         where i.purchase_request_id = ? and s.assignee_role = ?
+         limit 1
+        """,
+        UUID.class,
+        requestId,
+        role);
   }
 
   private UUID firstStepId(UUID requestId) throws Exception {

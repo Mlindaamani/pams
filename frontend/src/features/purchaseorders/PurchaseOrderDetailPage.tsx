@@ -373,7 +373,7 @@ export function PurchaseOrderDetailPage() {
                   <Chip size="small" label={approval.data.status} variant="outlined" />
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Current step {approval.data.currentSequence} of {approval.data.steps?.length ?? 0}
+                  Current stage {approval.data.currentSequence}
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -420,7 +420,7 @@ export function PurchaseOrderDetailPage() {
                 >
                   <Box>
                     <Typography variant="body2" fontWeight={600}>
-                      {step.sequence}. {step.name}
+                      Stage {step.sequence} · {step.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {step.approverRole ?? step.assigneeUserId ?? 'Assigned approver'}

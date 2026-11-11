@@ -2483,6 +2483,8 @@ export interface components {
             approverUserId?: string;
             /** Format: int32 */
             slaHours?: number;
+            /** Format: int32 */
+            stage?: number;
         };
         UpdateApprovalPolicyRequest: {
             name: string;

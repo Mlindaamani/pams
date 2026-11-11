@@ -180,7 +180,7 @@ function TimelineStep({
 
       <Box sx={{ flex: 1, minWidth: 0, pb: last ? 0 : 2.5 }}>
         <Typography fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>
-          {step.sequence}. {step.name}
+          Stage {step.sequence} · {step.name}
         </Typography>
 
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
