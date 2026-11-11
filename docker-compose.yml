@@ -1,0 +1,207 @@
+name: pams
+
+services:
+# PostgreSQL service for database
+  postgres:
+    image: postgres:16-alpine
+    container_name: pams-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pams}
+      POSTGRES_USER: ${POSTGRES_USER:-pams}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pams}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-pams} -d ${POSTGRES_DB:-pams}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+# Keycloak service for authentication and authorization
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2
+    container_name: pams-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_PORT: "8080"
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8080"
+    volumes:
+      - ./ops/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./ops/keycloak/themes:/opt/keycloak/themes:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "{ printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3; grep -q '200 OK' <&3; } 3<>/dev/tcp/localhost/9000",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+# MinIO service for object storage
+  minio:
+    image: bitnamilegacy/minio:latest
+    container_name: pams-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:9000/minio/health/live || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+# Redis service for caching
+  redis:
+    image: redis:7-alpine
+    container_name: pams-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+# Mailpit service for email testing
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: pams-mailpit
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped
+
+# Backend API service
+  api:
+    build:
+      context: ./backend
+    image: pams-backend:dev
+    container_name: pams-api
+    network_mode: host
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-pams}
+      POSTGRES_USER: ${POSTGRES_USER:-pams}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pams}
+      REDIS_HOST: localhost
+      REDIS_PORT: "6379"
+      MAIL_HOST: localhost
+      MAIL_PORT: "1025"
+      KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/pams
+      MINIO_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-pams-attachments}
+      PAMS_APP_URL: ${PAMS_APP_URL:-http://localhost:3000}
+      OTLP_TRACING_ENDPOINT: http://localhost:4318/v1/traces
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:3000/admin/billing?checkout=success}
+      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-http://localhost:3000/admin/billing?checkout=cancel}
+      STRIPE_PORTAL_RETURN_URL: ${STRIPE_PORTAL_RETURN_URL:-http://localhost:3000/admin/billing}
+      KEYCLOAK_ADMIN_BASE_URL: ${KEYCLOAK_ADMIN_BASE_URL:-http://localhost:8081}
+      KEYCLOAK_ADMIN_REALM: ${KEYCLOAK_ADMIN_REALM:-pams}
+      KEYCLOAK_ADMIN_AUTH_REALM: ${KEYCLOAK_ADMIN_AUTH_REALM:-master}
+      KEYCLOAK_ADMIN_FALLBACK_USER: ${KEYCLOAK_ADMIN_FALLBACK_USER:-}
+      KEYCLOAK_ADMIN_FALLBACK_PASSWORD: ${KEYCLOAK_ADMIN_FALLBACK_PASSWORD:-}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID:-pams-admin}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-}
+      JAVA_OPTS: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:9090/actuator/health/readiness || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    restart: unless-stopped
+
+# Tempo service for distributed tracing
+  tempo:
+    image: grafana/tempo:latest
+    container_name: pams-tempo
+    command: ["-config.file=/etc/tempo.yml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "3200:3200"
+    volumes:
+      - ./ops/tempo/tempo.yml:/etc/tempo.yml:ro
+      - tempo-data:/var/tempo
+    restart: unless-stopped
+
+# Web frontend service
+  web:
+    build:
+      context: ./frontend
+    container_name: pams-web
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    environment:
+      PAMS_API_BASE_URL: ${PAMS_PUBLIC_API_URL:-http://localhost:8080}
+      PAMS_OIDC_AUTHORITY: ${PAMS_PUBLIC_OIDC_AUTHORITY:-http://localhost:8081/realms/pams}
+      PAMS_OIDC_CLIENT_ID: ${PAMS_OIDC_CLIENT_ID:-pams-api}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    restart: unless-stopped
+
+# Flyway service for database migrations
+  flyway:
+    image: flyway/flyway:11
+    profiles: ["tools"]
+    command:
+      - "-url=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pams}"
+      - "-user=${POSTGRES_USER:-pams}"
+      - "-password=${POSTGRES_PASSWORD:-pams}"
+      - "-connectRetries=10"
+      - "migrate"
+    volumes:
+      - ./backend/src/main/resources/db/migration:/flyway/sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  minio-data:
+  tempo-data:
