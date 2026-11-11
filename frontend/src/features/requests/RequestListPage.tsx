@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
-import { Button, MenuItem, Stack, TablePagination, TextField } from '@mui/material';
+import { Button, Link, MenuItem, Stack, TablePagination, TextField } from '@mui/material';
 import { DataTable } from '@/components/DataTable';
 import { Can } from '@/auth/AbilityProvider';
 import { useBranding } from '@/branding/BrandingProvider';
@@ -94,7 +94,15 @@ export function RequestListPage() {
                 key: 'title',
                 label: 'Title',
                 render: (request) => (
-                  <RouterLink to={`/requests/${request.id}`}>{request.title}</RouterLink>
+                  <Link
+                    component={RouterLink}
+                    to={`/requests/${request.id}`}
+                    color="primary.main"
+                    underline="hover"
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {request.title}
+                  </Link>
                 ),
               },
               {

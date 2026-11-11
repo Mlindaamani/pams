@@ -120,13 +120,14 @@ export function ReportsPage() {
             onChange={(_event, value: number) => setTab(value)}
             variant="scrollable"
             allowScrollButtonsMobile
+            sx={{ borderBottom: 1, borderColor: 'divider', mb: 2.5 }}
           >
             <Tab icon={<AssessmentIcon />} iconPosition="start" label="Spend" />
             <Tab icon={<ScheduleIcon />} iconPosition="start" label="Cycle time" />
             <Tab icon={<AccountBalanceIcon />} iconPosition="start" label="Commitments" />
           </Tabs>
 
-          <Grid container spacing={2} alignItems="center" sx={{ mt: 0.5 }}>
+          <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 select
