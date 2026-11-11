@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
+  Box,
   Button,
   Card,
   CardContent,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -20,8 +22,8 @@ import { DataTable } from '@/components/DataTable';
 import { toast } from '@/components/Toast';
 import { useAbility } from '@/auth/AbilityProvider';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { Loading, PageHeader } from '@/components/Page';
-import { money, dateOnly, dateTime, downloadBlob } from '@/lib/format';
+import { Loading } from '@/components/Page';
+import { money, dateOnly, downloadBlob } from '@/lib/format';
 import {
   cancelRequest,
   deleteRequest,
@@ -37,7 +39,8 @@ import {
 import { createPurchaseOrder } from '@/features/purchaseorders/api';
 import { listVendors } from '@/features/vendors/api';
 import { auditPage } from '@/features/audit/api';
-import { ApprovalTimeline } from './ApprovalTimeline';
+import { ApprovalProgress } from './ApprovalProgress';
+import { TransitionLog } from './TransitionLog';
 import {
   approve as approveStep,
   reject as rejectStep,
@@ -84,7 +87,7 @@ export function RequestDetailPage() {
   });
   const audit = useQuery({
     queryKey: ['request', id, 'audit'],
-    queryFn: () => auditPage({ aggregateId: id, limit: 10 }),
+    queryFn: () => auditPage({ aggregateId: id, limit: 25 }),
     enabled: ability.can('read', 'Audit'),
   });
   const vendors = useQuery({
@@ -186,18 +189,72 @@ export function RequestDetailPage() {
 
   return (
     <>
-      <PageHeader
-        title={data.title ?? 'Purchase request'}
-        actions={
-          <Stack direction="row" spacing={1}>
+      <Box
+        component="section"
+        aria-label="Request header"
+        sx={{
+          mb: 2,
+          p: { xs: 2, md: 2.5 },
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', lg: 'row' }}
+          spacing={2}
+          alignItems={{ xs: 'stretch', lg: 'center' }}
+        >
+          <Box sx={{ minWidth: { lg: 240 }, maxWidth: { lg: 380 } }}>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography variant="h5" component="h1">
+                {data.title ?? 'Purchase request'}
+              </Typography>
+              <Chip
+                size="small"
+                label={data.status?.replaceAll('_', ' ') ?? 'DRAFT'}
+                color={requestStatusColor(data.status)}
+                variant={data.status === 'DRAFT' ? 'outlined' : 'filled'}
+              />
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              {data.requesterName} · Request {data.id?.slice(0, 8)}
+            </Typography>
+          </Box>
+
+          <Box sx={{ flex: '1 1 260px', minWidth: 0 }}>
+            {timeline.data ? (
+              <ApprovalProgress timeline={timeline.data} />
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                Approval starts after submission.
+              </Typography>
+            )}
+          </Box>
+
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            useFlexGap
+            justifyContent={{ lg: 'flex-end' }}
+            sx={{ flexShrink: 0, maxWidth: { lg: 560 } }}
+          >
             {editable && (
-              <Button component={RouterLink} to={`/requests/${data.id}/edit`} variant="outlined">
+              <Button
+                component={RouterLink}
+                to={`/requests/${data.id}/edit`}
+                variant="outlined"
+                size="small"
+              >
                 Edit
               </Button>
             )}
             {canSubmit && (
               <Button
                 variant="contained"
+                size="small"
                 onClick={() => submit.mutate()}
                 disabled={submit.isPending}
               >
@@ -207,6 +264,7 @@ export function RequestDetailPage() {
             {allowed.has('CANCEL') && (
               <Button
                 color="warning"
+                size="small"
                 onClick={() =>
                   setConfirm({
                     title: 'Cancel request',
@@ -224,6 +282,7 @@ export function RequestDetailPage() {
             {allowed.has('DELETE') && (
               <Button
                 color="error"
+                size="small"
                 onClick={() =>
                   setConfirm({
                     title: 'Delete draft',
@@ -239,16 +298,59 @@ export function RequestDetailPage() {
               </Button>
             )}
             {allowed.has('CREATE_PO') && (
-              <Button variant="contained" color="secondary" onClick={() => setPoOpen(true)}>
-                Create purchase order
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={() => setPoOpen(true)}
+              >
+                Create PO
+              </Button>
+            )}
+            {allowed.has('APPROVE') && (
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => {
+                  setApprovalComment('');
+                  setApprovalDialog('approve');
+                }}
+              >
+                Approve
+              </Button>
+            )}
+            {allowed.has('REQUEST_CHANGES') && (
+              <Button
+                size="small"
+                color="warning"
+                variant="outlined"
+                onClick={() => {
+                  setApprovalComment('');
+                  setApprovalDialog('request-changes');
+                }}
+              >
+                Request changes
+              </Button>
+            )}
+            {allowed.has('REJECT') && (
+              <Button
+                size="small"
+                color="error"
+                variant="outlined"
+                onClick={() => {
+                  setApprovalComment('');
+                  setApprovalDialog('reject');
+                }}
+              >
+                Reject
               </Button>
             )}
           </Stack>
-        }
-      />
+        </Stack>
+      </Box>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid size={{ xs: 12, md: ability.can('read', 'Audit') ? 8 : 12 }}>
           <Card>
             <CardContent>
               <Stack
@@ -258,7 +360,7 @@ export function RequestDetailPage() {
               >
                 <Stack>
                   <Typography color="text.secondary">Status</Typography>
-                  <Typography variant="h6">{data.status}</Typography>
+                  <Typography variant="h6">{data.status?.replaceAll('_', ' ')}</Typography>
                 </Stack>
                 <Stack>
                   <Typography color="text.secondary">Total</Typography>
@@ -304,96 +406,6 @@ export function RequestDetailPage() {
               />
             </CardContent>
           </Card>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Approval timeline
-              </Typography>
-              {timeline.data ? (
-                <>
-                  <ApprovalTimeline
-                    timeline={timeline.data}
-                    requesterName={data.requesterName}
-                    submittedAt={data.submittedAt ?? data.createdAt}
-                  />
-                  {(allowed.has('APPROVE') ||
-                    allowed.has('REJECT') ||
-                    allowed.has('REQUEST_CHANGES')) && (
-                    <Stack direction="row" spacing={1} sx={{ mt: 2, ml: 4 }} flexWrap="wrap">
-                      {allowed.has('APPROVE') && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={() => {
-                            setApprovalComment('');
-                            setApprovalDialog('approve');
-                          }}
-                        >
-                          Approve
-                        </Button>
-                      )}
-                      {allowed.has('REQUEST_CHANGES') && (
-                        <Button
-                          size="small"
-                          color="warning"
-                          onClick={() => {
-                            setApprovalComment('');
-                            setApprovalDialog('request-changes');
-                          }}
-                        >
-                          Request changes
-                        </Button>
-                      )}
-                      {allowed.has('REJECT') && (
-                        <Button
-                          size="small"
-                          color="error"
-                          onClick={() => {
-                            setApprovalComment('');
-                            setApprovalDialog('reject');
-                          }}
-                        >
-                          Reject
-                        </Button>
-                      )}
-                    </Stack>
-                  )}
-                </>
-              ) : (
-                <Typography color="text.secondary">Approval starts after submission.</Typography>
-              )}
-            </CardContent>
-          </Card>
-
-          {ability.can('read', 'Audit') && (
-            <Card sx={{ mt: 2 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Audit trail
-                </Typography>
-                <Stack spacing={1}>
-                  {(audit.data?.content ?? []).length === 0 && (
-                    <Typography color="text.secondary">No audit events.</Typography>
-                  )}
-                  {(audit.data?.content ?? []).map((event) =>
-                    event ? (
-                      <Stack key={event.id} spacing={0.25}>
-                        <Typography variant="body2" fontWeight={600}>
-                          {event.action}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {event.actorName} · {dateTime(event.occurredAt)}
-                        </Typography>
-                      </Stack>
-                    ) : null,
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
-          )}
 
           <Card sx={{ mt: 2 }}>
             <CardContent>
@@ -451,6 +463,12 @@ export function RequestDetailPage() {
               </Stack>
             </CardContent>
           </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          {ability.can('read', 'Audit') ? (
+            <TransitionLog events={audit.data?.content ?? []} loading={audit.isLoading} />
+          ) : null}
         </Grid>
       </Grid>
 
@@ -552,4 +570,22 @@ export function RequestDetailPage() {
       </Dialog>
     </>
   );
+}
+
+function requestStatusColor(status?: string): 'default' | 'info' | 'success' | 'warning' | 'error' {
+  switch (status) {
+    case 'APPROVED':
+    case 'CONVERTED_TO_PO':
+      return 'success';
+    case 'SUBMITTED':
+    case 'IN_APPROVAL':
+      return 'info';
+    case 'CHANGES_REQUESTED':
+      return 'warning';
+    case 'REJECTED':
+    case 'CANCELLED':
+      return 'error';
+    default:
+      return 'default';
+  }
 }
