@@ -154,7 +154,8 @@ public class PurchaseRequestService {
             request.getRequesterSubject(),
             request.getCurrency(),
             request.getTotalAmount(),
-            request.isBudgetException());
+            request.isBudgetException(),
+            request.getDepartmentId());
     request.attachApprovalPolicy(approval.policyId(), approval.policyVersion());
     request.submit(clock.instant());
     request.advanceToInApproval();
@@ -207,6 +208,11 @@ public class PurchaseRequestService {
     }
     request.reject();
     requests.save(request);
+  }
+
+  @Transactional(readOnly = true)
+  public UUID departmentIdForPurchaseRequest(UUID id) {
+    return requestDetail(id).getDepartmentId();
   }
 
   @Transactional(readOnly = true)

@@ -151,7 +151,8 @@ public class ApprovalService {
       String requesterSubject,
       String currency,
       BigDecimal totalAmount,
-      boolean budgetException) {
+      boolean budgetException,
+      UUID departmentId) {
     UUID organizationId = TenantContext.require();
     Optional<UserProfile> requester = userProfiles.findBySubject(requesterSubject);
     UUID requesterUserId = requester.map(UserProfile::getId).orElse(null);
@@ -164,7 +165,8 @@ public class ApprovalService {
             totalAmount,
             requesterUserId,
             managerUserId,
-            budgetException);
+            budgetException,
+            departmentId);
 
     instances.deleteByOrganizationIdAndPurchaseRequestId(organizationId, requestId);
 
@@ -521,7 +523,9 @@ public class ApprovalService {
           command.approverRole(),
           command.approverUserId(),
           command.slaHours(),
-          stage);
+          stage,
+          command.conditionType(),
+          command.conditionDepartmentId());
       nextStage = Math.max(nextStage, stage + 1);
     }
   }

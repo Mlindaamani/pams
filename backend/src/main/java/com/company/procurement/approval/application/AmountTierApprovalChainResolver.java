@@ -29,7 +29,8 @@ public class AmountTierApprovalChainResolver implements ApprovalChainResolver {
       BigDecimal amount,
       UUID requesterUserId,
       UUID requesterManagerUserId,
-      boolean budgetException) {
+      boolean budgetException,
+      UUID departmentId) {
     ApprovalPolicy policy =
         policies
             .findActiveByAmount(organizationId, entityType, amount)
@@ -45,6 +46,9 @@ public class AmountTierApprovalChainResolver implements ApprovalChainResolver {
               "Finance (budget exception)", ApproverType.ROLE, "FINANCE", null, 24, 0));
     }
     for (ApprovalPolicyStep step : policy.getSteps()) {
+      if (!matchesCondition(step, budgetException, departmentId)) {
+        continue;
+      }
       UUID assignee = step.getApproverUserId();
       if (step.getApproverType() == ApproverType.REQUESTER_MANAGER) {
         if (requesterManagerUserId == null) {
@@ -70,5 +74,15 @@ public class AmountTierApprovalChainResolver implements ApprovalChainResolver {
       throw new BusinessRuleException("Approval policy resolved to no eligible steps");
     }
     return new ResolvedChain(policy.getId(), policy.getPolicyVersion(), policy.getName(), steps);
+  }
+
+  private static boolean matchesCondition(
+      ApprovalPolicyStep step, boolean budgetException, UUID departmentId) {
+    return switch (step.getConditionType()) {
+      case ALWAYS -> true;
+      case BUDGET_EXCEPTION -> budgetException;
+      case DEPARTMENT ->
+          departmentId != null && departmentId.equals(step.getConditionDepartmentId());
+    };
   }
 }

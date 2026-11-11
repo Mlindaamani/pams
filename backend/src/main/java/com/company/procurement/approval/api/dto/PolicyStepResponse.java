@@ -1,5 +1,6 @@
 package com.company.procurement.approval.api.dto;
 
+import com.company.procurement.approval.domain.ApprovalConditionType;
 import com.company.procurement.approval.domain.ApproverType;
 import java.util.UUID;
 
@@ -10,4 +11,6 @@ public record PolicyStepResponse(
     ApproverType approverType,
     String approverRole,
     UUID approverUserId,
-    int slaHours) {}
+    int slaHours,
+    ApprovalConditionType conditionType,
+    UUID conditionDepartmentId) {}

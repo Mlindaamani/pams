@@ -212,6 +212,42 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void departmentConditionsIncludeOnlyMatchingSteps() throws Exception {
+    UUID operations = createDepartment(org, "Operations");
+    createPolicyBody(
+        "Conditional",
+        List.of(
+            Map.of(
+                "name", "Always",
+                "approverType", "ROLE",
+                "approverRole", "APPROVER",
+                "slaHours", 24,
+                "stage", 1,
+                "conditionType", "ALWAYS"),
+            Map.of(
+                "name", "Ops finance",
+                "approverType", "ROLE",
+                "approverRole", "FINANCE",
+                "slaHours", 24,
+                "stage", 1,
+                "conditionType", "DEPARTMENT",
+                "conditionDepartmentId", operations.toString()),
+            Map.of(
+                "name", "Finance admin",
+                "approverType", "ROLE",
+                "approverRole", "ADMIN",
+                "slaHours", 24,
+                "stage", 2,
+                "conditionType", "DEPARTMENT",
+                "conditionDepartmentId", department.toString())));
+    UUID requestId = createRequest("Conditional request", "500.00");
+    String body = timeline(requestId).getResponse().getContentAsString();
+
+    List<String> roles = JsonPath.read(body, "$.steps[*].assigneeRole");
+    assertThat(roles).containsExactly("APPROVER", "ADMIN");
+  }
+
+  @Test
   void adminCanApproveAnyRoleStepAsFallback() throws Exception {
     createPolicy("Admin fallback", "APPROVER", "FINANCE");
     UUID requestId = createRequest("Admin fallback request", "500.00");

@@ -42,6 +42,13 @@ public class ApprovalPolicyStep extends TenantEntity {
   @Column(name = "sla_hours", nullable = false)
   private int slaHours;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "condition_type", nullable = false, length = 30)
+  private ApprovalConditionType conditionType;
+
+  @Column(name = "condition_department_id")
+  private UUID conditionDepartmentId;
+
   protected ApprovalPolicyStep() {
     // for JPA
   }
@@ -54,13 +61,20 @@ public class ApprovalPolicyStep extends TenantEntity {
       ApproverType approverType,
       String role,
       UUID userId,
-      int slaHours) {
+      int slaHours,
+      ApprovalConditionType conditionType,
+      UUID conditionDepartmentId) {
     super(organizationId);
     this.policy = Objects.requireNonNull(policy, "policy");
     this.sequence = sequence;
     this.name = requireText(name, "name");
     this.approverType = Objects.requireNonNull(approverType, "approverType");
     this.slaHours = slaHours;
+    this.conditionType = conditionType == null ? ApprovalConditionType.ALWAYS : conditionType;
+    this.conditionDepartmentId = conditionDepartmentId;
+    if (this.conditionType == ApprovalConditionType.DEPARTMENT && conditionDepartmentId == null) {
+      throw new IllegalArgumentException("conditionDepartmentId is required for DEPARTMENT");
+    }
     if (slaHours <= 0) {
       throw new IllegalArgumentException("slaHours must be positive");
     }
@@ -95,6 +109,14 @@ public class ApprovalPolicyStep extends TenantEntity {
 
   public int getSlaHours() {
     return slaHours;
+  }
+
+  public ApprovalConditionType getConditionType() {
+    return conditionType;
+  }
+
+  public UUID getConditionDepartmentId() {
+    return conditionDepartmentId;
   }
 
   private static String requireText(String value, String field) {

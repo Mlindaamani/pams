@@ -114,7 +114,9 @@ public class ApprovalPolicyController {
                     step.approverRole(),
                     step.approverUserId(),
                     step.slaHours(),
-                    step.stage()))
+                    step.stage(),
+                    step.conditionType(),
+                    step.conditionDepartmentId()))
         .toList();
   }
 }

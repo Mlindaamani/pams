@@ -11,20 +11,23 @@ public interface ApprovalChainResolver {
       BigDecimal amount,
       UUID requesterUserId,
       UUID requesterManagerUserId,
-      boolean budgetException);
+      boolean budgetException,
+      UUID departmentId);
 
   default ResolvedChain resolve(
       UUID organizationId,
       BigDecimal amount,
       UUID requesterUserId,
       UUID requesterManagerUserId,
-      boolean budgetException) {
+      boolean budgetException,
+      UUID departmentId) {
     return resolve(
         organizationId,
         "PURCHASE_REQUEST",
         amount,
         requesterUserId,
         requesterManagerUserId,
-        budgetException);
+        budgetException,
+        departmentId);
   }
 }

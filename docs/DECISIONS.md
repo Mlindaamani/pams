@@ -1569,3 +1569,26 @@ example Procurement and Finance before an order reaches an administrator.
 **Consequences.** Tenants can model parallel review stages for both purchase requests and purchase
 orders. Non-amount conditions, quorum rules and a fully visual workflow builder remain follow-up
 increments.
+
+---
+
+## ADR-082 — Conditional approval steps and workflow preview
+
+**Context.** Every step in a policy applied to every request or purchase order. Tenants needed
+non-amount conditions so that department-specific or budget-exception reviewers only appear when
+relevant, and administrators needed to see the resulting workflow before saving.
+
+**Decision.**
+- Add `condition_type` (`ALWAYS`, `BUDGET_EXCEPTION`, `DEPARTMENT`) and
+  `condition_department_id` to approval-policy steps (`V34`).
+- Resolve conditions when the chain is created: the request department is passed into the resolver;
+  purchase orders inherit the linked request's department.
+- Department conditions require a department ID; budget-exception conditions only apply when the
+  request was submitted with that exception.
+- Add a workflow preview to the policy editor showing stages, parallel approvers and conditions.
+- Keep condition evaluation immutable once an approval instance is created so later policy edits do
+  not change in-flight approvals.
+
+**Consequences.** Policies can target specific departments and budget exceptions while preserving
+historical approval records. Quorum rules and a fully visual drag-and-drop builder remain follow-up
+increments.

@@ -87,13 +87,29 @@ public class ApprovalPolicy extends SoftDeletableEntity {
   }
 
   public void addStep(
-      String stepName, ApproverType type, String role, UUID userId, int slaHours, int stage) {
+      String stepName,
+      ApproverType type,
+      String role,
+      UUID userId,
+      int slaHours,
+      int stage,
+      ApprovalConditionType conditionType,
+      UUID conditionDepartmentId) {
     if (stage < 1) {
       throw new IllegalArgumentException("stage must be positive");
     }
     steps.add(
         new ApprovalPolicyStep(
-            getOrganizationId(), this, stage, stepName, type, role, userId, slaHours));
+            getOrganizationId(),
+            this,
+            stage,
+            stepName,
+            type,
+            role,
+            userId,
+            slaHours,
+            conditionType,
+            conditionDepartmentId));
   }
 
   public void deactivate() {

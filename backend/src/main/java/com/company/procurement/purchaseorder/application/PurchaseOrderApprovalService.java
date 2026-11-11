@@ -260,7 +260,8 @@ public class PurchaseOrderApprovalService {
             order.getTotalAmount(),
             requester == null ? null : requester.getId(),
             requester == null ? null : requester.getManagerId(),
-            false);
+            false,
+            requests.departmentIdForPurchaseRequest(order.getPurchaseRequestId()));
     Instant now = clock.instant();
     UUID approvalId = UUID.randomUUID();
     jdbc.update(

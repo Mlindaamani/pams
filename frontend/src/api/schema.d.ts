@@ -2485,6 +2485,10 @@ export interface components {
             slaHours?: number;
             /** Format: int32 */
             stage?: number;
+            /** @enum {string} */
+            conditionType?: "ALWAYS" | "BUDGET_EXCEPTION" | "DEPARTMENT";
+            /** Format: uuid */
+            conditionDepartmentId?: string;
         };
         UpdateApprovalPolicyRequest: {
             name: string;
@@ -2524,6 +2528,10 @@ export interface components {
             approverUserId?: string;
             /** Format: int32 */
             slaHours?: number;
+            /** @enum {string} */
+            conditionType?: "ALWAYS" | "BUDGET_EXCEPTION" | "DEPARTMENT";
+            /** Format: uuid */
+            conditionDepartmentId?: string;
         };
         ReplaceRulesRequest: {
             rules: components["schemas"]["RuleRequest"][];

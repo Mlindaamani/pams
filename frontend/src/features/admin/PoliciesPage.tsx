@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -19,18 +20,24 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { EmptyState, Loading, PageHeader } from '@/components/Page';
+import { listDepartments } from '@/features/reference/api';
 import { createPolicy, deletePolicy, listPolicies, updatePolicy } from './api';
+
+type ConditionType = 'ALWAYS' | 'BUDGET_EXCEPTION' | 'DEPARTMENT';
 
 interface StepForm {
   name: string;
   approverRole: string;
   slaHours: number;
   stage: number;
+  conditionType: ConditionType;
+  conditionDepartmentId: string;
 }
 
 export function PoliciesPage() {
   const queryClient = useQueryClient();
   const policies = useQuery({ queryKey: ['policies'], queryFn: listPolicies });
+  const departments = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
   const [open, setOpen] = useState(false);
   const [entityType, setEntityType] = useState('PURCHASE_REQUEST');
   const [name, setName] = useState('');
@@ -39,7 +46,14 @@ export function PoliciesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
   const [steps, setSteps] = useState<StepForm[]>([
-    { name: 'Approver', approverRole: 'APPROVER', slaHours: 24, stage: 1 },
+    {
+      name: 'Approver',
+      approverRole: 'APPROVER',
+      slaHours: 24,
+      stage: 1,
+      conditionType: 'ALWAYS',
+      conditionDepartmentId: '',
+    },
   ]);
 
   const remove = useMutation({
@@ -64,6 +78,11 @@ export function PoliciesPage() {
           approverRole: step.approverRole,
           slaHours: step.slaHours,
           stage: step.stage,
+          conditionType: step.conditionType,
+          conditionDepartmentId:
+            step.conditionType === 'DEPARTMENT'
+              ? step.conditionDepartmentId || undefined
+              : undefined,
         })),
       };
       return editingId ? updatePolicy(editingId, body) : createPolicy(body);
@@ -161,6 +180,8 @@ export function PoliciesPage() {
                           approverRole: step.approverRole ?? 'APPROVER',
                           slaHours: step.slaHours ?? 24,
                           stage: step.sequence ?? 1,
+                          conditionType: step.conditionType ?? 'ALWAYS',
+                          conditionDepartmentId: step.conditionDepartmentId ?? '',
                         })),
                       );
                       setOpen(true);
@@ -239,7 +260,14 @@ export function PoliciesPage() {
                     const stage = steps.at(-1)?.stage ?? 1;
                     setSteps([
                       ...steps,
-                      { name: 'Approver', approverRole: 'APPROVER', slaHours: 24, stage },
+                      {
+                        name: 'Approver',
+                        approverRole: 'APPROVER',
+                        slaHours: 24,
+                        stage,
+                        conditionType: 'ALWAYS',
+                        conditionDepartmentId: '',
+                      },
                     ]);
                   }}
                 >
@@ -251,7 +279,14 @@ export function PoliciesPage() {
                     const stage = Math.max(0, ...steps.map((step) => step.stage)) + 1;
                     setSteps([
                       ...steps,
-                      { name: 'Approver', approverRole: 'APPROVER', slaHours: 24, stage },
+                      {
+                        name: 'Approver',
+                        approverRole: 'APPROVER',
+                        slaHours: 24,
+                        stage,
+                        conditionType: 'ALWAYS',
+                        conditionDepartmentId: '',
+                      },
                     ]);
                   }}
                 >
@@ -259,8 +294,15 @@ export function PoliciesPage() {
                 </Button>
               </Stack>
             </Stack>
+            <WorkflowPreview steps={steps} departments={departments.data?.content ?? []} />
             {steps.map((step, index) => (
-              <Stack direction="row" spacing={1} key={`${index}-${step.approverRole}`}>
+              <Stack
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                useFlexGap
+                key={`${index}-${step.approverRole}-${index}`}
+              >
                 <TextField
                   label="Stage"
                   type="number"
@@ -308,6 +350,45 @@ export function PoliciesPage() {
                     setSteps(next);
                   }}
                 />
+                <TextField
+                  select
+                  label="Condition"
+                  value={step.conditionType}
+                  sx={{ minWidth: 170 }}
+                  onChange={(event) => {
+                    const next = [...steps];
+                    next[index] = {
+                      ...step,
+                      conditionType: event.target.value as ConditionType,
+                      conditionDepartmentId:
+                        event.target.value === 'DEPARTMENT' ? step.conditionDepartmentId : '',
+                    };
+                    setSteps(next);
+                  }}
+                >
+                  <MenuItem value="ALWAYS">Always</MenuItem>
+                  <MenuItem value="BUDGET_EXCEPTION">Budget exception only</MenuItem>
+                  <MenuItem value="DEPARTMENT">Specific department</MenuItem>
+                </TextField>
+                {step.conditionType === 'DEPARTMENT' && (
+                  <TextField
+                    select
+                    label="Department"
+                    value={step.conditionDepartmentId}
+                    sx={{ minWidth: 190 }}
+                    onChange={(event) => {
+                      const next = [...steps];
+                      next[index] = { ...step, conditionDepartmentId: event.target.value };
+                      setSteps(next);
+                    }}
+                  >
+                    {(departments.data?.content ?? []).map((department) => (
+                      <MenuItem key={department.id} value={department.id}>
+                        {department.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
                 <IconButton
                   disabled={steps.length === 1}
                   onClick={() => setSteps(steps.filter((_, i) => i !== index))}
@@ -331,4 +412,62 @@ export function PoliciesPage() {
       </Dialog>
     </>
   );
+}
+
+function WorkflowPreview({
+  steps,
+  departments,
+}: {
+  steps: StepForm[];
+  departments: { id?: string; name?: string }[];
+}) {
+  const stages = new Map<number, StepForm[]>();
+  steps.forEach((step) => stages.set(step.stage, [...(stages.get(step.stage) ?? []), step]));
+  return (
+    <Box sx={{ p: 2, bgcolor: 'grey.50', border: 1, borderColor: 'divider', borderRadius: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        Workflow preview
+      </Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+        {[...stages.entries()]
+          .sort(([left], [right]) => left - right)
+          .map(([stage, stageSteps], index) => (
+            <Stack key={stage} direction="row" spacing={1} alignItems="center">
+              {index > 0 && <Typography color="text.secondary">→</Typography>}
+              <Box sx={{ p: 1.5, minWidth: 180, bgcolor: 'background.paper', borderRadius: 2 }}>
+                <Typography variant="overline" color="text.secondary">
+                  Stage {stage}
+                </Typography>
+                <Stack spacing={0.5}>
+                  {stageSteps.map((step, stepIndex) => (
+                    <Chip
+                      key={`${step.approverRole}-${stepIndex}`}
+                      size="small"
+                      label={`${step.approverRole} · ${conditionLabel(step, departments)}`}
+                      variant={step.conditionType === 'ALWAYS' ? 'outlined' : 'filled'}
+                    />
+                  ))}
+                </Stack>
+                {stageSteps.length > 1 && (
+                  <Typography variant="caption" color="text.secondary">
+                    Parallel
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
+          ))}
+      </Stack>
+    </Box>
+  );
+}
+
+function conditionLabel(step: StepForm, departments: { id?: string; name?: string }[]): string {
+  if (step.conditionType === 'BUDGET_EXCEPTION') return 'budget exception';
+  if (step.conditionType === 'DEPARTMENT') {
+    return (
+      departments.find((department) => department.id === step.conditionDepartmentId)?.name ??
+      'department'
+    );
+  }
+  return 'always';
 }

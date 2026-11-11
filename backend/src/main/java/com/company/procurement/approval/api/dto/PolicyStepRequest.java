@@ -1,5 +1,6 @@
 package com.company.procurement.approval.api.dto;
 
+import com.company.procurement.approval.domain.ApprovalConditionType;
 import com.company.procurement.approval.domain.ApproverType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -15,4 +16,6 @@ public record PolicyStepRequest(
     @Size(max = 50, message = "approverRole must be at most 50 characters") String approverRole,
     UUID approverUserId,
     @Min(value = 1, message = "slaHours must be positive") int slaHours,
-    @Min(value = 1, message = "stage must be positive") Integer stage) {}
+    @Min(value = 1, message = "stage must be positive") Integer stage,
+    ApprovalConditionType conditionType,
+    UUID conditionDepartmentId) {}

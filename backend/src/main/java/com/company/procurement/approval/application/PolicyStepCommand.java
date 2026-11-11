@@ -1,5 +1,6 @@
 package com.company.procurement.approval.application;
 
+import com.company.procurement.approval.domain.ApprovalConditionType;
 import com.company.procurement.approval.domain.ApproverType;
 import java.util.UUID;
 
@@ -9,4 +10,6 @@ public record PolicyStepCommand(
     String approverRole,
     UUID approverUserId,
     int slaHours,
-    Integer stage) {}
+    Integer stage,
+    ApprovalConditionType conditionType,
+    UUID conditionDepartmentId) {}
