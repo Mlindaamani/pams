@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: pams
+  profiles:
+    default: dev
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: true
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 8080
+  shutdown: graceful
+  compression:
+    enabled: true
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    level: "%5p [pams,%X{requestId:-}]"
+
+pams:
+  keycloak-admin:
+    base-url: ${KEYCLOAK_ADMIN_BASE_URL:http://localhost:8081}
+    realm: ${KEYCLOAK_ADMIN_REALM:pams}
+    auth-realm: ${KEYCLOAK_ADMIN_AUTH_REALM:master}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:pams-admin}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
+    admin-user: ${KEYCLOAK_ADMIN_FALLBACK_USER:}
+    admin-password: ${KEYCLOAK_ADMIN_FALLBACK_PASSWORD:}
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    success-url: ${STRIPE_SUCCESS_URL:http://localhost:3000/admin/billing?checkout=success}
+    cancel-url: ${STRIPE_CANCEL_URL:http://localhost:3000/admin/billing?checkout=cancel}
+    portal-return-url: ${STRIPE_PORTAL_RETURN_URL:http://localhost:3000/admin/billing}
+  webhooks:
+    max-attempts: 8
+    batch-size: 25
+    connect-timeout-ms: 3000
+    read-timeout-ms: 5000
+    poll-interval-ms: 5000
+    initial-delay-ms: 60000
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000

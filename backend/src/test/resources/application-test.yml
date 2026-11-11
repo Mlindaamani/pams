@@ -1,0 +1,29 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:0/.well-known/jwks.json
+  flyway:
+    locations: classpath:db/migration
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
+  cache:
+    type: simple
+
+pams:
+  rate-limit:
+    enabled: false
+  storage:
+    enabled: false
+  mail:
+    enabled: false
+  outbox:
+    initial-delay-ms: 3600000
+  webhooks:
+    initial-delay-ms: 3600000
+management:
+  tracing:
+    enabled: false

@@ -1,0 +1,56 @@
+spring:
+  datasource:
+    url: ${PAMS_DB_URL}
+    username: ${PAMS_DB_USERNAME}
+    password: ${PAMS_DB_PASSWORD}
+    hikari:
+      pool-name: pams-pool
+      maximum-pool-size: ${PAMS_DB_POOL_SIZE:20}
+      minimum-idle: 5
+      connection-timeout: 3000
+      max-lifetime: 1800000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cache:
+    type: redis
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACING_ENDPOINT}
+
+logging:
+  level:
+    root: INFO
+    com.company.procurement: INFO
+
+pams:
+  rate-limit:
+    enabled: true
+    capacity: 240
+    refill-tokens: 240
+    refill-period-seconds: 60
+  mail:
+    enabled: true
+    from: ${MAIL_FROM:no-reply@pams.local}
+    app-url: ${PAMS_APP_URL:http://localhost:3000}
+  storage:
+    enabled: true
+    endpoint: ${MINIO_ENDPOINT}
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    bucket: ${MINIO_BUCKET:pams-attachments}

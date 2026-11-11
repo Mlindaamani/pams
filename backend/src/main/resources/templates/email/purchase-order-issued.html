@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchase order issued</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f5f7fa;font-family:Inter,Roboto,Helvetica,Arial,sans-serif;color:#1f2937;">
+    <span style="display:none;max-height:0;overflow:hidden;opacity:0;">
+      Purchase order <span th:text="${poNumber}">PO-2026-000001</span> has been issued.
+    </span>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f7fa;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e0e4ea;">
+            <tr>
+              <td th:style="|background-color:${brandColor};padding:26px 32px;|">
+                <div style="font-size:26px;font-weight:800;letter-spacing:2px;color:#ffffff;" th:text="${brandName}">PAMS</div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:1.6px;color:#c7dcf5;margin-top:4px;">
+                  PROCUREMENT &amp; APPROVAL MANAGEMENT
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 th:style="|margin:0 0 8px;font-size:22px;line-height:1.3;color:${brandColor};|">Purchase order issued</h1>
+                <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">
+                  Dear <strong th:text="${vendorName}">Vendor</strong>,
+                </p>
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                  Please find the details of the purchase order issued to you by
+                  <strong th:text="${brandName}">PAMS</strong>.
+                </p>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e4ea;border-radius:8px;margin-bottom:24px;">
+                  <tr>
+                    <td style="padding:12px 16px;font-size:13px;color:#6b7280;border-bottom:1px solid #e0e4ea;">Purchase order</td>
+                    <td align="right" style="padding:12px 16px;font-size:14px;font-weight:700;color:#0b5cad;border-bottom:1px solid #e0e4ea;" th:text="${poNumber}">PO-2026-000001</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 16px;font-size:13px;color:#6b7280;border-bottom:1px solid #e0e4ea;">Total</td>
+                    <td align="right" style="padding:12px 16px;font-size:14px;font-weight:700;color:#00695c;border-bottom:1px solid #e0e4ea;">
+                      <span th:text="${totalAmount}">0.0000</span> <span th:text="${currency}">TZS</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Request</td>
+                    <td align="right" style="padding:12px 16px;font-size:13px;color:#374151;" th:text="${requestId}">request-id</td>
+                  </tr>
+                </table>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+                  <tr>
+                    <td align="center" th:style="|border-radius:8px;background-color:${brandColor};|">
+                      <a th:href="${poUrl}"
+                         style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">
+                        View purchase order
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#374151;">
+                  If you have any questions about this order, please contact our procurement team.
+                </p>
+                <p style="margin:0;font-size:14px;line-height:1.6;color:#374151;">
+                  Regards,<br /><strong th:text="|${brandName} Procurement|">PAMS Procurement</strong>
+                </p>
+
+                <hr style="border:none;border-top:1px solid #e0e4ea;margin:28px 0 16px;" />
+                <p style="margin:0;font-size:11px;line-height:1.6;color:#9ca3af;text-align:center;">
+                  This is an automated message from <span th:text="${brandName}">PAMS</span>. Please do not reply directly to this email.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

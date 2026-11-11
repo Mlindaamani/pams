@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:pams}
+    username: ${POSTGRES_USER:pams}
+    password: ${POSTGRES_PASSWORD:pams}
+    hikari:
+      pool-name: pams-pool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000
+      max-lifetime: 1800000
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/pams}
+
+pams:
+  rate-limit:
+    enabled: true
+    capacity: 120
+    refill-tokens: 120
+    refill-period-seconds: 60
+  reporting:
+    cache-ttl: PT5M
+  mail:
+    enabled: true
+    from: ${MAIL_FROM:no-reply@pams.local}
+    app-url: ${PAMS_APP_URL:http://localhost:3000}
+  outbox:
+    poll-interval-ms: 5000
+  storage:
+    enabled: true
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:pams-attachments}
+
+logging:
+  level:
+    com.company.procurement: DEBUG
