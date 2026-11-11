@@ -26,6 +26,7 @@ import { ProfilePage } from '@/features/profile/ProfilePage';
 import { SystemPage } from '@/features/system/SystemPage';
 import { RolesPermissionsPage } from '@/features/admin/RolesPermissionsPage';
 import { WorkflowPage } from '@/features/admin/WorkflowPage';
+import { WorkflowPolicyDetailPage } from '@/features/admin/WorkflowPolicyDetailPage';
 import { WorkflowPolicyFormPage } from '@/features/admin/WorkflowPolicyFormPage';
 import { PlatformDashboardPage } from '@/features/platform/PlatformDashboardPage';
 import { PlatformDemoRequestsPage } from '@/features/platform/PlatformDemoRequestsPage';
@@ -177,6 +178,10 @@ export const router = createBrowserRouter([
       {
         path: 'admin/workflow/policies/new',
         element: guard('manage', 'Policy', <WorkflowPolicyFormPage />),
+      },
+      {
+        path: 'admin/workflow/policies/:id',
+        element: guard('read', 'Policy', <WorkflowPolicyDetailPage />),
       },
       {
         path: 'admin/workflow/policies/:id/new-version',

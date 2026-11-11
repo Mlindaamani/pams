@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Stack, TextField, MenuItem } from '@mui/material';
+import { Link, MenuItem, Stack, TextField } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
@@ -58,12 +58,16 @@ export function InvoicesPage() {
             key: 'invoice',
             label: 'Invoice',
             render: (invoice) => (
-              <RouterLink
+              <Link
+                component={RouterLink}
                 to={`/invoices/${invoice.id}`}
+                color="primary.main"
+                underline="hover"
+                sx={{ fontWeight: 600 }}
                 onClick={(event) => event.stopPropagation()}
               >
                 {invoice.invoiceNumber}
-              </RouterLink>
+              </Link>
             ),
           },
           {
@@ -75,12 +79,16 @@ export function InvoicesPage() {
             key: 'po',
             label: 'Purchase order',
             render: (invoice) => (
-              <RouterLink
+              <Link
+                component={RouterLink}
                 to={`/purchase-orders/${invoice.purchaseOrderId}`}
+                color="primary.main"
+                underline="hover"
+                sx={{ fontWeight: 600 }}
                 onClick={(event) => event.stopPropagation()}
               >
                 {invoice.poNumber}
-              </RouterLink>
+              </Link>
             ),
           },
           {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Stack } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import { Link } from '@mui/material';
 import { Can } from '@/auth/AbilityProvider';
 import { useBranding } from '@/branding/BrandingProvider';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -84,7 +85,15 @@ export function PurchaseOrdersPage() {
               key: 'number',
               label: 'Number',
               render: (order) => (
-                <RouterLink to={`/purchase-orders/${order.id}`}>{order.poNumber}</RouterLink>
+                <Link
+                  component={RouterLink}
+                  to={`/purchase-orders/${order.id}`}
+                  color="primary.main"
+                  underline="hover"
+                  sx={{ fontWeight: 600 }}
+                >
+                  {order.poNumber}
+                </Link>
               ),
             },
             {

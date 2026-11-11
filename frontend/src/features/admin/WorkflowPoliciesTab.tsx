@@ -40,7 +40,16 @@ export function WorkflowPoliciesTab() {
           {
             key: 'name',
             label: 'Name',
-            render: (policy) => policy.name,
+            render: (policy) => (
+              <Button
+                component={RouterLink}
+                to={`/admin/workflow/policies/${policy.id}`}
+                size="small"
+                sx={{ px: 0, textTransform: 'none', fontWeight: 600 }}
+              >
+                {policy.name}
+              </Button>
+            ),
             sortValue: (policy) => policy.name ?? '',
           },
           {

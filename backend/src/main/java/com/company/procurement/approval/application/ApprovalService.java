@@ -118,10 +118,13 @@ public class ApprovalService {
   @Transactional(readOnly = true)
   public ApprovalPolicy getPolicy(UUID id) {
     UUID organizationId = TenantContext.require();
-    return policies
-        .findByIdAndOrganizationId(id, organizationId)
-        .orElseThrow(
-            () -> new ResourceNotFoundException("Approval policy %s not found".formatted(id)));
+    ApprovalPolicy policy =
+        policies
+            .findByIdAndOrganizationId(id, organizationId)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Approval policy %s not found".formatted(id)));
+    policy.getSteps().size();
+    return policy;
   }
 
   @Transactional

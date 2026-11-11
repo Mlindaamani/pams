@@ -212,6 +212,16 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void policyDetailIncludesStages() throws Exception {
+    UUID policyId = createPolicy("Detail", "APPROVER");
+    mockMvc
+        .perform(get("/api/v1/approval-policies/{id}", policyId).with(token(org, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("Detail"))
+        .andExpect(jsonPath("$.steps[0].approverRole").value("APPROVER"));
+  }
+
+  @Test
   void quorumCompletesStageAfterConfiguredApprovals() throws Exception {
     createPolicyBody(
         "Quorum",
