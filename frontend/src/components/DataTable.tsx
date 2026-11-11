@@ -42,7 +42,7 @@ export function DataTable<T>({
   ariaLabel = 'Data table',
   bulkActions,
   persistentSelectionToolbar = false,
-  selectable = true,
+  selectable = Boolean(bulkActions),
   onRowClick,
 }: Props<T>) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
