@@ -1,5 +1,14 @@
 import { api, unwrap } from '@/api/client';
+import type { components } from '@/api/schema';
 import type { ApprovalPolicy, Page } from '@/api/types';
+
+type WorkflowPolicyStepInput = components['schemas']['PolicyStepRequest'];
+
+export async function getPolicy(id: string): Promise<ApprovalPolicy> {
+  return unwrap(
+    api.GET('/api/v1/approval-policies/{id}', { params: { path: { id } } }),
+  ) as Promise<ApprovalPolicy>;
+}
 
 export async function listPolicies(): Promise<Page<ApprovalPolicy>> {
   return unwrap(
@@ -14,12 +23,7 @@ export async function createPolicy(body: {
   entityType?: string;
   amountMin: number;
   amountMax?: number;
-  steps: {
-    name: string;
-    approverType: 'ROLE' | 'USER' | 'REQUESTER_MANAGER';
-    approverRole?: string;
-    slaHours: number;
-  }[];
+  steps: WorkflowPolicyStepInput[];
 }): Promise<ApprovalPolicy> {
   return unwrap(api.POST('/api/v1/approval-policies', { body }));
 }
@@ -39,12 +43,7 @@ export async function updatePolicy(
     entityType?: string;
     amountMin: number;
     amountMax?: number;
-    steps: {
-      name: string;
-      approverType: 'ROLE' | 'USER' | 'REQUESTER_MANAGER';
-      approverRole?: string;
-      slaHours: number;
-    }[];
+    steps: WorkflowPolicyStepInput[];
   },
 ): Promise<ApprovalPolicy> {
   return unwrap(api.PUT('/api/v1/approval-policies/{id}', { params: { path: { id } }, body }));

@@ -15,7 +15,6 @@ import { PurchaseOrderDetailPage } from '@/features/purchaseorders/PurchaseOrder
 import { InvoicesPage } from '@/features/invoices/InvoicesPage';
 import { InvoiceDetailPage } from '@/features/invoices/InvoiceDetailPage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
-import { PoliciesPage } from '@/features/admin/PoliciesPage';
 import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
 import { UsersPage } from '@/features/admin/UsersPage';
 import { CatalogPage } from '@/features/admin/CatalogPage';
@@ -26,7 +25,8 @@ import { DelegationsPage } from '@/features/approvals/DelegationsPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { SystemPage } from '@/features/system/SystemPage';
 import { RolesPermissionsPage } from '@/features/admin/RolesPermissionsPage';
-import { WorkflowConfigPage } from '@/features/admin/WorkflowConfigPage';
+import { WorkflowPage } from '@/features/admin/WorkflowPage';
+import { WorkflowPolicyFormPage } from '@/features/admin/WorkflowPolicyFormPage';
 import { PlatformDashboardPage } from '@/features/platform/PlatformDashboardPage';
 import { PlatformDemoRequestsPage } from '@/features/platform/PlatformDemoRequestsPage';
 import { PlatformFeatureFormPage } from '@/features/platform/PlatformFeatureFormPage';
@@ -173,8 +173,16 @@ export const router = createBrowserRouter([
         path: 'admin/billing/change-plan',
         element: guard('manage', 'Subscription', <PlanChangePreviewPage />),
       },
-      { path: 'admin/workflow', element: guard('read', 'Workflow', <WorkflowConfigPage />) },
-      { path: 'admin/policies', element: guard('read', 'Policy', <PoliciesPage />) },
+      { path: 'admin/workflow', element: guard('read', 'Workflow', <WorkflowPage />) },
+      {
+        path: 'admin/workflow/policies/new',
+        element: guard('manage', 'Policy', <WorkflowPolicyFormPage />),
+      },
+      {
+        path: 'admin/workflow/policies/:id/new-version',
+        element: guard('manage', 'Policy', <WorkflowPolicyFormPage />),
+      },
+      { path: 'admin/policies', element: <Navigate to="/admin/workflow?tab=policies" replace /> },
       { path: 'admin/webhooks', element: guard('read', 'Webhook', <WebhooksPage />) },
       { path: 'audit', element: guard('read', 'Audit', <AuditPage />) },
       { path: 'notifications', element: <NotificationsPage /> },

@@ -36,7 +36,6 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import BusinessIcon from '@mui/icons-material/Business';
-import PolicyIcon from '@mui/icons-material/Policy';
 import HistoryIcon from '@mui/icons-material/History';
 import PeopleIcon from '@mui/icons-material/People';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
@@ -251,11 +250,11 @@ const navGroups: NavGroup[] = [
         icon: <CreditCardIcon />,
       },
       {
-        label: 'Policies',
-        to: '/admin/policies',
+        label: 'Workflow',
+        to: '/admin/workflow',
         action: 'read',
-        subject: 'Policy',
-        icon: <PolicyIcon />,
+        subject: 'Workflow',
+        icon: <AccountTreeIcon />,
       },
       {
         label: 'Webhooks',
@@ -277,13 +276,6 @@ const navGroups: NavGroup[] = [
         action: 'read',
         subject: 'System',
         icon: <MonitorHeartIcon />,
-      },
-      {
-        label: 'Workflow',
-        to: '/admin/workflow',
-        action: 'read',
-        subject: 'Workflow',
-        icon: <AccountTreeIcon />,
       },
       { label: 'Audit log', to: '/audit', action: 'read', subject: 'Audit', icon: <HistoryIcon /> },
     ],
