@@ -78,7 +78,13 @@ export function TenantSubscriptionsTab() {
                 label: 'Tenant',
                 render: (tenant) => (
                   <Box>
-                    <Typography variant="body2" fontWeight={600}>
+                    <Typography
+                      component={Link}
+                      to={`/platform/tenants/${tenant.organizationId}`}
+                      variant="body2"
+                      fontWeight={600}
+                      sx={{ color: 'primary.main', textDecoration: 'none' }}
+                    >
                       {tenant.organizationName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">

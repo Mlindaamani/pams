@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { DataTable } from '@/components/DataTable';
@@ -70,7 +71,13 @@ export function TenantPerformanceTab() {
                 key: 'tenant',
                 label: 'Tenant',
                 render: (tenant) => (
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography
+                    component={Link}
+                    to={`/platform/tenants/${tenant.id}`}
+                    variant="body2"
+                    fontWeight={600}
+                    sx={{ color: 'primary.main', textDecoration: 'none' }}
+                  >
                     {tenant.name}
                   </Typography>
                 ),
