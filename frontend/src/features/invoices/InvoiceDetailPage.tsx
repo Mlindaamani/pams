@@ -65,6 +65,7 @@ export function InvoiceDetailPage() {
       setConfirmApprove(false);
       void queryClient.invalidateQueries({ queryKey: ['vendor-invoice', id] });
       void queryClient.invalidateQueries({ queryKey: ['vendor-invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
     },
     onError: () => setConfirmApprove(false),
   });
@@ -90,6 +91,7 @@ export function InvoiceDetailPage() {
       setResolutionNote('');
       void queryClient.invalidateQueries({ queryKey: ['vendor-invoice', id] });
       void queryClient.invalidateQueries({ queryKey: ['vendor-invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
     },
     onError: (error) => toast.error(problemMessage(error)),
   });

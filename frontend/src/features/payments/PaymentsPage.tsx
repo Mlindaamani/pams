@@ -23,6 +23,7 @@ export function PaymentsPage() {
     void queryClient.invalidateQueries({ queryKey: ['payments'] });
     void queryClient.invalidateQueries({ queryKey: ['vendor-invoices'] });
     void queryClient.invalidateQueries({ queryKey: ['vendor-invoice'] });
+    void queryClient.invalidateQueries({ queryKey: ['purchase-order'] });
   };
   const approve = useMutation({
     mutationFn: approvePayment,

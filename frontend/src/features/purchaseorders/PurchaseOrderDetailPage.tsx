@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { Link } from '@mui/material';
 import {
   Alert,
   Box,
@@ -58,6 +59,8 @@ export function PurchaseOrderDetailPage() {
     queryKey: ['purchase-order', id, 'actions'],
     queryFn: () => getPurchaseOrderActions(id!),
     enabled: Boolean(id),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
   const vendors = useQuery({ queryKey: ['vendors'], queryFn: () => listVendors({ size: 100 }) });
   const receipts = useQuery({
@@ -556,9 +559,15 @@ export function PurchaseOrderDetailPage() {
                       key: 'number',
                       label: 'Invoice',
                       render: (invoice) => (
-                        <RouterLink to={`/invoices/${invoice.id}`}>
+                        <Link
+                          component={RouterLink}
+                          to={`/invoices/${invoice.id}`}
+                          color="primary.main"
+                          underline="hover"
+                          sx={{ fontWeight: 600 }}
+                        >
                           {invoice.invoiceNumber}
-                        </RouterLink>
+                        </Link>
                       ),
                     },
                     {

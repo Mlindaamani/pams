@@ -1,4 +1,4 @@
-import { createTheme, type PaletteMode } from '@mui/material/styles';
+import { alpha, createTheme, type PaletteMode } from '@mui/material/styles';
 
 export function createAppTheme(
   mode: PaletteMode,
@@ -60,16 +60,16 @@ export function createAppTheme(
       MuiCssBaseline: {
         styleOverrides: {
           a: {
-            color: dark ? '#5AA7F5' : '#0B5CAD',
+            color: primary,
             fontWeight: 600,
             textDecoration: 'none',
             transition: 'color 140ms ease',
             '&:not(.MuiButtonBase-root):hover': {
-              color: dark ? '#8CC3FA' : '#074079',
+              color: alpha(primary, 0.82),
               textDecoration: 'none',
             },
             '&:focus-visible': {
-              outline: `2px solid ${dark ? '#8CC3FA' : '#0B5CAD'}`,
+              outline: `2px solid ${primary}`,
               outlineOffset: 2,
               borderRadius: 2,
             },
@@ -90,7 +90,7 @@ export function createAppTheme(
         styleOverrides: {
           root: {
             backgroundImage: 'none',
-            backgroundColor: '#0B5CAD',
+            backgroundColor: primary,
             boxShadow: dark ? '0 1px 0 rgba(255,255,255,0.08)' : '0 2px 10px rgba(9, 40, 77, 0.18)',
           },
         },
