@@ -10,5 +10,13 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: (process.env.E2E_BROWSER_CHANNEL as 'chrome' | undefined) || undefined,
+      },
+    },
+  ],
 });

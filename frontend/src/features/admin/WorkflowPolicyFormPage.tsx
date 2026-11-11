@@ -588,6 +588,7 @@ function SortableStage({
   return (
     <Box
       ref={setNodeRef}
+      data-testid={`workflow-stage-${stage}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       sx={{
         width: 250,
@@ -647,6 +648,7 @@ function SortableApprover({
   return (
     <Box
       ref={setNodeRef}
+      data-testid="workflow-approver"
       style={{ transform: CSS.Transform.toString(transform), transition }}
       sx={{
         p: 1,
