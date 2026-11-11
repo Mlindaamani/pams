@@ -39,6 +39,23 @@ export function TransitionLog({ events, loading }: { events: AuditEvent[]; loadi
                   <Typography variant="caption" color="text.secondary" display="block">
                     {event.actorName ?? 'System'} · {dateTime(event.occurredAt)}
                   </Typography>
+                  {eventComment(event) && (
+                    <Box
+                      sx={{
+                        mt: 1,
+                        px: 1.25,
+                        py: 0.75,
+                        borderLeft: 2,
+                        borderColor: transitionColor(event.action),
+                        bgcolor: 'action.hover',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+                        “{eventComment(event)}”
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               </Stack>
             ))}
@@ -47,6 +64,13 @@ export function TransitionLog({ events, loading }: { events: AuditEvent[]; loadi
       </CardContent>
     </Card>
   );
+}
+
+function eventComment(event: AuditEvent): string | null {
+  const payload = event.payload;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  const comment = (payload as Record<string, unknown>).comment;
+  return typeof comment === 'string' && comment.trim() ? comment.trim() : null;
 }
 
 function transitionColor(action?: string): string {

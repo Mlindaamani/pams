@@ -239,6 +239,29 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void approvalCommentsAreRetainedInTransitionAudit() throws Exception {
+    createPolicy("Comment audit", "APPROVER");
+    UUID requestId = createRequest("Comment audit", "100.00");
+    UUID stepId = firstStepId(requestId);
+
+    mockMvc
+        .perform(
+            post("/api/v1/approvals/{stepId}/approve", stepId)
+                .with(tokenSubject("approver-user", org, "APPROVER"))
+                .header(IDEMPOTENCY, "comment-audit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"comment\":\"Budget checked\"}"))
+        .andExpect(status().isOk());
+
+    String comment =
+        jdbcTemplate.queryForObject(
+            "select payload->>'comment' from audit_event where aggregate_id = ?::uuid and action = 'approval_step_approved' order by occurred_at limit 1",
+            String.class,
+            requestId.toString());
+    assertThat(comment).isEqualTo("Budget checked");
+  }
+
+  @Test
   void requesterCannotUseApprovalInboxButCanSeeOwnTimeline() throws Exception {
     createPolicy("Requester separation", "APPROVER");
     UUID requestId = createRequest("Requester separation", "100.00");

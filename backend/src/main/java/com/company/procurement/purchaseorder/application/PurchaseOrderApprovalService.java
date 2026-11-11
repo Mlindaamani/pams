@@ -137,7 +137,7 @@ public class PurchaseOrderApprovalService {
           "purchase_order",
           purchaseOrderId,
           "purchase_order_approval_step_approved",
-          Map.of("sequence", step.sequence()));
+          Map.of("sequence", step.sequence(), "comment", comment == null ? "" : comment));
     } else {
       Integer next = nextPendingSequence(approval.id(), step.sequence());
       if (next == null) {
@@ -159,7 +159,7 @@ public class PurchaseOrderApprovalService {
             "purchase_order",
             purchaseOrderId,
             "purchase_order_approval_step_approved",
-            Map.of("sequence", step.sequence()));
+            Map.of("sequence", step.sequence(), "comment", comment == null ? "" : comment));
       }
     }
     return view(organizationId, purchaseOrderId);

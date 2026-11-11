@@ -216,7 +216,10 @@ public class ApprovalService {
         "approval_step_approved",
         currentUser.subject(),
         currentUser.username(),
-        Map.of("stepId", stepId.toString(), "sequence", step.getSequence()));
+        Map.of(
+            "stepId", stepId.toString(),
+            "sequence", step.getSequence(),
+            "comment", comment == null ? "" : comment));
     publisher.publishEvent(
         new StepApproved(instance.getPurchaseRequestId(), stepId, currentUser.subject()));
 
