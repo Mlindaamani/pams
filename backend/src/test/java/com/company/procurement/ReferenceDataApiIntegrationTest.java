@@ -1024,6 +1024,89 @@ class ReferenceDataApiIntegrationTest {
   }
 
   @Test
+  void workflowActionsAreUnderstandableAndEntitySpecific() throws Exception {
+    List<Map<String, Object>> validRules =
+        List.of(
+            Map.of(
+                "fromStatus", "SCHEDULED",
+                "actionCode", "APPROVE",
+                "requiredPermission", "payment:manage"),
+            Map.of(
+                "fromStatus", "SCHEDULED",
+                "actionCode", "CANCEL",
+                "requiredPermission", "payment:manage"),
+            Map.of(
+                "fromStatus", "APPROVED",
+                "actionCode", "MARK_PAID",
+                "requiredPermission", "payment:manage"),
+            Map.of(
+                "fromStatus", "APPROVED",
+                "actionCode", "CANCEL",
+                "requiredPermission", "payment:manage"));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/workflow-actions/vendor_payment")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("rules", validRules))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(4));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/workflow-actions/vendor_payment")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "rules",
+                            List.of(
+                                Map.of(
+                                    "fromStatus", "SCHEDULED",
+                                    "actionCode", "MARK_PAID",
+                                    "requiredPermission", "payment:manage"),
+                                Map.of(
+                                    "fromStatus", "SCHEDULED",
+                                    "actionCode", "MARK_PAID",
+                                    "requiredPermission", "payment:manage"))))))
+        .andExpect(status().isUnprocessableEntity());
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/workflow-actions/vendor_payment")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "rules",
+                            List.of(
+                                Map.of(
+                                    "fromStatus", "NOT_A_STATUS",
+                                    "actionCode", "APPROVE",
+                                    "requiredPermission", "payment:manage"))))))
+        .andExpect(status().isUnprocessableEntity());
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/workflow-actions/vendor_payment")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "rules",
+                            List.of(
+                                Map.of(
+                                    "fromStatus", "SCHEDULED",
+                                    "actionCode", "EDIT",
+                                    "requiredPermission", "payment:manage"))))))
+        .andExpect(status().isUnprocessableEntity());
+  }
+
+  @Test
   void rolePermissionFiltersAndSinglePermissionToggle() throws Exception {
     mockMvc
         .perform(

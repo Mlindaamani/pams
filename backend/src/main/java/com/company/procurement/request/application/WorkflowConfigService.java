@@ -14,16 +14,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WorkflowConfigService {
 
-  private static final Set<String> ACTIONS =
-      Set.of(
-          "EDIT",
-          "DELETE",
-          "SUBMIT",
-          "CANCEL",
-          "APPROVE",
-          "REJECT",
-          "REQUEST_CHANGES",
-          "CREATE_PO");
+  private static final Map<String, Set<String>> ACTIONS_BY_ENTITY =
+      Map.of(
+          "purchase_request",
+          Set.of(
+              "EDIT",
+              "DELETE",
+              "SUBMIT",
+              "CANCEL",
+              "APPROVE",
+              "REJECT",
+              "REQUEST_CHANGES",
+              "CREATE_PO"),
+          "vendor_payment",
+          Set.of("APPROVE", "CANCEL", "MARK_PAID"));
 
   private final JdbcTemplate jdbcTemplate;
   private final AuditEventService audit;
@@ -75,15 +79,33 @@ public class WorkflowConfigService {
     }
     Set<String> knownPermissions =
         Set.copyOf(jdbcTemplate.queryForList("select code from permission", String.class));
+    Set<String> knownStatuses =
+        Set.copyOf(
+            jdbcTemplate.queryForList(
+                "select status_code from workflow_status where entity_type = ?",
+                String.class,
+                entityType));
+    Set<String> seen = new java.util.HashSet<>();
+    Set<String> allowedActions = ACTIONS_BY_ENTITY.getOrDefault(entityType, Set.of());
     for (WorkflowRule rule : rules) {
-      if (!ACTIONS.contains(rule.actionCode())) {
-        throw new BusinessRuleException("Unknown workflow action " + rule.actionCode());
+      if (!allowedActions.contains(rule.actionCode())) {
+        throw new BusinessRuleException(
+            "Workflow action %s is not available for %s".formatted(rule.actionCode(), entityType));
       }
       if (!knownPermissions.contains(rule.requiredPermission())) {
         throw new BusinessRuleException("Unknown permission " + rule.requiredPermission());
       }
       if (rule.fromStatus() == null || rule.fromStatus().isBlank()) {
         throw new BusinessRuleException("Workflow status is required");
+      }
+      if (!knownStatuses.contains(rule.fromStatus())) {
+        throw new BusinessRuleException(
+            "Unknown workflow status %s for %s".formatted(rule.fromStatus(), entityType));
+      }
+      if (!seen.add(rule.fromStatus() + "|" + rule.actionCode())) {
+        throw new BusinessRuleException(
+            "Duplicate workflow action %s for status %s"
+                .formatted(rule.actionCode(), rule.fromStatus()));
       }
     }
     jdbcTemplate.update("delete from workflow_action_rule where entity_type = ?", entityType);

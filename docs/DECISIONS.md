@@ -1664,3 +1664,26 @@ search, email and operational follow-up.
 
 **Consequences.** Documents can be referenced safely outside PAMS. Purchase orders and invoices keep
 their existing `PO-` and `INV-` numbering.
+
+---
+
+## ADR-086 — Plain-language workflow action configuration
+
+**Context.** Workflow action rules exposed raw status codes, action codes and permission codes. The
+tab was limited to purchase requests, hid vendor-payment actions, and gave administrators no way to
+understand which buttons a role would actually see.
+
+**Decision.**
+- Add a record-type selector for purchase requests and vendor payments.
+- Group rules by business status with friendly names and explanations.
+- Replace raw action codes with labels and descriptions.
+- Show the permission as a plain-language label plus the roles that currently hold it.
+- Add an in-page role preview showing which buttons that role would see per status.
+- Add warnings for missing essential actions and a discard-changes path.
+- Restrict available actions by record type.
+- Add the missing `MARK_PAID` action and reject duplicates, unknown statuses and actions that do not
+  apply to the selected record type.
+- Keep approval-chain configuration in Workflow policies.
+
+**Consequences.** Non-technical administrators can understand and safely change action availability
+without reading permission codes. Vendor-payment workflow actions are now configurable.
