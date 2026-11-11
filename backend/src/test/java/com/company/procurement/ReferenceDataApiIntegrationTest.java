@@ -1104,6 +1104,43 @@ class ReferenceDataApiIntegrationTest {
                                     "actionCode", "EDIT",
                                     "requiredPermission", "payment:manage"))))))
         .andExpect(status().isUnprocessableEntity());
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/workflow-actions/purchase_order")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "rules",
+                            List.of(
+                                Map.of(
+                                    "fromStatus", "DRAFT",
+                                    "actionCode", "ISSUE",
+                                    "requiredPermission", "purchase_order:issue"),
+                                Map.of(
+                                    "fromStatus", "DRAFT",
+                                    "actionCode", "EDIT",
+                                    "requiredPermission", "purchase_order:update"))))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/workflow-actions/purchase_order")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "rules",
+                            List.of(
+                                Map.of(
+                                    "fromStatus", "DRAFT",
+                                    "actionCode", "MARK_PAID",
+                                    "requiredPermission", "payment:manage"))))))
+        .andExpect(status().isUnprocessableEntity());
   }
 
   @Test

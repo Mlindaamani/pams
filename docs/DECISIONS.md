@@ -1687,3 +1687,24 @@ understand which buttons a role would actually see.
 
 **Consequences.** Non-technical administrators can understand and safely change action availability
 without reading permission codes. Vendor-payment workflow actions are now configurable.
+
+---
+
+## ADR-087 — Purchase-order workflow actions
+
+**Context.** Workflow action rules were configurable for purchase requests and vendor payments, but
+purchase-order buttons were still hardcoded in the UI. That made the Workflow Actions tab incomplete
+and prevented tenants from deciding which PO actions appear in each status.
+
+**Decision.**
+- Add purchase-order statuses and default action rules in `V37`.
+- Add `PurchaseOrderActionService` and `GET /purchase-orders/{id}/actions`.
+- Derive PO action visibility from `workflow_action_rule` plus the current user's permissions.
+- Support EDIT, SUBMIT_APPROVAL, ISSUE, CANCEL, APPROVE, REJECT, REQUEST_CHANGES, RECEIVE and
+  CREATE_INVOICE actions.
+- Add Purchase orders to the Workflow Actions record-type selector.
+- Replace hardcoded PO detail button conditions with server-provided actions.
+- Validate entity-specific actions and keep the plain-language configuration UI.
+
+**Consequences.** Purchase-order buttons are now configurable per status and permission. The workflow
+action tab covers all supported record types.

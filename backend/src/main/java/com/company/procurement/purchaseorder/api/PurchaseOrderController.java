@@ -5,6 +5,7 @@ import com.company.procurement.purchaseorder.api.dto.PurchaseOrderResponse;
 import com.company.procurement.purchaseorder.api.dto.UpdatePurchaseOrderRequest;
 import com.company.procurement.purchaseorder.api.mapper.PurchaseOrderMapper;
 import com.company.procurement.purchaseorder.application.CreatePurchaseOrderCommand;
+import com.company.procurement.purchaseorder.application.PurchaseOrderActionService;
 import com.company.procurement.purchaseorder.application.PurchaseOrderApprovalService;
 import com.company.procurement.purchaseorder.application.PurchaseOrderPdfService;
 import com.company.procurement.purchaseorder.application.PurchaseOrderService;
@@ -49,6 +50,7 @@ public class PurchaseOrderController {
       Set.of("createdAt", "totalAmount", "poNumber", "status", "issuedAt");
 
   private final PurchaseOrderService orders;
+  private final PurchaseOrderActionService actions;
   private final PurchaseOrderApprovalService approvals;
   private final PurchaseOrderPdfService pdf;
   private final VendorService vendors;
@@ -56,11 +58,13 @@ public class PurchaseOrderController {
 
   public PurchaseOrderController(
       PurchaseOrderService orders,
+      PurchaseOrderActionService actions,
       PurchaseOrderApprovalService approvals,
       PurchaseOrderPdfService pdf,
       VendorService vendors,
       PurchaseOrderMapper mapper) {
     this.orders = orders;
+    this.actions = actions;
     this.approvals = approvals;
     this.pdf = pdf;
     this.vendors = vendors;
@@ -93,6 +97,12 @@ public class PurchaseOrderController {
     return ResponseEntity.ok()
         .eTag(ConditionalRequests.etag(order.getVersion()))
         .body(mapper.toResponse(order));
+  }
+
+  @GetMapping("/purchase-orders/{id}/actions")
+  @PreAuthorize("@permissions.has('purchase_order:read')")
+  public PurchaseOrderActionService.PurchaseOrderActionsResponse actions(@PathVariable UUID id) {
+    return actions.forOrder(id);
   }
 
   @GetMapping("/purchase-orders")

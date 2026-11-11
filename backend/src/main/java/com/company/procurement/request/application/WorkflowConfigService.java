@@ -27,7 +27,18 @@ public class WorkflowConfigService {
               "REQUEST_CHANGES",
               "CREATE_PO"),
           "vendor_payment",
-          Set.of("APPROVE", "CANCEL", "MARK_PAID"));
+          Set.of("APPROVE", "CANCEL", "MARK_PAID"),
+          "purchase_order",
+          Set.of(
+              "EDIT",
+              "SUBMIT_APPROVAL",
+              "ISSUE",
+              "CANCEL",
+              "APPROVE",
+              "REJECT",
+              "REQUEST_CHANGES",
+              "RECEIVE",
+              "CREATE_INVOICE"));
 
   private final JdbcTemplate jdbcTemplate;
   private final AuditEventService audit;

@@ -1700,6 +1700,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-orders/{id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["actions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/plans": {
         parameters: {
             query?: never;
@@ -3195,6 +3211,9 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        PurchaseOrderActionsResponse: {
+            actions?: string[];
         };
         PublicPlan: {
             code?: string;
@@ -7140,6 +7159,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApprovalView"];
+                };
+            };
+        };
+    };
+    actions_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchaseOrderActionsResponse"];
                 };
             };
         };

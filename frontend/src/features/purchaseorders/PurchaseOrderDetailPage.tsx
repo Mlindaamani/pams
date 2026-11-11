@@ -18,7 +18,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Can, useAbility } from '@/auth/AbilityProvider';
+import { useAbility } from '@/auth/AbilityProvider';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
@@ -31,6 +31,7 @@ import {
   approvePurchaseOrder,
   cancelPurchaseOrder,
   getPurchaseOrder,
+  getPurchaseOrderActions,
   getPurchaseOrderApproval,
   issuePurchaseOrder,
   listGoodsReceipts,
@@ -50,6 +51,11 @@ export function PurchaseOrderDetailPage() {
   const order = useQuery({
     queryKey: ['purchase-order', id],
     queryFn: () => getPurchaseOrder(id!),
+  });
+  const actionsQuery = useQuery({
+    queryKey: ['purchase-order', id, 'actions'],
+    queryFn: () => getPurchaseOrderActions(id!),
+    enabled: Boolean(id),
   });
   const vendors = useQuery({ queryKey: ['vendors'], queryFn: () => listVendors({ size: 100 }) });
   const receipts = useQuery({
@@ -291,6 +297,7 @@ export function PurchaseOrderDetailPage() {
   if (order.error || !order.data) return <Alert severity="error">Purchase order not found.</Alert>;
 
   const data = order.data;
+  const allowed = new Set(actionsQuery.data?.actions ?? []);
   const vendorName =
     vendors.data?.content.find((vendor) => vendor.id === data.vendorId)?.name ?? data.vendorId;
 
@@ -303,19 +310,17 @@ export function PurchaseOrderDetailPage() {
             <Button component={RouterLink} to="/purchase-orders" variant="outlined">
               Back
             </Button>
-            <Can I="update" a="PurchaseOrder">
-              {data.status === 'DRAFT' && (
-                <Button
-                  onClick={() => {
-                    setPaymentTerms(data.paymentTerms ?? '');
-                    setDeliveryDate(data.deliveryDate ?? '');
-                    setEditOpen(true);
-                  }}
-                >
-                  Edit
-                </Button>
-              )}
-            </Can>
+            {allowed.has('EDIT') && (
+              <Button
+                onClick={() => {
+                  setPaymentTerms(data.paymentTerms ?? '');
+                  setDeliveryDate(data.deliveryDate ?? '');
+                  setEditOpen(true);
+                }}
+              >
+                Edit
+              </Button>
+            )}
             <Button
               onClick={async () => {
                 const blob = await purchaseOrderPdf(data.id!);
@@ -324,35 +329,25 @@ export function PurchaseOrderDetailPage() {
             >
               PDF
             </Button>
-            <Can I="receive" a="PurchaseOrder">
-              {['ISSUED', 'PARTIALLY_RECEIVED'].includes(data.status ?? '') && (
-                <Button variant="contained" onClick={openReceipt}>
-                  Record receipt
-                </Button>
-              )}
-            </Can>
-            <Can I="issue" a="PurchaseOrder">
-              {['DRAFT', 'APPROVED'].includes(data.status ?? '') && (
-                <Button
-                  variant="contained"
-                  onClick={() => issue.mutate()}
-                  disabled={issue.isPending}
-                >
-                  Issue
-                </Button>
-              )}
-            </Can>
-            <Can I="cancel" a="PurchaseOrder">
-              {['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'ISSUED'].includes(data.status ?? '') && (
-                <Button
-                  color="error"
-                  onClick={() => setConfirmCancel(true)}
-                  disabled={cancel.isPending}
-                >
-                  Cancel
-                </Button>
-              )}
-            </Can>
+            {allowed.has('RECEIVE') && (
+              <Button variant="contained" onClick={openReceipt}>
+                Record receipt
+              </Button>
+            )}
+            {allowed.has('ISSUE') && (
+              <Button variant="contained" onClick={() => issue.mutate()} disabled={issue.isPending}>
+                Issue
+              </Button>
+            )}
+            {allowed.has('CANCEL') && (
+              <Button
+                color="error"
+                onClick={() => setConfirmCancel(true)}
+                disabled={cancel.isPending}
+              >
+                Cancel
+              </Button>
+            )}
           </Stack>
         }
       />
@@ -377,7 +372,7 @@ export function PurchaseOrderDetailPage() {
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {approval.data.status === 'CHANGES_REQUESTED' && (
+                {allowed.has('SUBMIT_APPROVAL') && approval.data.status === 'CHANGES_REQUESTED' && (
                   <Button
                     variant="contained"
                     disabled={submitApproval.isPending}
@@ -386,20 +381,22 @@ export function PurchaseOrderDetailPage() {
                     Resubmit for approval
                   </Button>
                 )}
-                {approval.data.status === 'PENDING' && (
-                  <Can I="approve" a="Approval">
-                    <Button
-                      variant="contained"
-                      disabled={approveApproval.isPending}
-                      onClick={() => approveApproval.mutate()}
-                    >
-                      Approve
-                    </Button>
-                    <Button color="error" onClick={() => setApprovalAction('reject')}>
-                      Reject
-                    </Button>
-                    <Button onClick={() => setApprovalAction('changes')}>Request changes</Button>
-                  </Can>
+                {allowed.has('APPROVE') && (
+                  <Button
+                    variant="contained"
+                    disabled={approveApproval.isPending}
+                    onClick={() => approveApproval.mutate()}
+                  >
+                    Approve
+                  </Button>
+                )}
+                {allowed.has('REJECT') && (
+                  <Button color="error" onClick={() => setApprovalAction('reject')}>
+                    Reject
+                  </Button>
+                )}
+                {allowed.has('REQUEST_CHANGES') && (
+                  <Button onClick={() => setApprovalAction('changes')}>Request changes</Button>
                 )}
               </Stack>
             </Stack>
@@ -526,13 +523,11 @@ export function PurchaseOrderDetailPage() {
                   sx={{ mb: 2 }}
                 >
                   <Typography variant="h6">Invoices</Typography>
-                  <Can I="create" a="Invoice">
-                    {['ISSUED', 'PARTIALLY_RECEIVED', 'RECEIVED'].includes(data.status ?? '') && (
-                      <Button variant="outlined" size="small" onClick={openInvoice}>
-                        Record invoice
-                      </Button>
-                    )}
-                  </Can>
+                  {allowed.has('CREATE_INVOICE') && (
+                    <Button variant="outlined" size="small" onClick={openInvoice}>
+                      Record invoice
+                    </Button>
+                  )}
                 </Stack>
                 <DataTable
                   ariaLabel="Purchase order invoices"

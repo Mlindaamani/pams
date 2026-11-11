@@ -60,6 +60,16 @@ export async function getPurchaseOrder(id: string): Promise<PurchaseOrder> {
   return unwrap(api.GET('/api/v1/purchase-orders/{id}', { params: { path: { id } } }));
 }
 
+export interface PurchaseOrderActions {
+  actions: string[];
+}
+
+export async function getPurchaseOrderActions(id: string): Promise<PurchaseOrderActions> {
+  return unwrap(
+    api.GET('/api/v1/purchase-orders/{id}/actions', { params: { path: { id } } }),
+  ) as Promise<PurchaseOrderActions>;
+}
+
 export async function updatePurchaseOrder(
   id: string,
   version: number,

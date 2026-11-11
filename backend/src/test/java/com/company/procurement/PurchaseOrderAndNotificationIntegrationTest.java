@@ -3,6 +3,8 @@ package com.company.procurement;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -485,6 +487,19 @@ class PurchaseOrderAndNotificationIntegrationTest {
   }
 
   @Test
+  void purchaseOrderActionsComeFromWorkflowRules() throws Exception {
+    UUID requestId = createApprovedRequest("Action rules", "50.00");
+    MvcResult created = createPurchaseOrder(requestId);
+    UUID poId = UUID.fromString(JsonPath.read(created.getResponse().getContentAsString(), "$.id"));
+
+    mockMvc
+        .perform(get("/api/v1/purchase-orders/{id}/actions", poId).with(token(org, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.actions").value(hasItems("EDIT", "SUBMIT_APPROVAL", "ISSUE", "CANCEL")));
+  }
+
+  @Test
   void recordsPartialAndCompleteGoodsReceipts() throws Exception {
     UUID requestId = createApprovedRequest("Receive me", "40.00", 4);
     MvcResult created = createPurchaseOrder(requestId);
@@ -497,6 +512,7 @@ class PurchaseOrderAndNotificationIntegrationTest {
         recordReceipt(
                 poId, issued.getResponse().getHeader("ETag"), lineId, "2.0000", "partial-receipt")
             .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.receiptNumber").value(matchesPattern("GRN-\\d{4}-\\d{6}")))
             .andExpect(jsonPath("$.deliveryNoteReference").value("DN-1"))
             .andExpect(jsonPath("$.recordedByName").isNotEmpty())
             .andExpect(jsonPath("$.lines[0].quantity").value("2.0000"))
@@ -682,6 +698,7 @@ class PurchaseOrderAndNotificationIntegrationTest {
                                         Map.of(
                                             "invoiceId", invoiceId.toString(), "amount", 160))))))
             .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.paymentNumber").value(matchesPattern("PAY-\\d{4}-\\d{6}")))
             .andExpect(jsonPath("$.status").value("SCHEDULED"))
             .andExpect(jsonPath("$.totalAmount").value(160))
             .andReturn();

@@ -34,6 +34,11 @@ const ENTITIES = [
     singular: 'request',
   },
   {
+    value: 'purchase_order',
+    label: 'Purchase orders',
+    singular: 'purchase order',
+  },
+  {
     value: 'vendor_payment',
     label: 'Vendor payments',
     singular: 'payment',
@@ -89,6 +94,26 @@ const ACTIONS: Record<string, ActionMeta> = {
     description: 'Convert an approved request into a purchase order.',
     permission: 'purchase_order:create',
   },
+  SUBMIT_APPROVAL: {
+    label: 'Submit for approval',
+    description: 'Send the purchase order into its approval chain.',
+    permission: 'purchase_order:update',
+  },
+  ISSUE: {
+    label: 'Issue purchase order',
+    description: 'Send the approved purchase order to the vendor.',
+    permission: 'purchase_order:issue',
+  },
+  RECEIVE: {
+    label: 'Record receipt',
+    description: 'Record goods received against the purchase order.',
+    permission: 'purchase_order:receive',
+  },
+  CREATE_INVOICE: {
+    label: 'Record invoice',
+    description: 'Record a vendor invoice against the purchase order.',
+    permission: 'invoice:create',
+  },
   MARK_PAID: {
     label: 'Mark payment paid',
     description: 'Record that the scheduled payment has been completed.',
@@ -107,6 +132,17 @@ const ENTITY_ACTIONS: Record<EntityType, string[]> = {
     'REQUEST_CHANGES',
     'CREATE_PO',
   ],
+  purchase_order: [
+    'EDIT',
+    'SUBMIT_APPROVAL',
+    'ISSUE',
+    'CANCEL',
+    'APPROVE',
+    'REJECT',
+    'REQUEST_CHANGES',
+    'RECEIVE',
+    'CREATE_INVOICE',
+  ],
   vendor_payment: ['APPROVE', 'CANCEL', 'MARK_PAID'],
 };
 
@@ -120,6 +156,17 @@ const STATUS_HELP: Record<EntityType, Record<string, string>> = {
     REJECTED: 'The request was rejected. No further actions are expected.',
     CANCELLED: 'The request was cancelled. No further actions are expected.',
     CONVERTED_TO_PO: 'The request has become a purchase order.',
+  },
+  purchase_order: {
+    DRAFT: 'The purchase order can still be prepared or sent for approval.',
+    PENDING_APPROVAL: 'Approvers act on the current purchase-order stage.',
+    APPROVED: 'The purchase order is approved and ready to be issued.',
+    REJECTED: 'The purchase order was rejected. No further actions are expected.',
+    ISSUED: 'The purchase order has been sent to the vendor and can be received or invoiced.',
+    PARTIALLY_RECEIVED: 'Some goods have been received. More receipts or invoices can be recorded.',
+    RECEIVED: 'All goods have been received and invoices can be recorded.',
+    CLOSED: 'The purchase order is closed.',
+    CANCELLED: 'The purchase order was cancelled. No further actions are expected.',
   },
   vendor_payment: {
     SCHEDULED: 'The payment is scheduled and waiting for approval.',
@@ -138,6 +185,11 @@ const PERMISSION_LABELS: Record<string, string> = {
   'approval:act': 'Act on approvals',
   'purchase_order:create': 'Create purchase orders',
   'payment:manage': 'Manage vendor payments',
+  'purchase_order:update': 'Edit or submit purchase orders',
+  'purchase_order:issue': 'Issue purchase orders',
+  'purchase_order:cancel': 'Cancel purchase orders',
+  'purchase_order:receive': 'Receive purchase orders',
+  'invoice:create': 'Record vendor invoices',
 };
 
 const PERMISSION_FALLBACK: Record<string, string> = {
@@ -148,6 +200,11 @@ const PERMISSION_FALLBACK: Record<string, string> = {
   'approval:act': 'Act on approvals',
   'purchase_order:create': 'Create purchase orders',
   'payment:manage': 'Manage vendor payments',
+  'purchase_order:update': 'Edit or submit purchase orders',
+  'purchase_order:issue': 'Issue purchase orders',
+  'purchase_order:cancel': 'Cancel purchase orders',
+  'purchase_order:receive': 'Receive purchase orders',
+  'invoice:create': 'Record vendor invoices',
 };
 
 export function WorkflowActionsTab() {
@@ -534,6 +591,14 @@ function actionDescription(entityType: EntityType, actionCode: string): string {
     if (actionCode === 'APPROVE') return 'Approve the scheduled payment.';
     if (actionCode === 'CANCEL') return 'Cancel the scheduled or approved payment.';
     if (actionCode === 'MARK_PAID') return 'Record that the payment has been completed.';
+  }
+  if (entityType === 'purchase_order') {
+    if (actionCode === 'EDIT') return 'Change the draft purchase order.';
+    if (actionCode === 'CANCEL') return 'Cancel this purchase order.';
+    if (actionCode === 'ISSUE') return 'Issue the purchase order to the vendor.';
+    if (actionCode === 'RECEIVE') return 'Record goods received against this order.';
+    if (actionCode === 'CREATE_INVOICE') return 'Record a vendor invoice for this order.';
+    if (actionCode === 'SUBMIT_APPROVAL') return 'Send this order into approval.';
   }
   return ACTIONS[actionCode]?.description ?? 'Configured workflow action.';
 }
