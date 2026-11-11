@@ -81,7 +81,7 @@ public class ApprovalController {
   }
 
   @GetMapping("/purchase-requests/{requestId}/approval")
-  @PreAuthorize("@permissions.has('approval:read')")
+  @PreAuthorize("@permissions.has('approval:read') or @permissions.has('purchase_request:read')")
   public ApprovalInstanceResponse timeline(@PathVariable UUID requestId) {
     return mapper.toResponse(approvals.getForRequest(requestId));
   }

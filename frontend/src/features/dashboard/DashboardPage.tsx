@@ -22,6 +22,7 @@ import type { PurchaseRequest } from '@/api/types';
 export function DashboardPage() {
   const ability = useAbility();
   const canViewReports = ability.can('read', 'Report');
+  const canApprove = ability.can('read', 'Approval');
   const monthlySpend = useQuery({
     queryKey: ['reports', 'spend', 'month'],
     queryFn: () => spendReport('month'),
@@ -41,7 +42,11 @@ export function DashboardPage() {
     queryKey: ['requests', 'dashboard'],
     queryFn: () => listRequests({ page: 0, size: 5 }),
   });
-  const inbox = useQuery({ queryKey: ['approvals', 'inbox'], queryFn: approvalInbox });
+  const inbox = useQuery({
+    queryKey: ['approvals', 'inbox'],
+    queryFn: approvalInbox,
+    enabled: canApprove,
+  });
   const unread = useQuery({ queryKey: ['notifications', 'unread-count'], queryFn: unreadCount });
 
   if (requests.isLoading) return <Loading />;
@@ -94,7 +99,7 @@ export function DashboardPage() {
       {ability.can('manage', 'User') && <OnboardingChecklist />}
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: canApprove ? 4 : 6 }}>
           <Card>
             <CardContent>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -105,18 +110,20 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <Card>
-            <CardContent>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <ApprovalIcon color="secondary" fontSize="small" />
-                <Typography color="text.secondary">Pending my approval</Typography>
-              </Stack>
-              <Typography variant="h4">{inbox.data?.length ?? 0}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        {canApprove && (
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <Card>
+              <CardContent>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <ApprovalIcon color="secondary" fontSize="small" />
+                  <Typography color="text.secondary">Pending my approval</Typography>
+                </Stack>
+                <Typography variant="h4">{inbox.data?.length ?? 0}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+        <Grid size={{ xs: 12, sm: canApprove ? 4 : 6 }}>
           <Card>
             <CardContent>
               <Stack direction="row" spacing={1} alignItems="center">

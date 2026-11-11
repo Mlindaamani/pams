@@ -1708,3 +1708,22 @@ and prevented tenants from deciding which PO actions appear in each status.
 
 **Consequences.** Purchase-order buttons are now configurable per status and permission. The workflow
 action tab covers all supported record types.
+
+---
+
+## ADR-088 — Requesters cannot approve
+
+**Context.** The REQUESTER role inherited approval inbox and approval-action permissions, so requesters
+could see the Approval menu even though they should only prepare and submit requests. Removing read
+access outright would also have hidden the approval timeline on their own request.
+
+**Decision.**
+- Remove `approval:read`, `approval:act` and `approval:act:REQUESTER` from the REQUESTER role.
+- Allow the request approval timeline endpoint to use `purchase_request:read`; the service still
+  enforces owner or view-all access.
+- Hide the Approval navigation item and dashboard approval card when the user cannot read approvals.
+- Remove REQUESTER from selectable approval-policy roles.
+- Add an integration test proving requesters cannot access the inbox but can see their own timeline.
+
+**Consequences.** Requesters no longer appear in approval workflows, while retaining visibility of
+their own request progress.

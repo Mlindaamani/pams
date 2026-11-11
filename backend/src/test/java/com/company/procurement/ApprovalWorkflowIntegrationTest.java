@@ -222,6 +222,24 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void requesterCannotUseApprovalInboxButCanSeeOwnTimeline() throws Exception {
+    createPolicy("Requester separation", "APPROVER");
+    UUID requestId = createRequest("Requester separation", "100.00");
+
+    mockMvc
+        .perform(
+            get("/api/v1/approvals/inbox").with(tokenSubject("requesting-user", org, "REQUESTER")))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            get("/api/v1/purchase-requests/{id}/approval", requestId)
+                .with(tokenSubject("requesting-user", org, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+  }
+
+  @Test
   void quorumCompletesStageAfterConfiguredApprovals() throws Exception {
     createPolicyBody(
         "Quorum",
