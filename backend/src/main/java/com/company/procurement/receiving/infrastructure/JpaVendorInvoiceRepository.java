@@ -41,7 +41,9 @@ public interface JpaVendorInvoiceRepository
       where l.organizationId = :organizationId and l.purchaseOrderId = :purchaseOrderId
         and l.invoice.status in (
           com.company.procurement.receiving.domain.VendorInvoiceStatus.MATCHED,
-          com.company.procurement.receiving.domain.VendorInvoiceStatus.APPROVED)
+          com.company.procurement.receiving.domain.VendorInvoiceStatus.APPROVED,
+          com.company.procurement.receiving.domain.VendorInvoiceStatus.PARTIALLY_PAID,
+          com.company.procurement.receiving.domain.VendorInvoiceStatus.PAID)
       group by l.purchaseOrderLineId
       """)
   List<InvoicedQuantityProjection> sumInvoicedQuantities(

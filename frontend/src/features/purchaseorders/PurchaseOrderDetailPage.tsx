@@ -150,6 +150,7 @@ export function PurchaseOrderDetailPage() {
       setInvoiceOpen(false);
       setInvoiceError(null);
       void queryClient.invalidateQueries({ queryKey: ['vendor-invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['purchase-order', id, 'actions'] });
     },
     onError: (error) => setInvoiceError(problemMessage(error)),
   });

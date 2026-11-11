@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -747,6 +748,11 @@ class PurchaseOrderAndNotificationIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("PAID"))
         .andExpect(jsonPath("$.paidAmount.amount").value("160.0000"));
+
+    mockMvc
+        .perform(get("/api/v1/purchase-orders/{id}/actions", poId).with(token(org, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.actions", not(hasItems("CREATE_INVOICE"))));
   }
 
   @Test

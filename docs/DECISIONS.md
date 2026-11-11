@@ -1849,3 +1849,17 @@ appeared to depend on the global audit permission.
 
 **Consequences.** Request transition logs no longer require global audit access, and the global
 audit trail is limited to audit and administration roles by default.
+
+---
+
+## ADR-095 — Paid invoices stop further invoicing actions
+
+**Context.** Once an invoice was marked PAID, its quantities were excluded from the already-invoiced
+calculation, so the purchase order still exposed Record invoice and could accept duplicate invoicing.
+
+**Decision.**
+- Count `MATCHED`, `APPROVED`, `PARTIALLY_PAID` and `PAID` invoice lines toward invoiced quantity.
+- Compute `CREATE_INVOICE` dynamically: expose it only while received quantity remains uninvoiced.
+- Invalidate purchase-order actions after recording an invoice.
+
+**Consequences.** Fully invoiced or fully paid purchase orders no longer offer Record invoice.
