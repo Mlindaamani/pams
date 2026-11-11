@@ -1617,3 +1617,26 @@ requester's manager or a specific user from the UI.
 
 **Consequences.** Workflow stages can model M-of-N approval, and policies can target managers and
 named users. Drag-and-drop polishing and a full visual canvas remain follow-up work.
+
+---
+
+## ADR-084 — Drag-and-drop workflow builder
+
+**Context.** The policy form could configure stages and approvers, but only through flat form rows.
+Administrators needed a visual way to reorder stages and move approvers between parallel groups.
+
+**Decision.**
+- Add `@dnd-kit/core`, `@dnd-kit/sortable` and `@dnd-kit/utilities`.
+- Replace the static workflow preview with a stage board:
+  - drag whole stages to reorder them,
+  - drag approvers within a stage or between stages,
+  - edit stage quorum directly on the stage card.
+- Keep the detailed form rows below the board for field editing.
+- Use pointer and keyboard sensors with a drag handle and an activation distance to avoid accidental
+  drags.
+- Renumber stages contiguously after reordering.
+- Include requester, approver, finance, admin, procurement officer and auditor role actors, plus
+  requester-manager and specific-user actor types.
+
+**Consequences.** Workflow configuration is now visual and keyboard-accessible. Policy changes still
+go through the same validated create-version API.
