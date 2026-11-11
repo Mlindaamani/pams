@@ -1,0 +1,15 @@
+meta {
+  name: List catalog items
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/catalog-items?page=0&size=20&sort=name,asc
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

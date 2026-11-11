@@ -1,0 +1,19 @@
+meta {
+  name: Request approval timeline
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/purchase-requests/{{requestId}}/approval
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+script:post-response {
+  bru.setEnvVar("approvalStepId", res.body.steps[0].id);
+}

@@ -1,0 +1,269 @@
+{
+  "realm": "pams",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 3600,
+  "roles": {
+    "realm": [
+      {
+        "name": "REQUESTER"
+      },
+      {
+        "name": "APPROVER"
+      },
+      {
+        "name": "PROCUREMENT_OFFICER"
+      },
+      {
+        "name": "FINANCE"
+      },
+      {
+        "name": "ADMIN"
+      },
+      {
+        "name": "AUDITOR"
+      },
+      {
+        "name": "PLATFORM_ADMIN"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "pams-api",
+      "name": "PAMS API",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "organization_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "organization_id",
+            "claim.name": "organization_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "pams-admin",
+      "name": "PAMS Admin API",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "secret": "change-me-keycloak-admin-secret",
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.com",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN",
+        "default-roles-pams"
+      ]
+    },
+    {
+      "username": "officer",
+      "enabled": true,
+      "email": "officer@example.com",
+      "firstName": "Demo",
+      "lastName": "Officer",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "officer",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "PROCUREMENT_OFFICER",
+        "default-roles-pams"
+      ]
+    },
+    {
+      "username": "requester",
+      "enabled": true,
+      "email": "requester@example.com",
+      "firstName": "Demo",
+      "lastName": "Requester",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "requester",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "REQUESTER",
+        "default-roles-pams"
+      ]
+    },
+    {
+      "username": "approver",
+      "enabled": true,
+      "email": "approver@example.com",
+      "firstName": "Demo",
+      "lastName": "Approver",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "approver",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "APPROVER",
+        "default-roles-pams"
+      ]
+    },
+    {
+      "username": "finance",
+      "enabled": true,
+      "email": "finance@example.com",
+      "firstName": "Demo",
+      "lastName": "Finance",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "finance",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "FINANCE",
+        "default-roles-pams"
+      ]
+    },
+    {
+      "username": "auditor",
+      "enabled": true,
+      "email": "auditor@example.com",
+      "firstName": "Demo",
+      "lastName": "Auditor",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "auditor",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "AUDITOR",
+        "default-roles-pams"
+      ]
+    },
+    {
+      "username": "platform",
+      "enabled": true,
+      "email": "platform@example.com",
+      "firstName": "Demo",
+      "lastName": "Platform",
+      "emailVerified": true,
+      "attributes": {
+        "organization_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "PLATFORM_ADMIN",
+        "default-roles-pams"
+      ]
+    }
+  ],
+  "loginTheme": "pams",
+  "displayName": "PAMS",
+  "displayNameHtml": "<span style=\"font-weight:800;letter-spacing:3px;color:#0b5cad;\">PAMS</span>",
+  "emailTheme": "pams",
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@pams.local",
+    "fromDisplayName": "PAMS",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "accountTheme": "pams",
+  "editUsernameAllowed": true
+}

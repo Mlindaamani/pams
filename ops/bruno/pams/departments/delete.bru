@@ -1,0 +1,15 @@
+meta {
+  name: Delete department
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/departments/{{departmentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

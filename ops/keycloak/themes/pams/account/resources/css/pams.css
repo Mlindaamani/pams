@@ -1,0 +1,60 @@
+:root {
+  --pf-v5-global--primary-color--100: #0b5cad;
+  --pf-v5-global--primary-color--200: #074079;
+  --pf-v5-global--link--Color: #0b5cad;
+  --pf-v5-global--link--Color--hover: #074079;
+  --pf-v5-global--FontFamily--text: Inter, Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: #f5f7fa !important;
+  font-family: Inter, Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+.pf-v5-c-masthead,
+.pf-v5-c-masthead .pf-v5-c-masthead__main {
+  background-color: #0b5cad !important;
+}
+
+.pf-v5-c-masthead,
+.pf-v5-c-masthead a,
+.pf-v5-c-masthead button {
+  color: #ffffff !important;
+}
+
+.pf-v5-c-button.pf-m-primary {
+  background-color: #0b5cad !important;
+  border-radius: 8px;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  background-color: #074079 !important;
+}
+
+.pf-v5-c-button.pf-m-secondary {
+  border-color: #0b5cad !important;
+  color: #0b5cad !important;
+  border-radius: 8px;
+}
+
+.pf-v5-c-card,
+.pf-v5-c-page__main-section .pf-v5-c-card {
+  border-radius: 10px;
+}
+
+.pf-v5-c-nav__link.pf-m-current,
+.pf-v5-c-nav__link:hover {
+  color: #0b5cad !important;
+}
+
+.pf-v5-c-nav__item.pf-m-current > .pf-v5-c-nav__link {
+  border-left-color: #0b5cad !important;
+}
+
+a {
+  color: #0b5cad;
+}
+
+a:hover {
+  color: #074079;
+}

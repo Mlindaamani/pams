@@ -1,0 +1,25 @@
+meta {
+  name: Approve current step
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/approvals/{{approvalStepId}}/approve
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Idempotency-Key: {{$uuid}}
+}
+
+body:json {
+  {
+    "comment": "Looks good"
+  }
+}

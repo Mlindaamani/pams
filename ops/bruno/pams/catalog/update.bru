@@ -1,0 +1,28 @@
+meta {
+  name: Update catalog item
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/v1/catalog-items/{{catalogItemId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Business Laptop Pro",
+    "unit": "EA",
+    "defaultPrice": {
+      "amount": "1750.0000",
+      "currency": "TZS"
+    },
+    "category": "IT",
+    "active": true
+  }
+}

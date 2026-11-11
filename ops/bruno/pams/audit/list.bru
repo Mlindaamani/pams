@@ -1,0 +1,19 @@
+meta {
+  name: Audit log (keyset)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/audit-events?limit=25
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+script:post-response {
+  bru.setEnvVar("auditCursor", res.body.nextCursor);
+}

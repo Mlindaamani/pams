@@ -1,0 +1,15 @@
+meta {
+  name: Download purchase order PDF
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/purchase-orders/{{purchaseOrderId}}/pdf
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

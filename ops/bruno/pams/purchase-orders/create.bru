@@ -1,0 +1,32 @@
+meta {
+  name: Create purchase order
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/purchase-requests/{{requestId}}/purchase-orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Idempotency-Key: {{$uuid}}
+}
+
+body:json {
+  {
+    "vendorId": "{{vendorId}}",
+    "paymentTerms": "Net 30",
+    "deliveryDate": "2026-12-31"
+  }
+}
+
+script:post-response {
+  bru.setEnvVar("purchaseOrderId", res.body.id);
+  bru.setEnvVar("purchaseOrderEtag", res.headers.etag);
+}

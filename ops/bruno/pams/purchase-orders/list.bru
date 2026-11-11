@@ -1,0 +1,15 @@
+meta {
+  name: List purchase orders
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/purchase-orders?page=0&size=20&sort=createdAt,desc
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -1,0 +1,40 @@
+meta {
+  name: Create approval policy
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/approval-policies
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Demo two-step",
+    "amountMin": 0,
+    "steps": [
+      {
+        "name": "Approver",
+        "approverType": "ROLE",
+        "approverRole": "APPROVER",
+        "slaHours": 24
+      },
+      {
+        "name": "Finance",
+        "approverType": "ROLE",
+        "approverRole": "FINANCE",
+        "slaHours": 24
+      }
+    ]
+  }
+}
+
+script:post-response {
+  bru.setEnvVar("policyId", res.body.id);
+}

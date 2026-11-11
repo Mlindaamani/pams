@@ -1,0 +1,25 @@
+meta {
+  name: Request changes
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/approvals/{{approvalStepId}}/request-changes
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Idempotency-Key: {{$uuid}}
+}
+
+body:json {
+  {
+    "comment": "Please attach a quote"
+  }
+}

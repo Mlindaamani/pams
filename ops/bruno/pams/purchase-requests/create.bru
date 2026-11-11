@@ -1,0 +1,49 @@
+meta {
+  name: Create purchase request
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/purchase-requests
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Idempotency-Key: {{$uuid}}
+}
+
+body:json {
+  {
+    "title": "Laptops for new starters",
+    "justification": "Three new engineers joining next month",
+    "departmentId": "{{departmentId}}",
+    "neededBy": "2026-12-31",
+    "currency": "TZS",
+    "budgetExceptionRequested": false,
+    "lines": [
+      {
+        "description": "Business laptop",
+        "quantity": 3,
+        "unit": "EA",
+        "unitPrice": 1500.0000
+      },
+      {
+        "description": "Docking station",
+        "quantity": 3,
+        "unit": "EA",
+        "unitPrice": 250.0000
+      }
+    ]
+  }
+}
+
+script:post-response {
+  bru.setEnvVar("requestId", res.body.id);
+  bru.setEnvVar("requestEtag", res.headers.etag);
+}

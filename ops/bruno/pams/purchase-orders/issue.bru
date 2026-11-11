@@ -1,0 +1,24 @@
+meta {
+  name: Issue purchase order
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/purchase-orders/{{purchaseOrderId}}/issue
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  If-Match: {{purchaseOrderEtag}}
+  Idempotency-Key: {{$uuid}}
+}
+
+script:post-response {
+  bru.setEnvVar("purchaseOrderEtag", res.headers.etag);
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Submit purchase request
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/purchase-requests/{{requestId}}/submit
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  If-Match: {{requestEtag}}
+  Idempotency-Key: {{$uuid}}
+}
+
+script:post-response {
+  bru.setEnvVar("requestEtag", res.headers.etag);
+}

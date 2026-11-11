@@ -1,0 +1,30 @@
+meta {
+  name: Create budget
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/budgets
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "departmentId": "{{departmentId}}",
+    "fiscalYear": 2026,
+    "allocated": {
+      "amount": "100000.0000",
+      "currency": "TZS"
+    }
+  }
+}
+
+script:post-response {
+  bru.setEnvVar("budgetId", res.body.id);
+}

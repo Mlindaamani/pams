@@ -1,0 +1,26 @@
+meta {
+  name: Update vendor
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/vendors/{{vendorId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Acme Supplies Ltd",
+    "taxId": "TAX-100",
+    "contactName": "Jane Doe",
+    "contactEmail": "jane@acme.example",
+    "contactPhone": "+255700000000",
+    "addressLine": "1 Market Street, Dar es Salaam"
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Delete catalog item
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/catalog-items/{{catalogItemId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

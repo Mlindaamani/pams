@@ -1,0 +1,33 @@
+meta {
+  name: Create vendor
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/vendors
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "name": "Acme Supplies",
+    "taxId": "TAX-100",
+    "contactName": "Jane Doe",
+    "contactEmail": "jane@acme.example",
+    "contactPhone": "+255700000000",
+    "addressLine": "1 Market Street, Dar es Salaam",
+    "bankName": "Example Bank",
+    "bankAccountName": "Acme Supplies Ltd",
+    "bankAccountNumber": "000123456789"
+  }
+}
+
+script:post-response {
+  bru.setEnvVar("vendorId", res.body.id);
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Budget commitments
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/reports/commitments
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
