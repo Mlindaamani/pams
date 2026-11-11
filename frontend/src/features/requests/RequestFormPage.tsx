@@ -12,9 +12,12 @@ import {
   CardContent,
   Chip,
   Divider,
+  Drawer,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
+  Paper,
   Stack,
   TextField,
   Typography,
@@ -23,6 +26,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 import { PageHeader, Loading } from '@/components/Page';
 import {
   favoriteCatalogItem,
@@ -111,6 +116,8 @@ export function RequestFormPage() {
     });
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' });
   const [files, setFiles] = useState<File[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   useEffect(() => {
     if (!edit && profile.data?.departmentId) {
@@ -201,6 +208,12 @@ export function RequestFormPage() {
   }
 
   const currency = watch('currency').toUpperCase();
+  const watchedLines = watch('lines') ?? [];
+  const itemCount = watchedLines.length;
+  const estimatedTotal = watchedLines.reduce(
+    (sum, line) => sum + (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0),
+    0,
+  );
 
   const catalogItems = (catalog.data?.content ?? []).filter((item) => item.active);
   const catalogById = new Map(catalogItems.map((item) => [item.id!, item]));
@@ -234,7 +247,7 @@ export function RequestFormPage() {
     }
   };
 
-  const addCustomItem = () =>
+  const addCustomItem = () => {
     append({
       description: '',
       quantity: 1,
@@ -245,6 +258,8 @@ export function RequestFormPage() {
       notes: '',
       nonCatalog: true,
     });
+    setPickerOpen(false);
+  };
 
   return (
     <>
@@ -327,73 +342,48 @@ export function RequestFormPage() {
         </Grid>
 
         <Divider sx={{ my: 3 }} />
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="h6">Add items</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Pick an item from the catalog. Prices, units and vendors are filled for you.
-            </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <TextField
-                select
-                label="Add from catalog"
-                value=""
-                onChange={(event) => addCatalogItem(event.target.value)}
-                sx={{ minWidth: 320 }}
+        <Paper
+          elevation={6}
+          sx={{
+            position: 'sticky',
+            top: { xs: 72, md: 78 },
+            zIndex: 8,
+            p: 1.5,
+            mb: 2,
+            borderRadius: 2,
+            border: 1,
+            borderColor: 'divider',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            spacing={1}
+          >
+            <Box>
+              <Typography variant="subtitle2">
+                {itemCount} item{itemCount === 1 ? '' : 's'} in this request
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Estimated total {estimatedTotal.toLocaleString()} {currency}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setPickerOpen(true)}
               >
-                <MenuItem value="" disabled>
-                  Choose an item…
-                </MenuItem>
-                {catalogItems.map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.sku} · {item.name} ({item.unit})
-                  </MenuItem>
-                ))}
-              </TextField>
-              <Button variant="outlined" startIcon={<AddIcon />} onClick={addCustomItem}>
-                Can&apos;t find your item?
+                Add item
+              </Button>
+              <Button variant="outlined" onClick={addCustomItem}>
+                Can&apos;t find item?
               </Button>
             </Stack>
-            {(favorites.data?.length ?? 0) > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Favorites
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {(favorites.data ?? []).map((item) => (
-                    <Button
-                      key={item.id}
-                      size="small"
-                      variant="outlined"
-                      onClick={() => addCatalogItem(item.id!)}
-                    >
-                      {item.name}
-                    </Button>
-                  ))}
-                </Stack>
-              </Box>
-            )}
-            {(popular.data?.length ?? 0) > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Popular in {departmentName}
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {(popular.data ?? []).map((item) => (
-                    <Button
-                      key={item.id}
-                      size="small"
-                      variant="outlined"
-                      onClick={() => addCatalogItem(item.id!)}
-                    >
-                      {item.name}
-                    </Button>
-                  ))}
-                </Stack>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+          </Stack>
+        </Paper>
 
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Typography variant="h6">Items</Typography>
@@ -404,7 +394,27 @@ export function RequestFormPage() {
 
         <Stack spacing={2}>
           {fields.length === 0 && (
-            <Alert severity="info">Add at least one catalog item or custom item.</Alert>
+            <Card variant="outlined">
+              <CardContent sx={{ textAlign: 'center', py: 5 }}>
+                <Typography variant="h6">No items yet</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Search the catalog or add a custom item. You will only need to enter quantity and
+                  notes for catalog items.
+                </Typography>
+                <Stack direction="row" spacing={1} justifyContent="center">
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setPickerOpen(true)}
+                  >
+                    Add from catalog
+                  </Button>
+                  <Button variant="outlined" onClick={addCustomItem}>
+                    Add custom item
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
           )}
           {fields.map((field, index) => {
             const catalogItem = field.catalogItemId
@@ -590,6 +600,196 @@ export function RequestFormPage() {
           <Button onClick={() => navigate(-1)}>Cancel</Button>
         </Stack>
       </form>
+
+      <Drawer
+        anchor="right"
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        sx={{ zIndex: (theme) => theme.zIndex.appBar + 10 }}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 520 },
+              px: 2.5,
+              pb: 2.5,
+              pt: 9,
+            },
+          },
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+          <Box>
+            <Typography variant="h6">Add items</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Search the catalog or pick a favorite. Prices and units are locked automatically.
+            </Typography>
+          </Box>
+          <IconButton aria-label="Close item picker" onClick={() => setPickerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+
+        <TextField
+          autoFocus
+          fullWidth
+          placeholder="Search by item name or SKU"
+          value={catalogSearch}
+          onChange={(event) => setCatalogSearch(event.target.value)}
+          sx={{ mt: 2 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+
+        <Stack spacing={2.5} sx={{ mt: 2, overflowY: 'auto', pr: 0.5 }}>
+          {(favorites.data?.length ?? 0) > 0 && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Favorites
+              </Typography>
+              <Stack spacing={1}>
+                {(favorites.data ?? []).map((item) => (
+                  <CatalogPickerRow
+                    key={item.id}
+                    item={item}
+                    added={watchedLines.some((line) => line.catalogItemId === item.id)}
+                    favorite={favoriteIds.has(item.id!)}
+                    onAdd={() => addCatalogItem(item.id!)}
+                    onToggleFavorite={() =>
+                      toggleFavorite.mutate({ id: item.id!, favorite: favoriteIds.has(item.id!) })
+                    }
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {(popular.data?.length ?? 0) > 0 && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Popular in {departmentName}
+              </Typography>
+              <Stack spacing={1}>
+                {(popular.data ?? []).map((item) => (
+                  <CatalogPickerRow
+                    key={item.id}
+                    item={item}
+                    added={watchedLines.some((line) => line.catalogItemId === item.id)}
+                    favorite={favoriteIds.has(item.id!)}
+                    onAdd={() => addCatalogItem(item.id!)}
+                    onToggleFavorite={() =>
+                      toggleFavorite.mutate({ id: item.id!, favorite: favoriteIds.has(item.id!) })
+                    }
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              All catalog items
+            </Typography>
+            <Stack spacing={1}>
+              {catalogItems
+                .filter((item) => {
+                  const term = catalogSearch.trim().toLowerCase();
+                  if (!term) return true;
+                  return `${item.name ?? ''} ${item.sku ?? ''} ${item.category ?? ''}`
+                    .toLowerCase()
+                    .includes(term);
+                })
+                .map((item) => (
+                  <CatalogPickerRow
+                    key={item.id}
+                    item={item}
+                    added={watchedLines.some((line) => line.catalogItemId === item.id)}
+                    favorite={favoriteIds.has(item.id!)}
+                    onAdd={() => addCatalogItem(item.id!)}
+                    onToggleFavorite={() =>
+                      toggleFavorite.mutate({ id: item.id!, favorite: favoriteIds.has(item.id!) })
+                    }
+                  />
+                ))}
+              {catalogItems.filter((item) => {
+                const term = catalogSearch.trim().toLowerCase();
+                if (!term) return true;
+                return `${item.name ?? ''} ${item.sku ?? ''} ${item.category ?? ''}`
+                  .toLowerCase()
+                  .includes(term);
+              }).length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  No catalog items match your search.
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </Stack>
+
+        <Button variant="outlined" startIcon={<AddIcon />} onClick={addCustomItem} sx={{ mt: 2 }}>
+          Can&apos;t find your item? Add a custom item
+        </Button>
+      </Drawer>
     </>
+  );
+}
+
+function CatalogPickerRow({
+  item,
+  added,
+  favorite,
+  onAdd,
+  onToggleFavorite,
+}: {
+  item: {
+    id?: string;
+    name?: string;
+    sku?: string;
+    unit?: string;
+    defaultPrice?: { amount?: string; currency?: string };
+    category?: string;
+  };
+  added: boolean;
+  favorite: boolean;
+  onAdd: () => void;
+  onToggleFavorite: () => void;
+}) {
+  return (
+    <Paper variant="outlined" sx={{ p: 1.5 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="body2" fontWeight={600} noWrap>
+            {item.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" noWrap>
+            {item.sku} · {item.unit} · {Number(item.defaultPrice?.amount ?? 0).toLocaleString()}{' '}
+            {item.defaultPrice?.currency}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {item.category ?? 'Uncategorized'}
+          </Typography>
+        </Box>
+        <IconButton
+          aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          onClick={onToggleFavorite}
+        >
+          {favorite ? <StarIcon color="warning" /> : <StarBorderIcon />}
+        </IconButton>
+        <Button
+          size="small"
+          variant={added ? 'outlined' : 'contained'}
+          onClick={onAdd}
+          disabled={added}
+        >
+          {added ? 'Added' : 'Add'}
+        </Button>
+      </Stack>
+    </Paper>
   );
 }
