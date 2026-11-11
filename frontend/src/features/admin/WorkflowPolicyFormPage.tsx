@@ -365,18 +365,13 @@ export function WorkflowPolicyFormPage() {
                             setSteps(next);
                           }}
                         >
-                          {[
-                            'REQUESTER',
-                            'APPROVER',
-                            'FINANCE',
-                            'ADMIN',
-                            'PROCUREMENT_OFFICER',
-                            'AUDITOR',
-                          ].map((role) => (
-                            <MenuItem key={role} value={role}>
-                              {role}
-                            </MenuItem>
-                          ))}
+                          {['APPROVER', 'FINANCE', 'ADMIN', 'PROCUREMENT_OFFICER', 'AUDITOR'].map(
+                            (role) => (
+                              <MenuItem key={role} value={role}>
+                                {role}
+                              </MenuItem>
+                            ),
+                          )}
                         </TextField>
                       )}
                       {step.approverType === 'USER' && (

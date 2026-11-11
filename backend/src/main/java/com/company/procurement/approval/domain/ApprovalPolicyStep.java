@@ -87,7 +87,12 @@ public class ApprovalPolicyStep extends TenantEntity {
       throw new IllegalArgumentException("slaHours must be positive");
     }
     switch (approverType) {
-      case ROLE -> this.approverRole = requireText(role, "approverRole");
+      case ROLE -> {
+        this.approverRole = requireText(role, "approverRole");
+        if ("REQUESTER".equalsIgnoreCase(this.approverRole)) {
+          throw new IllegalArgumentException("Requesters cannot be approval actors");
+        }
+      }
       case USER -> this.approverUserId = Objects.requireNonNull(userId, "approverUserId");
       case REQUESTER_MANAGER -> {
         // resolved to a user at submission time
