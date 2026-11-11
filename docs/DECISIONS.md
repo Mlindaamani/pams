@@ -1750,3 +1750,45 @@ This created errors and made catalog pricing advisory rather than authoritative.
 
 **Consequences.** Request creation is faster and catalog pricing cannot be tampered with. Department
 catalog audiences, popularity, favorites and reorder remain follow-up increments.
+
+---
+
+## ADR-090 — Catalog audiences, favorites and popularity
+
+**Context.** Catalog items were tenant-wide. Requesters could not easily find the items their
+department actually buys, and recurring users had no personal shortcuts.
+
+**Decision.**
+- Add `catalog_item.department_scope` (`ALL` or `SELECTED`) and `catalog_item_department`.
+- Requesters see global items plus items assigned to their department; server-side filtering
+  enforces the rule.
+- Add personal favorites through `catalog_favorite`.
+- Expose favorites and “Popular in your department” through catalog discovery endpoints.
+- Popularity is computed from non-draft request lines in the requester's department, ordered by
+  usage count and recency.
+- Add catalog admin controls for department audiences.
+- Show favorites and popular items as quick-add actions in the request composer.
+- Favorite catalog items from a selected request line.
+
+**Consequences.** Catalog discovery is now personalized and department-aware without duplicating
+catalog records. Reorder remains the final follow-up increment.
+
+---
+
+## ADR-091 — Department catalog audiences, favorites, popularity and reorder
+
+**Context.** Department visibility, personal shortcuts and repeat ordering remained after the
+catalog-first request form.
+
+**Decision.**
+- Catalog items are global or restricted to selected departments through
+  `catalog_item_department`.
+- Catalog search filters by the requester's department on the server.
+- Requesters can favorite catalog items; favorites are personal and tenant-scoped.
+- Request form shows favorites and popular items for the requester's department.
+- Popularity uses non-draft historical request lines for that department.
+- Add a clone endpoint that creates a new draft request with current catalog snapshots.
+- Expose Reorder on non-draft request detail pages.
+
+**Consequences.** Requesters can find relevant items faster and repeat recurring purchases without
+re-entering line details.

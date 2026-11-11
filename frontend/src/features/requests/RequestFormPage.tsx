@@ -21,8 +21,17 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { PageHeader, Loading } from '@/components/Page';
-import { listDepartments, listCatalogItems } from '@/features/reference/api';
+import {
+  favoriteCatalogItem,
+  listCatalogItems,
+  listDepartments,
+  listFavoriteCatalogItems,
+  listPopularCatalogItems,
+  unfavoriteCatalogItem,
+} from '@/features/reference/api';
 import { useAbility } from '@/auth/AbilityProvider';
 import { getMe } from '@/features/admin/usersApi';
 import { listVendors } from '@/features/vendors/api';
@@ -77,7 +86,21 @@ export function RequestFormPage() {
   const ability = useAbility();
   const profile = useQuery({ queryKey: ['me'], queryFn: getMe });
   const departments = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
-  const catalog = useQuery({ queryKey: ['catalog-items'], queryFn: listCatalogItems });
+  const catalog = useQuery({
+    queryKey: ['catalog-items', profile.data?.departmentId],
+    queryFn: () => listCatalogItems(profile.data?.departmentId),
+    enabled: Boolean(profile.data?.departmentId),
+  });
+  const favorites = useQuery({
+    queryKey: ['catalog-favorites'],
+    queryFn: listFavoriteCatalogItems,
+    enabled: Boolean(profile.data?.departmentId),
+  });
+  const popular = useQuery({
+    queryKey: ['catalog-popular', profile.data?.departmentId],
+    queryFn: () => listPopularCatalogItems(profile.data?.departmentId),
+    enabled: Boolean(profile.data?.departmentId),
+  });
   const vendors = useQuery({ queryKey: ['vendors'], queryFn: () => listVendors({ size: 100 }) });
   const canChooseDepartment = ability.can('request-for-any-department', 'PurchaseRequest');
 
@@ -121,6 +144,14 @@ export function RequestFormPage() {
       });
     }
   }, [existing.data, reset]);
+
+  const toggleFavorite = useMutation({
+    mutationFn: (input: { id: string; favorite: boolean }) =>
+      input.favorite ? unfavoriteCatalogItem(input.id) : favoriteCatalogItem(input.id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['catalog-favorites'] });
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -173,6 +204,11 @@ export function RequestFormPage() {
 
   const catalogItems = (catalog.data?.content ?? []).filter((item) => item.active);
   const catalogById = new Map(catalogItems.map((item) => [item.id!, item]));
+  const favoriteIds = new Set((favorites.data ?? []).map((item) => item.id!));
+  const departmentName =
+    (departments.data?.content ?? []).find(
+      (department) => department.id === profile.data?.departmentId,
+    )?.name ?? 'your department';
   const vendorNames = new Map(
     (vendors.data?.content ?? []).map((vendor) => [vendor.id!, vendor.name ?? '']),
   );
@@ -318,6 +354,44 @@ export function RequestFormPage() {
                 Can&apos;t find your item?
               </Button>
             </Stack>
+            {(favorites.data?.length ?? 0) > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Favorites
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {(favorites.data ?? []).map((item) => (
+                    <Button
+                      key={item.id}
+                      size="small"
+                      variant="outlined"
+                      onClick={() => addCatalogItem(item.id!)}
+                    >
+                      {item.name}
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
+            )}
+            {(popular.data?.length ?? 0) > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Popular in {departmentName}
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {(popular.data ?? []).map((item) => (
+                    <Button
+                      key={item.id}
+                      size="small"
+                      variant="outlined"
+                      onClick={() => addCatalogItem(item.id!)}
+                    >
+                      {item.name}
+                    </Button>
+                  ))}
+                </Stack>
+              </Box>
+            )}
           </CardContent>
         </Card>
 
@@ -365,6 +439,27 @@ export function RequestFormPage() {
                           : `${catalogItem?.sku ?? 'Catalog item'} · ${field.unit} · ${Number(field.unitPrice).toLocaleString()} ${currency} · ${vendorNames.get(vendorId ?? '') ?? (vendorId ? 'Vendor' : 'Vendor to be confirmed')}`}
                       </Typography>
                     </Box>
+                    {field.catalogItemId && (
+                      <IconButton
+                        aria-label={
+                          favoriteIds.has(field.catalogItemId)
+                            ? 'Remove from favorites'
+                            : 'Add to favorites'
+                        }
+                        onClick={() =>
+                          toggleFavorite.mutate({
+                            id: field.catalogItemId!,
+                            favorite: favoriteIds.has(field.catalogItemId!),
+                          })
+                        }
+                      >
+                        {favoriteIds.has(field.catalogItemId) ? (
+                          <StarIcon color="warning" />
+                        ) : (
+                          <StarBorderIcon />
+                        )}
+                      </IconButton>
+                    )}
                     <IconButton
                       aria-label="Remove line"
                       onClick={() => remove(index)}

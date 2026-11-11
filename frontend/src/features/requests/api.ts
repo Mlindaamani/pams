@@ -46,6 +46,15 @@ export async function updateRequest(
   );
 }
 
+export async function cloneRequest(id: string): Promise<PurchaseRequest> {
+  return unwrap(
+    api.POST('/api/v1/purchase-requests/{id}/clone', {
+      params: { path: { id } },
+      headers: { 'Idempotency-Key': idempotencyKey() },
+    }),
+  );
+}
+
 export async function deleteRequest(id: string, version: number): Promise<void> {
   await unwrap(
     api.DELETE('/api/v1/purchase-requests/{id}', {

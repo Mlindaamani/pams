@@ -27,6 +27,11 @@ public class CatalogItemRepositoryAdapter implements CatalogItemRepository {
   }
 
   @Override
+  public void flush() {
+    jpa.flush();
+  }
+
+  @Override
   public Optional<CatalogItem> findByIdAndOrganizationId(UUID id, UUID organizationId) {
     return jpa.findByIdAndOrganizationId(id, organizationId);
   }
@@ -43,12 +48,26 @@ public class CatalogItemRepositoryAdapter implements CatalogItemRepository {
 
   @Override
   public Page<CatalogItem> search(
-      UUID organizationId, String category, Boolean active, String text, Pageable pageable) {
-    return jpa.findAll(specification(organizationId, category, active, text), pageable);
+      UUID organizationId,
+      String category,
+      Boolean active,
+      String text,
+      UUID departmentId,
+      java.util.Set<UUID> selectedDepartmentItemIds,
+      Pageable pageable) {
+    return jpa.findAll(
+        specification(
+            organizationId, category, active, text, departmentId, selectedDepartmentItemIds),
+        pageable);
   }
 
   private static Specification<CatalogItem> specification(
-      UUID organizationId, String category, Boolean active, String text) {
+      UUID organizationId,
+      String category,
+      Boolean active,
+      String text,
+      UUID departmentId,
+      java.util.Set<UUID> selectedDepartmentItemIds) {
     return (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
       predicates.add(cb.equal(root.get("organizationId"), organizationId));
@@ -57,6 +76,17 @@ public class CatalogItemRepositoryAdapter implements CatalogItemRepository {
       }
       if (active != null) {
         predicates.add(cb.equal(root.get("active"), active));
+      }
+      if (departmentId != null) {
+        var allDepartments =
+            cb.equal(
+                root.get("departmentScope"),
+                com.company.procurement.catalog.domain.CatalogDepartmentScope.ALL);
+        if (selectedDepartmentItemIds == null || selectedDepartmentItemIds.isEmpty()) {
+          predicates.add(allDepartments);
+        } else {
+          predicates.add(cb.or(allDepartments, root.get("id").in(selectedDepartmentItemIds)));
+        }
       }
       if (text != null && !text.isBlank()) {
         String pattern = "%" + text.trim().toLowerCase() + "%";

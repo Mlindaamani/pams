@@ -105,6 +105,20 @@ public class PurchaseRequestController {
     return PageResponse.from(requests.search(filter, pageable), mapper::toSummary);
   }
 
+  @PostMapping("/{id}/clone")
+  @PreAuthorize("@permissions.has('purchase_request:create')")
+  public ResponseEntity<PurchaseRequestResponse> cloneRequest(@PathVariable UUID id) {
+    PurchaseRequest created = requests.cloneRequest(id);
+    URI location =
+        ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path("/api/v1/purchase-requests/{newId}")
+            .buildAndExpand(created.getId())
+            .toUri();
+    return ResponseEntity.created(location)
+        .eTag(ConditionalRequests.etag(created.getVersion()))
+        .body(mapper.toResponse(created));
+  }
+
   @PutMapping("/{id}")
   @PreAuthorize("@permissions.has('purchase_request:update')")
   public ResponseEntity<PurchaseRequestResponse> update(

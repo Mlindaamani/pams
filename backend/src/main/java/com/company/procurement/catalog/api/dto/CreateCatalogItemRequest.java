@@ -18,4 +18,6 @@ public record CreateCatalogItemRequest(
         String unit,
     @NotNull(message = "defaultPrice is required") @Valid MoneyRequest defaultPrice,
     @Size(max = 100, message = "category must be at most 100 characters") String category,
-    java.util.UUID defaultVendorId) {}
+    java.util.UUID defaultVendorId,
+    com.company.procurement.catalog.domain.CatalogDepartmentScope departmentScope,
+    java.util.List<java.util.UUID> departmentIds) {}

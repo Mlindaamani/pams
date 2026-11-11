@@ -33,7 +33,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
   public static final String HEADER = "Idempotency-Key";
 
   private static final Pattern REQUEST_ACTION_PATH =
-      Pattern.compile("^/api/v1/purchase-requests/[^/]+/(submit|cancel)$");
+      Pattern.compile("^/api/v1/purchase-requests/[^/]+/(submit|cancel|clone)$");
   private static final Pattern APPROVAL_ACTION_PATH =
       Pattern.compile("^/api/v1/approvals/[^/]+/(approve|reject|request-changes)$");
   private static final Pattern BULK_APPROVAL_PATH =

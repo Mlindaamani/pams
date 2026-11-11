@@ -26,6 +26,7 @@ import { Loading } from '@/components/Page';
 import { money, dateOnly, downloadBlob } from '@/lib/format';
 import {
   cancelRequest,
+  cloneRequest,
   deleteRequest,
   downloadAttachment,
   deleteAttachment,
@@ -116,6 +117,13 @@ export function RequestDetailPage() {
     onSuccess: () => {
       toast.success('Request cancelled.');
       invalidate();
+    },
+  });
+  const reorder = useMutation({
+    mutationFn: () => cloneRequest(id!),
+    onSuccess: (created) => {
+      toast.success('Draft request created from this request.');
+      navigate(`/requests/${created.id}`);
     },
   });
   const remove = useMutation({
@@ -297,6 +305,18 @@ export function RequestDetailPage() {
                 Delete
               </Button>
             )}
+            {ability.can('create', 'PurchaseRequest') &&
+              data.status !== 'DRAFT' &&
+              data.status !== 'CANCELLED' && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => reorder.mutate()}
+                  disabled={reorder.isPending}
+                >
+                  Reorder
+                </Button>
+              )}
             {allowed.has('CREATE_PO') && (
               <Button
                 variant="contained"

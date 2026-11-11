@@ -9,4 +9,6 @@ public record CreateCatalogItemCommand(
     BigDecimal defaultPrice,
     String currency,
     String category,
-    java.util.UUID defaultVendorId) {}
+    java.util.UUID defaultVendorId,
+    com.company.procurement.catalog.domain.CatalogDepartmentScope departmentScope,
+    java.util.List<java.util.UUID> departmentIds) {}

@@ -196,6 +196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog-items/{id}/favorite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["favorite"];
+        post?: never;
+        delete: operations["unfavorite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog-items/non-catalog-review/{lineId}": {
         parameters: {
             query?: never;
@@ -734,6 +750,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/purchase-requests/{id}/clone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cloneRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1972,6 +2004,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog-items/popular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["popular"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog-items/non-catalog-review": {
         parameters: {
             query?: never;
@@ -1980,6 +2028,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["pending"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog-items/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["favorites"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2451,6 +2515,9 @@ export interface components {
             category?: string;
             /** Format: uuid */
             defaultVendorId?: string;
+            /** @enum {string} */
+            departmentScope?: "ALL" | "SELECTED";
+            departmentIds?: string[];
             active: boolean;
         };
         CatalogItemResponse: {
@@ -2463,6 +2530,9 @@ export interface components {
             category?: string;
             /** Format: uuid */
             defaultVendorId?: string;
+            /** @enum {string} */
+            departmentScope?: "ALL" | "SELECTED";
+            departmentIds?: string[];
             active?: boolean;
             /** Format: date-time */
             createdAt?: string;
@@ -3034,6 +3104,9 @@ export interface components {
             category?: string;
             /** Format: uuid */
             defaultVendorId?: string;
+            /** @enum {string} */
+            departmentScope?: "ALL" | "SELECTED";
+            departmentIds?: string[];
         };
         CreateBudgetRequest: {
             /** Format: uuid */
@@ -4347,6 +4420,46 @@ export interface operations {
             };
         };
     };
+    favorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unfavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     resolve: {
         parameters: {
             query?: never;
@@ -5474,6 +5587,28 @@ export interface operations {
             };
         };
     };
+    cloneRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchaseRequestResponse"];
+                };
+            };
+        };
+    };
     cancel_1: {
         parameters: {
             query?: never;
@@ -6351,6 +6486,7 @@ export interface operations {
                 category?: string;
                 active?: boolean;
                 q?: string;
+                departmentId?: string;
                 page?: number;
                 size?: number;
                 sort?: string;
@@ -7593,6 +7729,29 @@ export interface operations {
             };
         };
     };
+    popular: {
+        parameters: {
+            query?: {
+                departmentId?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CatalogItemResponse"][];
+                };
+            };
+        };
+    };
     pending: {
         parameters: {
             query?: never;
@@ -7609,6 +7768,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["NonCatalogLine"][];
+                };
+            };
+        };
+    };
+    favorites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CatalogItemResponse"][];
                 };
             };
         };

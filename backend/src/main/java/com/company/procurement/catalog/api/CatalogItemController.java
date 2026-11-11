@@ -60,7 +60,9 @@ public class CatalogItemController {
                 request.defaultPrice().toAmount(),
                 request.defaultPrice().currency(),
                 request.category(),
-                request.defaultVendorId()));
+                request.defaultVendorId(),
+                request.departmentScope(),
+                request.departmentIds()));
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
@@ -81,11 +83,13 @@ public class CatalogItemController {
       @RequestParam(required = false) String category,
       @RequestParam(required = false) Boolean active,
       @RequestParam(required = false) String q,
+      @RequestParam(required = false) UUID departmentId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "createdAt,desc") String sort) {
     Pageable pageable = PageRequests.of(page, size, sort, SORTABLE);
-    return PageResponse.from(items.search(category, active, q, pageable), mapper::toResponse);
+    return PageResponse.from(
+        items.search(category, active, q, departmentId, pageable), mapper::toResponse);
   }
 
   @PreAuthorize("@permissions.has('catalog:manage')")
@@ -102,6 +106,8 @@ public class CatalogItemController {
                 request.defaultPrice().currency(),
                 request.category(),
                 request.defaultVendorId(),
+                request.departmentScope(),
+                request.departmentIds(),
                 request.active())));
   }
 

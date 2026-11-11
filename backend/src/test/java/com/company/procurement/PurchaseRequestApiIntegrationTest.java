@@ -249,6 +249,79 @@ class PurchaseRequestApiIntegrationTest {
   }
 
   @Test
+  void catalogAudienceAndFavoritesRespectDepartment() throws Exception {
+    UUID otherDepartment = createDepartment(orgA, "Operations");
+    UUID item =
+        createCatalogItem(
+            "CAT-" + UUID.randomUUID().toString().substring(0, 8),
+            "Department item",
+            "EA",
+            "20.00",
+            "SELECTED",
+            List.of(departmentA.toString()));
+
+    mockMvc
+        .perform(
+            get("/api/v1/catalog-items")
+                .param("departmentId", otherDepartment.toString())
+                .with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath(
+                "$.content[*].id",
+                org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(item.toString()))));
+
+    mockMvc
+        .perform(
+            get("/api/v1/catalog-items")
+                .param("departmentId", departmentA.toString())
+                .with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[*].id", org.hamcrest.Matchers.hasItem(item.toString())));
+
+    mockMvc
+        .perform(get("/api/v1/users/me").with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(put("/api/v1/catalog-items/{id}/favorite", item).with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/v1/catalog-items/favorites").with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.hasItem(item.toString())));
+
+    mockMvc
+        .perform(delete("/api/v1/catalog-items/{id}/favorite", item).with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void reorderClonesRequestIntoANewDraft() throws Exception {
+    UUID sourceId = createRequest(orgA, departmentA, "Monthly order", lines(2, "15.00"), false);
+    MvcResult cloned =
+        mockMvc
+            .perform(
+                post("/api/v1/purchase-requests/{id}/clone", sourceId)
+                    .with(token(orgA, "REQUESTER"))
+                    .header(IDEMPOTENCY_HEADER, "clone-" + UUID.randomUUID()))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("DRAFT"))
+            .andReturn();
+    UUID clonedId =
+        UUID.fromString(JsonPath.read(cloned.getResponse().getContentAsString(), "$.id"));
+    assertThat(clonedId).isNotEqualTo(sourceId);
+
+    mockMvc
+        .perform(get("/api/v1/purchase-requests/{id}", clonedId).with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.requestNumber").value(matchesPattern("PR-\\d{4}-\\d{6}")))
+        .andExpect(jsonPath("$.lines.length()").value(1))
+        .andExpect(jsonPath("$.lines[0].quantity").value("2.0000"));
+  }
+
+  @Test
   void nonCatalogItemsAppearInAdminReviewQueue() throws Exception {
     createRequest(
         orgA,
@@ -612,19 +685,26 @@ class PurchaseRequestApiIntegrationTest {
 
   private UUID createCatalogItem(String sku, String name, String unit, String amount)
       throws Exception {
+    return createCatalogItem(sku, name, unit, amount, "ALL", List.of());
+  }
+
+  private UUID createCatalogItem(
+      String sku, String name, String unit, String amount, String scope, List<String> departments)
+      throws Exception {
+    Map<String, Object> body = new java.util.HashMap<>();
+    body.put("sku", sku);
+    body.put("name", name);
+    body.put("unit", unit);
+    body.put("defaultPrice", Map.of("amount", amount, "currency", "TZS"));
+    body.put("departmentScope", scope);
+    body.put("departmentIds", departments);
     MvcResult result =
         mockMvc
             .perform(
                 post("/api/v1/catalog-items")
                     .with(token(orgA, "ADMIN"))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        json(
-                            Map.of(
-                                "sku", sku,
-                                "name", name,
-                                "unit", unit,
-                                "defaultPrice", Map.of("amount", amount, "currency", "TZS")))))
+                    .content(json(body)))
             .andExpect(status().isCreated())
             .andReturn();
     return UUID.fromString(JsonPath.read(result.getResponse().getContentAsString(), "$.id"));

@@ -98,6 +98,33 @@ public class PurchaseRequestService {
   }
 
   @Transactional
+  public PurchaseRequest cloneRequest(UUID sourceId) {
+    PurchaseRequest source = get(sourceId);
+    List<PurchaseRequestLineCommand> lines =
+        source.getLines().stream()
+            .map(
+                line ->
+                    new PurchaseRequestLineCommand(
+                        line.getDescription(),
+                        line.getQuantity(),
+                        line.getUnit(),
+                        line.getUnitPrice(),
+                        line.getCatalogItemId(),
+                        line.getVendorId(),
+                        line.getNotes()))
+            .toList();
+    return create(
+        new PurchaseRequestCommand(
+            source.getTitle() + " (Reorder)",
+            source.getJustification(),
+            source.getDepartmentId(),
+            null,
+            source.getCurrency(),
+            false,
+            lines));
+  }
+
+  @Transactional
   public PurchaseRequest update(UUID id, PurchaseRequestCommand command, long expectedVersion) {
     PurchaseRequest request = requireEditableByOwner(id);
     assertVersion(request, expectedVersion);

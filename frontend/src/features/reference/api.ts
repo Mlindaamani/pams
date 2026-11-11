@@ -9,12 +9,35 @@ export async function listDepartments(): Promise<Page<Department>> {
   ) as Promise<Page<Department>>;
 }
 
-export async function listCatalogItems(): Promise<Page<CatalogItem>> {
+export async function listCatalogItems(departmentId?: string): Promise<Page<CatalogItem>> {
   return unwrap(
     api.GET('/api/v1/catalog-items', {
-      params: { query: { page: 0, size: 100, sort: 'name,asc' } },
+      params: {
+        query: { page: 0, size: 100, sort: 'name,asc', departmentId },
+      },
     }),
   ) as Promise<Page<CatalogItem>>;
+}
+
+export async function listFavoriteCatalogItems(): Promise<CatalogItem[]> {
+  return unwrap(api.GET('/api/v1/catalog-items/favorites')) as Promise<CatalogItem[]>;
+}
+
+export async function listPopularCatalogItems(
+  departmentId?: string,
+  limit = 10,
+): Promise<CatalogItem[]> {
+  return unwrap(
+    api.GET('/api/v1/catalog-items/popular', { params: { query: { departmentId, limit } } }),
+  ) as Promise<CatalogItem[]>;
+}
+
+export async function favoriteCatalogItem(id: string): Promise<void> {
+  await unwrap(api.PUT('/api/v1/catalog-items/{id}/favorite', { params: { path: { id } } }));
+}
+
+export async function unfavoriteCatalogItem(id: string): Promise<void> {
+  await unwrap(api.DELETE('/api/v1/catalog-items/{id}/favorite', { params: { path: { id } } }));
 }
 
 export async function createDepartment(body: { name: string }): Promise<Department> {
@@ -32,6 +55,8 @@ export async function createCatalogItem(body: {
   defaultPrice: { amount: string; currency: string };
   category?: string;
   defaultVendorId?: string;
+  departmentScope?: 'ALL' | 'SELECTED';
+  departmentIds?: string[];
 }): Promise<CatalogItem> {
   return unwrap(api.POST('/api/v1/catalog-items', { body }));
 }
@@ -44,6 +69,8 @@ export async function updateCatalogItem(
     defaultPrice: { amount: string; currency: string };
     category?: string;
     defaultVendorId?: string;
+    departmentScope?: 'ALL' | 'SELECTED';
+    departmentIds?: string[];
     active: boolean;
   },
 ): Promise<CatalogItem> {

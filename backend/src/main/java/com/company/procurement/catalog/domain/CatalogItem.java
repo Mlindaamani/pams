@@ -38,6 +38,13 @@ public class CatalogItem extends SoftDeletableEntity {
   @Column(name = "default_vendor_id")
   private UUID defaultVendorId;
 
+  @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+  @Column(name = "department_scope", nullable = false, length = 20)
+  private CatalogDepartmentScope departmentScope;
+
+  @jakarta.persistence.Transient
+  private java.util.List<UUID> departmentIds = new java.util.ArrayList<>();
+
   @Column(name = "active", nullable = false)
   private boolean active;
 
@@ -53,11 +60,12 @@ public class CatalogItem extends SoftDeletableEntity {
       BigDecimal defaultPrice,
       String currency,
       String category,
-      UUID defaultVendorId) {
+      UUID defaultVendorId,
+      CatalogDepartmentScope departmentScope) {
     super(organizationId);
     this.sku = requireText(sku, "sku");
     this.active = true;
-    updateDetails(name, unit, defaultPrice, currency, category, defaultVendorId);
+    updateDetails(name, unit, defaultPrice, currency, category, defaultVendorId, departmentScope);
   }
 
   public void updateDetails(
@@ -66,13 +74,15 @@ public class CatalogItem extends SoftDeletableEntity {
       BigDecimal defaultPrice,
       String currency,
       String category,
-      UUID defaultVendorId) {
+      UUID defaultVendorId,
+      CatalogDepartmentScope departmentScope) {
     this.name = requireText(name, "name");
     this.unit = requireText(unit, "unit");
     this.defaultPrice = requireNonNegative(defaultPrice);
     this.currency = requireCurrency(currency);
     this.category = trimToNull(category);
     this.defaultVendorId = defaultVendorId;
+    this.departmentScope = departmentScope == null ? CatalogDepartmentScope.ALL : departmentScope;
   }
 
   public void setActive(boolean active) {
@@ -105,6 +115,18 @@ public class CatalogItem extends SoftDeletableEntity {
 
   public UUID getDefaultVendorId() {
     return defaultVendorId;
+  }
+
+  public CatalogDepartmentScope getDepartmentScope() {
+    return departmentScope;
+  }
+
+  public java.util.List<UUID> getDepartmentIds() {
+    return departmentIds;
+  }
+
+  public void setDepartmentIds(java.util.List<UUID> departmentIds) {
+    this.departmentIds = departmentIds == null ? new java.util.ArrayList<>() : departmentIds;
   }
 
   public boolean isActive() {

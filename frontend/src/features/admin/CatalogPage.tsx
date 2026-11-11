@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 import {
+  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -29,6 +30,7 @@ import {
   createCatalogItem,
   deleteCatalogItem,
   listCatalogItems,
+  listDepartments,
   listNonCatalogReview,
   resolveNonCatalogReview,
   updateCatalogItem,
@@ -42,6 +44,8 @@ interface FormState {
   currency: string;
   category: string;
   defaultVendorId: string;
+  departmentScope: 'ALL' | 'SELECTED';
+  departmentIds: string[];
   active: boolean;
 }
 
@@ -53,14 +57,20 @@ const emptyForm: FormState = {
   currency: 'TZS',
   category: '',
   defaultVendorId: '',
+  departmentScope: 'ALL',
+  departmentIds: [],
   active: true,
 };
 
 export function CatalogPage() {
   const { branding } = useBranding();
   const queryClient = useQueryClient();
-  const items = useQuery({ queryKey: ['catalog-items'], queryFn: listCatalogItems });
+  const items = useQuery({
+    queryKey: ['catalog-items'],
+    queryFn: () => listCatalogItems(),
+  });
   const vendors = useQuery({ queryKey: ['vendors'], queryFn: () => listVendors({ size: 100 }) });
+  const departments = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogItem | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -85,6 +95,8 @@ export function CatalogPage() {
           defaultPrice: price,
           category: form.category || undefined,
           defaultVendorId: form.defaultVendorId || undefined,
+          departmentScope: form.departmentScope,
+          departmentIds: form.departmentScope === 'SELECTED' ? form.departmentIds : undefined,
           active: form.active,
         });
       }
@@ -95,6 +107,8 @@ export function CatalogPage() {
         defaultPrice: price,
         category: form.category || undefined,
         defaultVendorId: form.defaultVendorId || undefined,
+        departmentScope: form.departmentScope,
+        departmentIds: form.departmentScope === 'SELECTED' ? form.departmentIds : undefined,
       });
     },
     onSuccess: () => {
@@ -147,6 +161,8 @@ export function CatalogPage() {
       currency: item.defaultPrice?.currency ?? 'TZS',
       category: item.category ?? '',
       defaultVendorId: item.defaultVendorId ?? '',
+      departmentScope: item.departmentScope ?? 'ALL',
+      departmentIds: item.departmentIds ?? [],
       active: item.active ?? true,
     });
     setOpen(true);
@@ -302,6 +318,21 @@ export function CatalogPage() {
             },
             { key: 'category', label: 'Category', render: (item) => item.category ?? '—' },
             {
+              key: 'audience',
+              label: 'Available to',
+              render: (item) =>
+                item.departmentScope === 'SELECTED'
+                  ? (item.departmentIds ?? [])
+                      .map(
+                        (id) =>
+                          (departments.data?.content ?? []).find(
+                            (department) => department.id === id,
+                          )?.name ?? id,
+                      )
+                      .join(', ')
+                  : 'All departments',
+            },
+            {
               key: 'vendor',
               label: 'Default vendor',
               render: (item) =>
@@ -411,6 +442,35 @@ export function CatalogPage() {
                   </MenuItem>
                 ))}
             </TextField>
+            <TextField
+              select
+              label="Available to"
+              value={form.departmentScope}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  departmentScope: event.target.value as 'ALL' | 'SELECTED',
+                  departmentIds: event.target.value === 'ALL' ? [] : form.departmentIds,
+                })
+              }
+            >
+              <MenuItem value="ALL">All departments</MenuItem>
+              <MenuItem value="SELECTED">Selected departments</MenuItem>
+            </TextField>
+            {form.departmentScope === 'SELECTED' && (
+              <Autocomplete
+                multiple
+                options={departments.data?.content ?? []}
+                getOptionLabel={(department) => department.name ?? ''}
+                value={(departments.data?.content ?? []).filter((department) =>
+                  form.departmentIds.includes(department.id!),
+                )}
+                onChange={(_, value) =>
+                  setForm({ ...form, departmentIds: value.map((department) => department.id!) })
+                }
+                renderInput={(params) => <TextField {...params} label="Departments" required />}
+              />
+            )}
             {editing && (
               <TextField
                 select

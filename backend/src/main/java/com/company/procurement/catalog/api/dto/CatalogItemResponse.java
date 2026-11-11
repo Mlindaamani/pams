@@ -12,6 +12,8 @@ public record CatalogItemResponse(
     MoneyDto defaultPrice,
     String category,
     UUID defaultVendorId,
+    com.company.procurement.catalog.domain.CatalogDepartmentScope departmentScope,
+    java.util.List<UUID> departmentIds,
     boolean active,
     Instant createdAt,
     Instant updatedAt,
