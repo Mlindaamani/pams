@@ -8,4 +8,5 @@ public record CreateCatalogItemCommand(
     String unit,
     BigDecimal defaultPrice,
     String currency,
-    String category) {}
+    String category,
+    java.util.UUID defaultVendorId) {}

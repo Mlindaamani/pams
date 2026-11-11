@@ -1727,3 +1727,26 @@ access outright would also have hidden the approval timeline on their own reques
 
 **Consequences.** Requesters no longer appear in approval workflows, while retaining visibility of
 their own request progress.
+
+---
+
+## ADR-089 — Catalog-first request entry
+
+**Context.** Requesters manually entered description, unit, price and catalog choice for every line.
+This created errors and made catalog pricing advisory rather than authoritative.
+
+**Decision.**
+- Pre-fill and lock the requester's department from their profile; Procurement/Admin can override
+  with `purchase_request:create_for_department`.
+- Replace manual lines with catalog-first item cards. Only quantity, notes and justification remain
+  editable for catalog items.
+- Snapshot catalog name, unit, price and default vendor on the server. Client-supplied catalog
+  description/unit/price are ignored.
+- Add optional default vendor to catalog items.
+- Add non-catalog fallback lines with `is_non_catalog`, notes and `PENDING` review status.
+- Enforce one vendor per purchase request.
+- Add a catalog admin review queue for pending non-catalog lines.
+- Keep request-level justification and optional line notes.
+
+**Consequences.** Request creation is faster and catalog pricing cannot be tampered with. Department
+catalog audiences, popularity, favorites and reorder remain follow-up increments.

@@ -35,6 +35,9 @@ public class CatalogItem extends SoftDeletableEntity {
   @Column(name = "category", length = 100)
   private String category;
 
+  @Column(name = "default_vendor_id")
+  private UUID defaultVendorId;
+
   @Column(name = "active", nullable = false)
   private boolean active;
 
@@ -49,20 +52,27 @@ public class CatalogItem extends SoftDeletableEntity {
       String unit,
       BigDecimal defaultPrice,
       String currency,
-      String category) {
+      String category,
+      UUID defaultVendorId) {
     super(organizationId);
     this.sku = requireText(sku, "sku");
     this.active = true;
-    updateDetails(name, unit, defaultPrice, currency, category);
+    updateDetails(name, unit, defaultPrice, currency, category, defaultVendorId);
   }
 
   public void updateDetails(
-      String name, String unit, BigDecimal defaultPrice, String currency, String category) {
+      String name,
+      String unit,
+      BigDecimal defaultPrice,
+      String currency,
+      String category,
+      UUID defaultVendorId) {
     this.name = requireText(name, "name");
     this.unit = requireText(unit, "unit");
     this.defaultPrice = requireNonNegative(defaultPrice);
     this.currency = requireCurrency(currency);
     this.category = trimToNull(category);
+    this.defaultVendorId = defaultVendorId;
   }
 
   public void setActive(boolean active) {
@@ -91,6 +101,10 @@ public class CatalogItem extends SoftDeletableEntity {
 
   public String getCategory() {
     return category;
+  }
+
+  public UUID getDefaultVendorId() {
+    return defaultVendorId;
   }
 
   public boolean isActive() {

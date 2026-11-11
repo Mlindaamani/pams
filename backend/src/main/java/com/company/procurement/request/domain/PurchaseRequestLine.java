@@ -4,6 +4,8 @@ import com.company.procurement.shared.domain.TenantEntity;
 import com.company.procurement.shared.domain.TenantFilter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -25,6 +27,19 @@ public class PurchaseRequestLine extends TenantEntity {
 
   @Column(name = "catalog_item_id")
   private UUID catalogItemId;
+
+  @Column(name = "vendor_id")
+  private UUID vendorId;
+
+  @Column(name = "is_non_catalog", nullable = false)
+  private boolean nonCatalog;
+
+  @Column(name = "notes", length = 500)
+  private String notes;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "catalog_review_status", nullable = false, length = 20)
+  private CatalogReviewStatus catalogReviewStatus;
 
   @Column(name = "description", nullable = false, length = 500)
   private String description;
@@ -56,6 +71,10 @@ public class PurchaseRequestLine extends TenantEntity {
       String unit,
       BigDecimal unitPrice,
       UUID catalogItemId,
+      UUID vendorId,
+      boolean nonCatalog,
+      String notes,
+      CatalogReviewStatus catalogReviewStatus,
       int position) {
     super(organizationId);
     this.request = Objects.requireNonNull(request, "request");
@@ -64,6 +83,11 @@ public class PurchaseRequestLine extends TenantEntity {
     this.unit = requireText(unit, "unit");
     this.unitPrice = requireNonNegative(unitPrice, "unitPrice");
     this.catalogItemId = catalogItemId;
+    this.vendorId = vendorId;
+    this.nonCatalog = nonCatalog;
+    this.notes = trimToNull(notes);
+    this.catalogReviewStatus =
+        catalogReviewStatus == null ? CatalogReviewStatus.NOT_REQUIRED : catalogReviewStatus;
     this.position = position;
     this.lineTotal = this.quantity.multiply(this.unitPrice).setScale(4, RoundingMode.HALF_UP);
   }
@@ -92,6 +116,22 @@ public class PurchaseRequestLine extends TenantEntity {
     return catalogItemId;
   }
 
+  public UUID getVendorId() {
+    return vendorId;
+  }
+
+  public boolean isNonCatalog() {
+    return nonCatalog;
+  }
+
+  public String getNotes() {
+    return notes;
+  }
+
+  public CatalogReviewStatus getCatalogReviewStatus() {
+    return catalogReviewStatus;
+  }
+
   public int getPosition() {
     return position;
   }
@@ -111,6 +151,14 @@ public class PurchaseRequestLine extends TenantEntity {
       throw new IllegalArgumentException(field + " must be positive");
     }
     return value;
+  }
+
+  private static String trimToNull(String value) {
+    if (value == null) {
+      return null;
+    }
+    String trimmed = value.trim();
+    return trimmed.isEmpty() ? null : trimmed;
   }
 
   private static BigDecimal requireNonNegative(BigDecimal value, String field) {

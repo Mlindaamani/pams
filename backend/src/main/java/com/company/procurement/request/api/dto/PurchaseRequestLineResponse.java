@@ -10,4 +10,8 @@ public record PurchaseRequestLineResponse(
     String unit,
     MoneyDto unitPrice,
     MoneyDto lineTotal,
-    UUID catalogItemId) {}
+    UUID catalogItemId,
+    UUID vendorId,
+    boolean nonCatalog,
+    String notes,
+    String catalogReviewStatus) {}

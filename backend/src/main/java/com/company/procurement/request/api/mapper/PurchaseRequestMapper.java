@@ -36,6 +36,10 @@ public interface PurchaseRequestMapper {
         line.getUnit(),
         MoneyDto.of(line.getUnitPrice(), currency),
         MoneyDto.of(line.getLineTotal(), currency),
-        line.getCatalogItemId());
+        line.getCatalogItemId(),
+        line.getVendorId(),
+        line.isNonCatalog(),
+        line.getNotes(),
+        line.getCatalogReviewStatus().name());
   }
 }

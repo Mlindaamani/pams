@@ -43,7 +43,8 @@ public class CatalogItemService {
             command.unit(),
             command.defaultPrice(),
             command.currency(),
-            command.category());
+            command.category(),
+            command.defaultVendorId());
     return items.save(item);
   }
 
@@ -55,7 +56,8 @@ public class CatalogItemService {
         command.unit(),
         command.defaultPrice(),
         command.currency(),
-        command.category());
+        command.category(),
+        command.defaultVendorId());
     item.setActive(command.active());
     return items.save(item);
   }

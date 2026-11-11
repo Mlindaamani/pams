@@ -8,4 +8,5 @@ public record UpdateCatalogItemCommand(
     BigDecimal defaultPrice,
     String currency,
     String category,
+    java.util.UUID defaultVendorId,
     boolean active) {}

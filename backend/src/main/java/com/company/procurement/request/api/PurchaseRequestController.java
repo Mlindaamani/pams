@@ -163,7 +163,9 @@ public class PurchaseRequestController {
                         line.quantity(),
                         line.unit(),
                         line.unitPrice(),
-                        line.catalogItemId()))
+                        line.catalogItemId(),
+                        line.vendorId(),
+                        line.notes()))
             .toList();
     return new PurchaseRequestCommand(
         request.title(),

@@ -196,6 +196,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog-items/non-catalog-review/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["resolve"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/budgets/{id}": {
         parameters: {
             query?: never;
@@ -1956,6 +1972,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog-items/non-catalog-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pending"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -2196,6 +2228,9 @@ export interface components {
             unitPrice: number;
             /** Format: uuid */
             catalogItemId?: string;
+            /** Format: uuid */
+            vendorId?: string;
+            notes?: string;
         };
         PurchaseRequestRequest: {
             title: string;
@@ -2218,6 +2253,11 @@ export interface components {
             lineTotal?: components["schemas"]["MoneyDto"];
             /** Format: uuid */
             catalogItemId?: string;
+            /** Format: uuid */
+            vendorId?: string;
+            nonCatalog?: boolean;
+            notes?: string;
+            catalogReviewStatus?: string;
         };
         PurchaseRequestResponse: {
             /** Format: uuid */
@@ -2409,6 +2449,8 @@ export interface components {
             unit: string;
             defaultPrice: components["schemas"]["MoneyRequest"];
             category?: string;
+            /** Format: uuid */
+            defaultVendorId?: string;
             active: boolean;
         };
         CatalogItemResponse: {
@@ -2419,6 +2461,8 @@ export interface components {
             unit?: string;
             defaultPrice?: components["schemas"]["MoneyDto"];
             category?: string;
+            /** Format: uuid */
+            defaultVendorId?: string;
             active?: boolean;
             /** Format: date-time */
             createdAt?: string;
@@ -2426,6 +2470,9 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+        };
+        ResolveRequest: {
+            status: string;
         };
         UpdateBudgetRequest: {
             allocated: components["schemas"]["MoneyRequest"];
@@ -2985,6 +3032,8 @@ export interface components {
             unit: string;
             defaultPrice: components["schemas"]["MoneyRequest"];
             category?: string;
+            /** Format: uuid */
+            defaultVendorId?: string;
         };
         CreateBudgetRequest: {
             /** Format: uuid */
@@ -3511,6 +3560,21 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        NonCatalogLine: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            requestId?: string;
+            requestNumber?: string;
+            requesterName?: string;
+            departmentName?: string;
+            description?: string;
+            unit?: string;
+            unitPrice?: number;
+            notes?: string;
+            /** Format: date-time */
+            createdAt?: string;
         };
         PageResponseBudgetResponse: {
             content?: components["schemas"]["BudgetResponse"][];
@@ -4273,6 +4337,30 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -7501,6 +7589,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["DelegationResponse"][];
+                };
+            };
+        };
+    };
+    pending: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NonCatalogLine"][];
                 };
             };
         };

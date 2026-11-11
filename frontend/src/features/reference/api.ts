@@ -31,6 +31,7 @@ export async function createCatalogItem(body: {
   unit: string;
   defaultPrice: { amount: string; currency: string };
   category?: string;
+  defaultVendorId?: string;
 }): Promise<CatalogItem> {
   return unwrap(api.POST('/api/v1/catalog-items', { body }));
 }
@@ -42,6 +43,7 @@ export async function updateCatalogItem(
     unit: string;
     defaultPrice: { amount: string; currency: string };
     category?: string;
+    defaultVendorId?: string;
     active: boolean;
   },
 ): Promise<CatalogItem> {
@@ -60,4 +62,35 @@ export async function bulkDeleteCatalogItems(ids: string[]): Promise<number> {
 export async function bulkDeleteDepartments(ids: string[]): Promise<number> {
   const result = await unwrap(api.POST('/api/v1/departments/bulk-delete', { body: { ids } }));
   return result.processed ?? 0;
+}
+
+export interface NonCatalogReviewLine {
+  id: string;
+  requestId: string;
+  requestNumber?: string;
+  requesterName?: string;
+  departmentName?: string;
+  description?: string;
+  unit?: string;
+  unitPrice?: number;
+  notes?: string;
+  createdAt?: string;
+}
+
+export async function listNonCatalogReview(): Promise<NonCatalogReviewLine[]> {
+  return unwrap(api.GET('/api/v1/catalog-items/non-catalog-review')) as Promise<
+    NonCatalogReviewLine[]
+  >;
+}
+
+export async function resolveNonCatalogReview(
+  id: string,
+  status: 'ADDED' | 'DISMISSED',
+): Promise<void> {
+  await unwrap(
+    api.PUT('/api/v1/catalog-items/non-catalog-review/{lineId}', {
+      params: { path: { lineId: id } },
+      body: { status },
+    }),
+  );
 }

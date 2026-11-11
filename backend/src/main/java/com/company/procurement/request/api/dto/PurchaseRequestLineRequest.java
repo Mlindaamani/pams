@@ -20,4 +20,6 @@ public record PurchaseRequestLineRequest(
     @NotNull(message = "unitPrice is required")
         @DecimalMin(value = "0.0000", message = "unitPrice must not be negative")
         BigDecimal unitPrice,
-    UUID catalogItemId) {}
+    UUID catalogItemId,
+    UUID vendorId,
+    @Size(max = 500, message = "notes must be at most 500 characters") String notes) {}

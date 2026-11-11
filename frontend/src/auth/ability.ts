@@ -14,6 +14,7 @@ export type Action =
   | 'issue'
   | 'receive'
   | 'convert'
+  | 'request-for-any-department'
   | 'export';
 
 export type Subject =
@@ -53,6 +54,9 @@ export function defineAbilityFor(permissions: string[], features: string[] = [])
 
   if (has('notification:read')) can('read', 'Notification');
   if (feature('requests') && has('purchase_request:create')) can('create', 'PurchaseRequest');
+  if (has('purchase_request:create_for_department')) {
+    can('request-for-any-department', 'PurchaseRequest');
+  }
   if (feature('requests') && has('purchase_request:read')) can('read', 'PurchaseRequest');
   if (feature('requests') && has('purchase_request:update')) can('update', 'PurchaseRequest');
   if (feature('requests') && has('purchase_request:delete')) can('delete', 'PurchaseRequest');

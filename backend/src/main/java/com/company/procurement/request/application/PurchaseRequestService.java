@@ -5,7 +5,9 @@ import com.company.procurement.audit.application.AuditEventService;
 import com.company.procurement.budget.application.BudgetService;
 import com.company.procurement.budget.domain.BudgetExceededException;
 import com.company.procurement.catalog.application.CatalogItemService;
+import com.company.procurement.catalog.domain.CatalogItem;
 import com.company.procurement.organization.application.DepartmentService;
+import com.company.procurement.request.domain.CatalogReviewStatus;
 import com.company.procurement.request.domain.PurchaseRequest;
 import com.company.procurement.request.domain.PurchaseRequestFilter;
 import com.company.procurement.request.domain.PurchaseRequestLineDraft;
@@ -78,7 +80,6 @@ public class PurchaseRequestService {
   public PurchaseRequest create(PurchaseRequestCommand command) {
     UUID organizationId = TenantContext.require();
     departments.get(command.departmentId());
-    validateCatalogReferences(command.lines());
     PurchaseRequest request =
         new PurchaseRequest(
             organizationId,
@@ -92,7 +93,7 @@ public class PurchaseRequestService {
             command.neededBy(),
             command.currency(),
             command.budgetExceptionRequested());
-    request.replaceLines(toDrafts(command.lines()));
+    request.replaceLines(resolveLines(command.lines(), command.currency()));
     return requests.save(request);
   }
 
@@ -101,14 +102,13 @@ public class PurchaseRequestService {
     PurchaseRequest request = requireEditableByOwner(id);
     assertVersion(request, expectedVersion);
     departments.get(command.departmentId());
-    validateCatalogReferences(command.lines());
     request.updateHeader(
         command.title(),
         command.justification(),
         command.neededBy(),
         command.departmentId(),
         command.currency());
-    request.replaceLines(toDrafts(command.lines()));
+    request.replaceLines(resolveLines(command.lines(), command.currency()));
     return requests.save(request);
   }
 
@@ -355,30 +355,62 @@ public class PurchaseRequestService {
     }
   }
 
-  private void validateCatalogReferences(List<PurchaseRequestLineCommand> lines) {
-    if (lines == null) {
-      return;
-    }
-    lines.stream()
-        .map(PurchaseRequestLineCommand::catalogItemId)
-        .filter(java.util.Objects::nonNull)
-        .distinct()
-        .forEach(catalogItems::get);
-  }
-
-  private static List<PurchaseRequestLineDraft> toDrafts(List<PurchaseRequestLineCommand> lines) {
+  private List<PurchaseRequestLineDraft> resolveLines(
+      List<PurchaseRequestLineCommand> lines, String requestCurrency) {
     if (lines == null) {
       return List.of();
     }
-    return lines.stream()
-        .map(
-            line ->
-                new PurchaseRequestLineDraft(
-                    line.description(),
-                    line.quantity(),
-                    line.unit(),
-                    line.unitPrice(),
-                    line.catalogItemId()))
-        .toList();
+    java.util.Map<UUID, CatalogItem> catalogCache = new java.util.HashMap<>();
+    java.util.Set<UUID> vendors = new java.util.LinkedHashSet<>();
+    java.util.List<PurchaseRequestLineDraft> drafts = new java.util.ArrayList<>();
+    for (PurchaseRequestLineCommand line : lines) {
+      UUID vendorId;
+      PurchaseRequestLineDraft draft;
+      if (line.catalogItemId() != null) {
+        CatalogItem item = catalogCache.computeIfAbsent(line.catalogItemId(), catalogItems::get);
+        if (!item.isActive()) {
+          throw new BusinessRuleException(
+              "Catalog item %s is not available".formatted(item.getName()));
+        }
+        if (!item.getCurrency().equalsIgnoreCase(requestCurrency)) {
+          throw new BusinessRuleException(
+              "Catalog item %s uses %s, not %s"
+                  .formatted(item.getName(), item.getCurrency(), requestCurrency));
+        }
+        vendorId = item.getDefaultVendorId();
+        draft =
+            new PurchaseRequestLineDraft(
+                item.getName(),
+                line.quantity(),
+                item.getUnit(),
+                item.getDefaultPrice(),
+                item.getId(),
+                vendorId,
+                false,
+                line.notes(),
+                CatalogReviewStatus.NOT_REQUIRED);
+      } else {
+        vendorId = line.vendorId();
+        draft =
+            new PurchaseRequestLineDraft(
+                line.description(),
+                line.quantity(),
+                line.unit(),
+                line.unitPrice(),
+                null,
+                vendorId,
+                true,
+                line.notes(),
+                CatalogReviewStatus.PENDING);
+      }
+      if (vendorId != null) {
+        vendors.add(vendorId);
+      }
+      drafts.add(draft);
+    }
+    if (vendors.size() > 1) {
+      throw new BusinessRuleException("A purchase request can only contain items from one vendor");
+    }
+    return drafts;
   }
 }

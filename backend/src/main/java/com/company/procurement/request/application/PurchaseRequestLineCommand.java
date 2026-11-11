@@ -8,4 +8,6 @@ public record PurchaseRequestLineCommand(
     BigDecimal quantity,
     String unit,
     BigDecimal unitPrice,
-    UUID catalogItemId) {}
+    UUID catalogItemId,
+    UUID vendorId,
+    String notes) {}

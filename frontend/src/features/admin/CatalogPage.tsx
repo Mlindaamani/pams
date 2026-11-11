@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link as RouterLink } from 'react-router-dom';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -8,7 +10,10 @@ import {
   DialogTitle,
   MenuItem,
   Stack,
+  Tab,
+  Tabs,
   TextField,
+  Typography,
 } from '@mui/material';
 import { Can } from '@/auth/AbilityProvider';
 import { useBranding } from '@/branding/BrandingProvider';
@@ -16,13 +21,16 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { EmptyState, Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
-import { money } from '@/lib/format';
+import { dateOnly, money } from '@/lib/format';
+import { listVendors } from '@/features/vendors/api';
 import type { CatalogItem } from '@/api/types';
 import {
   bulkDeleteCatalogItems,
   createCatalogItem,
   deleteCatalogItem,
   listCatalogItems,
+  listNonCatalogReview,
+  resolveNonCatalogReview,
   updateCatalogItem,
 } from '@/features/reference/api';
 
@@ -33,6 +41,7 @@ interface FormState {
   amount: string;
   currency: string;
   category: string;
+  defaultVendorId: string;
   active: boolean;
 }
 
@@ -43,6 +52,7 @@ const emptyForm: FormState = {
   amount: '0.0000',
   currency: 'TZS',
   category: '',
+  defaultVendorId: '',
   active: true,
 };
 
@@ -50,11 +60,19 @@ export function CatalogPage() {
   const { branding } = useBranding();
   const queryClient = useQueryClient();
   const items = useQuery({ queryKey: ['catalog-items'], queryFn: listCatalogItems });
+  const vendors = useQuery({ queryKey: ['vendors'], queryFn: () => listVendors({ size: 100 }) });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogItem | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [deleting, setDeleting] = useState<CatalogItem | null>(null);
   const [bulkIds, setBulkIds] = useState<string[] | null>(null);
+  const [tab, setTab] = useState(0);
+  const [reviewLineId, setReviewLineId] = useState<string | null>(null);
+  const reviews = useQuery({
+    queryKey: ['non-catalog-review'],
+    queryFn: listNonCatalogReview,
+    enabled: tab === 1,
+  });
 
   const invalidate = () => void queryClient.invalidateQueries({ queryKey: ['catalog-items'] });
   const save = useMutation({
@@ -66,6 +84,7 @@ export function CatalogPage() {
           unit: form.unit,
           defaultPrice: price,
           category: form.category || undefined,
+          defaultVendorId: form.defaultVendorId || undefined,
           active: form.active,
         });
       }
@@ -75,14 +94,27 @@ export function CatalogPage() {
         unit: form.unit,
         defaultPrice: price,
         category: form.category || undefined,
+        defaultVendorId: form.defaultVendorId || undefined,
       });
     },
     onSuccess: () => {
       toast.success(editing ? 'Catalog item updated.' : 'Catalog item created.');
+      if (reviewLineId) {
+        resolveReview.mutate({ id: reviewLineId, status: 'ADDED' });
+        setReviewLineId(null);
+      }
       setOpen(false);
       setEditing(null);
       setForm(emptyForm);
       invalidate();
+    },
+  });
+  const resolveReview = useMutation({
+    mutationFn: (input: { id: string; status: 'ADDED' | 'DISMISSED' }) =>
+      resolveNonCatalogReview(input.id, input.status),
+    onSuccess: () => {
+      toast.success('Review item updated.');
+      void queryClient.invalidateQueries({ queryKey: ['non-catalog-review'] });
     },
   });
   const remove = useMutation({
@@ -114,6 +146,7 @@ export function CatalogPage() {
       amount: item.defaultPrice?.amount ?? '0.0000',
       currency: item.defaultPrice?.currency ?? 'TZS',
       category: item.category ?? '',
+      defaultVendorId: item.defaultVendorId ?? '',
       active: item.active ?? true,
     });
     setOpen(true);
@@ -134,7 +167,99 @@ export function CatalogPage() {
           </Can>
         }
       />
-      {rows.length === 0 ? (
+      <Tabs value={tab} onChange={(_, value: number) => setTab(value)} sx={{ mb: 2 }}>
+        <Tab label="Catalog items" />
+        <Tab
+          label={`Non-catalog review${reviews.data?.length ? ` (${reviews.data.length})` : ''}`}
+        />
+      </Tabs>
+      {tab === 1 ? (
+        <DataTable
+          ariaLabel="Non-catalog review"
+          rows={reviews.data ?? []}
+          getRowId={(line) => line.id}
+          emptyMessage="No non-catalog items are waiting for review."
+          columns={[
+            {
+              key: 'request',
+              label: 'Request',
+              render: (line) => (
+                <Button component={RouterLink} to={`/requests/${line.requestId}`} size="small">
+                  {line.requestNumber ?? line.requestId.slice(0, 8)}
+                </Button>
+              ),
+            },
+            {
+              key: 'requester',
+              label: 'Requester',
+              render: (line) => line.requesterName ?? '—',
+            },
+            {
+              key: 'department',
+              label: 'Department',
+              render: (line) => line.departmentName ?? '—',
+            },
+            {
+              key: 'item',
+              label: 'Item',
+              render: (line) => (
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>
+                    {line.description}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {line.notes ?? 'No note'}
+                  </Typography>
+                </Box>
+              ),
+            },
+            { key: 'unit', label: 'Unit', render: (line) => line.unit ?? '—' },
+            {
+              key: 'price',
+              label: 'Estimated price',
+              align: 'right',
+              render: (line) => money({ amount: String(line.unitPrice ?? 0), currency: 'TZS' }),
+            },
+            {
+              key: 'created',
+              label: 'Requested',
+              render: (line) => dateOnly(line.createdAt),
+            },
+            {
+              key: 'actions',
+              label: 'Actions',
+              align: 'right',
+              render: (line) => (
+                <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setEditing(null);
+                      setReviewLineId(line.id);
+                      setForm({
+                        ...emptyForm,
+                        name: line.description ?? '',
+                        unit: line.unit ?? 'EA',
+                        amount: String(line.unitPrice ?? 0),
+                      });
+                      setOpen(true);
+                    }}
+                  >
+                    Add to catalog
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => resolveReview.mutate({ id: line.id, status: 'DISMISSED' })}
+                  >
+                    Dismiss
+                  </Button>
+                </Stack>
+              ),
+            },
+          ]}
+        />
+      ) : rows.length === 0 ? (
         <EmptyState message="No catalog items yet." />
       ) : (
         <DataTable
@@ -176,6 +301,13 @@ export function CatalogPage() {
               render: (item) => money(item.defaultPrice),
             },
             { key: 'category', label: 'Category', render: (item) => item.category ?? '—' },
+            {
+              key: 'vendor',
+              label: 'Default vendor',
+              render: (item) =>
+                (vendors.data?.content ?? []).find((vendor) => vendor.id === item.defaultVendorId)
+                  ?.name ?? '—',
+            },
             { key: 'active', label: 'Active', render: (item) => (item.active ? 'Yes' : 'No') },
             {
               key: 'actions',
@@ -264,6 +396,21 @@ export function CatalogPage() {
               value={form.category}
               onChange={(event) => setForm({ ...form, category: event.target.value })}
             />
+            <TextField
+              select
+              label="Default vendor"
+              value={form.defaultVendorId}
+              onChange={(event) => setForm({ ...form, defaultVendorId: event.target.value })}
+            >
+              <MenuItem value="">Vendor to be confirmed</MenuItem>
+              {(vendors.data?.content ?? [])
+                .filter((vendor) => vendor.status === 'ACTIVE')
+                .map((vendor) => (
+                  <MenuItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </MenuItem>
+                ))}
+            </TextField>
             {editing && (
               <TextField
                 select

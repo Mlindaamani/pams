@@ -199,6 +199,95 @@ class PurchaseRequestApiIntegrationTest {
   }
 
   @Test
+  void catalogLinesUseSnapshotsAndCustomLinesNeedReview() throws Exception {
+    UUID catalogItemId = createCatalogItem("CAT-PAPER", "Printer paper", "Pack of 10", "100.00");
+    List<Map<String, Object>> requestLines =
+        List.of(
+            Map.of(
+                "description",
+                "Tampered description",
+                "quantity",
+                2,
+                "unit",
+                "BOX",
+                "unitPrice",
+                new BigDecimal("1.00"),
+                "catalogItemId",
+                catalogItemId.toString(),
+                "notes",
+                "Urgent delivery"),
+            Map.of(
+                "description", "Custom toner",
+                "quantity", 1,
+                "unit", "EA",
+                "unitPrice", new BigDecimal("50.00"),
+                "notes", "Not in catalog"));
+
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/api/v1/purchase-requests")
+                    .with(token(orgA, "REQUESTER"))
+                    .header(IDEMPOTENCY_HEADER, "catalog-snapshot-" + UUID.randomUUID())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestBody(departmentA, "Catalog snapshot", requestLines, false)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    UUID requestId =
+        UUID.fromString(JsonPath.read(created.getResponse().getContentAsString(), "$.id"));
+
+    mockMvc
+        .perform(get("/api/v1/purchase-requests/{id}", requestId).with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lines[0].description").value("Printer paper"))
+        .andExpect(jsonPath("$.lines[0].unit").value("Pack of 10"))
+        .andExpect(jsonPath("$.lines[0].unitPrice.amount").value("100.0000"))
+        .andExpect(jsonPath("$.lines[0].nonCatalog").value(false))
+        .andExpect(jsonPath("$.lines[0].notes").value("Urgent delivery"))
+        .andExpect(jsonPath("$.lines[1].nonCatalog").value(true))
+        .andExpect(jsonPath("$.lines[1].catalogReviewStatus").value("PENDING"));
+  }
+
+  @Test
+  void nonCatalogItemsAppearInAdminReviewQueue() throws Exception {
+    createRequest(
+        orgA,
+        departmentA,
+        "Custom item request",
+        List.of(
+            Map.of(
+                "description", "Custom toner",
+                "quantity", 1,
+                "unit", "EA",
+                "unitPrice", new BigDecimal("50.00"),
+                "notes", "Not in catalog")),
+        false);
+
+    MvcResult queue =
+        mockMvc
+            .perform(get("/api/v1/catalog-items/non-catalog-review").with(token(orgA, "ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].description").value("Custom toner"))
+            .andReturn();
+    UUID lineId =
+        UUID.fromString(JsonPath.read(queue.getResponse().getContentAsString(), "$[0].id"));
+
+    mockMvc
+        .perform(
+            put("/api/v1/catalog-items/non-catalog-review/{id}", lineId)
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("status", "DISMISSED"))))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/v1/catalog-items/non-catalog-review").with(token(orgA, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
+
+  @Test
   void submitReservesBudgetAndCancelReleasesIt() throws Exception {
     UUID budgetId = createBudget(orgA, departmentA, "1000.00");
     UUID requestId = createRequest(orgA, departmentA, "Laptops", lines(2, "125.00"), false);
@@ -519,6 +608,26 @@ class PurchaseRequestApiIntegrationTest {
                                     "approverRole", "APPROVER",
                                     "slaHours", 24))))))
         .andExpect(status().isCreated());
+  }
+
+  private UUID createCatalogItem(String sku, String name, String unit, String amount)
+      throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/api/v1/catalog-items")
+                    .with(token(orgA, "ADMIN"))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        json(
+                            Map.of(
+                                "sku", sku,
+                                "name", name,
+                                "unit", unit,
+                                "defaultPrice", Map.of("amount", amount, "currency", "TZS")))))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return UUID.fromString(JsonPath.read(result.getResponse().getContentAsString(), "$.id"));
   }
 
   private UUID createBudget(UUID organizationId, UUID departmentId, String amount)

@@ -59,7 +59,8 @@ public class CatalogItemController {
                 request.unit(),
                 request.defaultPrice().toAmount(),
                 request.defaultPrice().currency(),
-                request.category()));
+                request.category(),
+                request.defaultVendorId()));
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
@@ -100,6 +101,7 @@ public class CatalogItemController {
                 request.defaultPrice().toAmount(),
                 request.defaultPrice().currency(),
                 request.category(),
+                request.defaultVendorId(),
                 request.active())));
   }
 

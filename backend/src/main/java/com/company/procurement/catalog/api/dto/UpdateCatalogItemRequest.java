@@ -15,4 +15,5 @@ public record UpdateCatalogItemRequest(
         String unit,
     @NotNull(message = "defaultPrice is required") @Valid MoneyRequest defaultPrice,
     @Size(max = 100, message = "category must be at most 100 characters") String category,
+    java.util.UUID defaultVendorId,
     @NotNull(message = "active is required") Boolean active) {}

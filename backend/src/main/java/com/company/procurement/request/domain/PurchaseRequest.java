@@ -141,6 +141,10 @@ public class PurchaseRequest extends SoftDeletableEntity {
               draft.unit(),
               draft.unitPrice(),
               draft.catalogItemId(),
+              draft.vendorId(),
+              draft.nonCatalog(),
+              draft.notes(),
+              draft.catalogReviewStatus(),
               position++));
     }
     recalculateTotal();

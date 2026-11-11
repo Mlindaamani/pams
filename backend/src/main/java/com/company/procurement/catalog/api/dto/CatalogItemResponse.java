@@ -11,6 +11,7 @@ public record CatalogItemResponse(
     String unit,
     MoneyDto defaultPrice,
     String category,
+    UUID defaultVendorId,
     boolean active,
     Instant createdAt,
     Instant updatedAt,
