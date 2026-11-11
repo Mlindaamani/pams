@@ -192,6 +192,10 @@ export function RequestDetailPage() {
 
   const data = request.data;
   const allowed = new Set(actionsQuery.data?.actions ?? []);
+  const requestVendorIds = [
+    ...new Set((data.lines ?? []).map((line) => line.vendorId).filter(Boolean)),
+  ] as string[];
+  const requestVendorId = requestVendorIds.length === 1 ? requestVendorIds[0] : '';
   const editable = allowed.has('EDIT');
   const canSubmit = allowed.has('SUBMIT');
 
@@ -322,7 +326,10 @@ export function RequestDetailPage() {
                 variant="contained"
                 color="secondary"
                 size="small"
-                onClick={() => setPoOpen(true)}
+                onClick={() => {
+                  if (requestVendorId) setVendorId(requestVendorId);
+                  setPoOpen(true);
+                }}
               >
                 Create PO
               </Button>
@@ -553,7 +560,11 @@ export function RequestDetailPage() {
               select
               label="Vendor"
               value={vendorId}
+              disabled={Boolean(requestVendorId)}
               onChange={(event) => setVendorId(event.target.value)}
+              helperText={
+                requestVendorId ? 'Vendor is locked from the selected catalog items.' : undefined
+              }
             >
               {(vendors.data?.content ?? [])
                 .filter((vendor) => vendor.status === 'ACTIVE')

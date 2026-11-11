@@ -500,6 +500,25 @@ class PurchaseOrderAndNotificationIntegrationTest {
   }
 
   @Test
+  void purchaseOrderCanBeReorderedIntoANewRequest() throws Exception {
+    UUID requestId = createApprovedRequest("Reorder source", "40.00");
+    MvcResult created = createPurchaseOrder(requestId);
+    UUID poId = UUID.fromString(JsonPath.read(created.getResponse().getContentAsString(), "$.id"));
+
+    MvcResult reordered =
+        mockMvc
+            .perform(
+                post("/api/v1/purchase-orders/{id}/reorder", poId)
+                    .with(token(org, "ADMIN"))
+                    .header(IDEMPOTENCY, "po-reorder-" + poId))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("DRAFT"))
+            .andReturn();
+    String newRequestId = JsonPath.read(reordered.getResponse().getContentAsString(), "$.id");
+    assertThat(newRequestId).isNotEqualTo(requestId.toString());
+  }
+
+  @Test
   void recordsPartialAndCompleteGoodsReceipts() throws Exception {
     UUID requestId = createApprovedRequest("Receive me", "40.00", 4);
     MvcResult created = createPurchaseOrder(requestId);

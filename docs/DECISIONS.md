@@ -1792,3 +1792,26 @@ catalog-first request form.
 
 **Consequences.** Requesters can find relevant items faster and repeat recurring purchases without
 re-entering line details.
+
+---
+
+## ADR-092 — Purchase-order reorder, vendor locking and starter catalogs
+
+**Context.** Requesters could reorder previous requests, but not directly from a past PO. Catalog
+items stored a default vendor, but PO creation still allowed choosing a different vendor. New
+tenants also had almost no useful starter catalog.
+
+**Decision.**
+- Add `POST /purchase-orders/{id}/reorder`, cloning the linked source request into a new draft.
+- Expose Reorder on purchase-order detail pages.
+- Include line vendor snapshots in request-to-PO conversion and reject a PO vendor that conflicts
+  with the request's locked vendor.
+- Pre-fill and lock the PO vendor dialog when the request lines share one vendor.
+- Seed starter catalogs in `V41`:
+  - ICT monitors, mice, keyboards, laptops, docking, storage, printers, network and software.
+  - Finance scanners, shredders, safes, filing, stationery and accounting software.
+  - General furniture, stationery, pantry, cleaning, safety and office equipment.
+- Department-specific seed items are scoped to the matching department; general items are global.
+
+**Consequences.** Repeated purchasing works from either requests or POs, vendor selection stays
+consistent with catalog choices, and new demo/tenant catalogs are immediately useful.

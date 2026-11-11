@@ -40,7 +40,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
       Pattern.compile("^/api/v1/approvals/bulk-approve$");
   private static final Pattern PURCHASE_ORDER_PATH =
       Pattern.compile(
-          "^/api/v1/(purchase-requests/[^/]+/purchase-orders|purchase-orders/[^/]+/(issue|cancel|receipts|vendor-invoices|submit-approval|approval/(approve|reject|request-changes)))$");
+          "^/api/v1/(purchase-requests/[^/]+/purchase-orders|purchase-orders/[^/]+/(issue|cancel|reorder|receipts|vendor-invoices|submit-approval|approval/(approve|reject|request-changes)))$");
   private static final Pattern VENDOR_INVOICE_ACTION_PATH =
       Pattern.compile("^/api/v1/vendor-invoices/[^/]+/(approve|reject|dispute|void)$");
   private static final Pattern VENDOR_PAYMENT_PATH =

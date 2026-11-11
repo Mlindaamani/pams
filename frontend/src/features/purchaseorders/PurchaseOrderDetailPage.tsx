@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -37,6 +37,7 @@ import {
   listGoodsReceipts,
   purchaseOrderPdf,
   recordGoodsReceipt,
+  reorderPurchaseOrder,
   rejectPurchaseOrder,
   requestPurchaseOrderChanges,
   submitPurchaseOrderForApproval,
@@ -46,6 +47,7 @@ import { listInvoicesForPurchaseOrder, recordVendorInvoice } from '@/features/in
 
 export function PurchaseOrderDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const ability = useAbility();
   const order = useQuery({
@@ -121,6 +123,14 @@ export function PurchaseOrderDetailPage() {
       setEditOpen(false);
       invalidate();
     },
+  });
+  const reorder = useMutation({
+    mutationFn: () => reorderPurchaseOrder(id!),
+    onSuccess: (created) => {
+      toast.success('Draft request created from this purchase order.');
+      navigate(`/requests/${created.id}`);
+    },
+    onError: (error) => toast.error(problemMessage(error)),
   });
   const cancel = useMutation({
     mutationFn: () => cancelPurchaseOrder(id!, order.data?.version ?? 0),
@@ -329,6 +339,12 @@ export function PurchaseOrderDetailPage() {
             >
               PDF
             </Button>
+            {ability.can('create', 'PurchaseRequest') &&
+              !['CANCELLED', 'REJECTED'].includes(data.status ?? '') && (
+                <Button onClick={() => reorder.mutate()} disabled={reorder.isPending}>
+                  Reorder
+                </Button>
+              )}
             {allowed.has('RECEIVE') && (
               <Button variant="contained" onClick={openReceipt}>
                 Record receipt

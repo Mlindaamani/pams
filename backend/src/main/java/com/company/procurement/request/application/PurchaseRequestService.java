@@ -272,7 +272,8 @@ public class PurchaseRequestService {
                         line.getQuantity(),
                         line.getUnit(),
                         line.getUnitPrice(),
-                        line.getLineTotal()))
+                        line.getLineTotal(),
+                        line.getVendorId()))
             .toList());
   }
 

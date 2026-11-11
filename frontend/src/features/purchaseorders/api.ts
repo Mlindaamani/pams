@@ -47,6 +47,15 @@ export async function cancelPurchaseOrder(id: string, version: number): Promise<
   );
 }
 
+export async function reorderPurchaseOrder(id: string): Promise<{ id: string }> {
+  return unwrap(
+    api.POST('/api/v1/purchase-orders/{id}/reorder', {
+      params: { path: { id } },
+      headers: { 'Idempotency-Key': idempotencyKey() },
+    }),
+  ) as Promise<{ id: string }>;
+}
+
 export async function purchaseOrderPdf(id: string): Promise<Blob> {
   return unwrap(
     api.GET('/api/v1/purchase-orders/{id}/pdf', {

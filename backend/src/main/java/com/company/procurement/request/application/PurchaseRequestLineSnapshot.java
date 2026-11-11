@@ -7,4 +7,5 @@ public record PurchaseRequestLineSnapshot(
     BigDecimal quantity,
     String unit,
     BigDecimal unitPrice,
-    BigDecimal lineTotal) {}
+    BigDecimal lineTotal,
+    java.util.UUID vendorId) {}

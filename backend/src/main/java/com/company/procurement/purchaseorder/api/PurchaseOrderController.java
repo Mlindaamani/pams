@@ -13,6 +13,9 @@ import com.company.procurement.purchaseorder.application.UpdatePurchaseOrderComm
 import com.company.procurement.purchaseorder.domain.PurchaseOrder;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderFilter;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
+import com.company.procurement.request.api.dto.PurchaseRequestResponse;
+import com.company.procurement.request.api.mapper.PurchaseRequestMapper;
+import com.company.procurement.request.application.PurchaseRequestService;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import com.company.procurement.shared.web.PageRequests;
@@ -55,6 +58,8 @@ public class PurchaseOrderController {
   private final PurchaseOrderPdfService pdf;
   private final VendorService vendors;
   private final PurchaseOrderMapper mapper;
+  private final PurchaseRequestService requests;
+  private final PurchaseRequestMapper requestMapper;
 
   public PurchaseOrderController(
       PurchaseOrderService orders,
@@ -62,13 +67,17 @@ public class PurchaseOrderController {
       PurchaseOrderApprovalService approvals,
       PurchaseOrderPdfService pdf,
       VendorService vendors,
-      PurchaseOrderMapper mapper) {
+      PurchaseOrderMapper mapper,
+      PurchaseRequestService requests,
+      PurchaseRequestMapper requestMapper) {
     this.orders = orders;
     this.actions = actions;
     this.approvals = approvals;
     this.pdf = pdf;
     this.vendors = vendors;
     this.mapper = mapper;
+    this.requests = requests;
+    this.requestMapper = requestMapper;
   }
 
   @PostMapping("/purchase-requests/{requestId}/purchase-orders")
@@ -157,6 +166,21 @@ public class PurchaseOrderController {
     return ResponseEntity.ok()
         .eTag(ConditionalRequests.etag(cancelled.getVersion()))
         .body(mapper.toResponse(cancelled));
+  }
+
+  @PostMapping("/purchase-orders/{id}/reorder")
+  @PreAuthorize("@permissions.has('purchase_request:create')")
+  public ResponseEntity<PurchaseRequestResponse> reorder(@PathVariable UUID id) {
+    PurchaseOrder order = orders.get(id);
+    var created = requests.cloneRequest(order.getPurchaseRequestId());
+    URI location =
+        ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path("/api/v1/purchase-requests/{newId}")
+            .buildAndExpand(created.getId())
+            .toUri();
+    return ResponseEntity.created(location)
+        .eTag(ConditionalRequests.etag(created.getVersion()))
+        .body(requestMapper.toResponse(created));
   }
 
   @GetMapping("/purchase-orders/{id}/approval")

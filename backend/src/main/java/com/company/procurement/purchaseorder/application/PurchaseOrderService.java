@@ -8,6 +8,7 @@ import com.company.procurement.purchaseorder.domain.PurchaseOrderLineDraft;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderNumberGenerator;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderRepository;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
+import com.company.procurement.request.application.PurchaseRequestLineSnapshot;
 import com.company.procurement.request.application.PurchaseRequestService;
 import com.company.procurement.request.application.PurchaseRequestSnapshot;
 import com.company.procurement.shared.domain.ReportingDataChangedEvent;
@@ -83,6 +84,15 @@ public class PurchaseOrderService {
       throw new ConflictException("A purchase order already exists for this request");
     }
     PurchaseRequestSnapshot snapshot = requests.snapshotForPurchaseOrder(requestId);
+    java.util.Set<UUID> requestVendors =
+        snapshot.lines().stream()
+            .map(PurchaseRequestLineSnapshot::vendorId)
+            .filter(java.util.Objects::nonNull)
+            .collect(java.util.stream.Collectors.toSet());
+    if (requestVendors.size() == 1 && !requestVendors.contains(command.vendorId())) {
+      throw new BusinessRuleException(
+          "The purchase order vendor must match the vendor locked on the request items");
+    }
     Vendor vendor = vendors.get(command.vendorId());
     if (vendor.getStatus() != VendorStatus.ACTIVE) {
       throw new BusinessRuleException("Only active vendors can be selected for purchase orders");
