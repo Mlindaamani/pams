@@ -3,6 +3,7 @@ import type { paths } from '@/api/schema';
 import type {
   ApprovalInstance,
   Attachment,
+  AuditPage,
   Page,
   PurchaseRequest,
   PurchaseRequestRequest,
@@ -78,6 +79,14 @@ export async function cancelRequest(id: string, version: number): Promise<Purcha
     api.POST('/api/v1/purchase-requests/{id}/cancel', {
       params: { path: { id } },
       headers: { 'If-Match': etag(version), 'Idempotency-Key': idempotencyKey() },
+    }),
+  );
+}
+
+export async function getRequestTransitions(id: string): Promise<AuditPage> {
+  return unwrap(
+    api.GET('/api/v1/purchase-requests/{id}/transitions', {
+      params: { path: { id }, query: { limit: 25 } },
     }),
   );
 }

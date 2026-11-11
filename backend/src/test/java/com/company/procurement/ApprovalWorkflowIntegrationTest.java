@@ -222,6 +222,23 @@ class ApprovalWorkflowIntegrationTest {
   }
 
   @Test
+  void transitionLogPermissionDoesNotGrantGlobalAuditAccess() throws Exception {
+    createPolicy("Transition permission", "APPROVER");
+    UUID requestId = createRequest("Transition permission", "100.00");
+
+    mockMvc
+        .perform(
+            get("/api/v1/purchase-requests/{id}/transitions", requestId)
+                .with(tokenSubject("requesting-user", org, "REQUESTER")))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(
+            get("/api/v1/audit-events").with(tokenSubject("requesting-user", org, "REQUESTER")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void requesterCannotUseApprovalInboxButCanSeeOwnTimeline() throws Exception {
     createPolicy("Requester separation", "APPROVER");
     UUID requestId = createRequest("Requester separation", "100.00");

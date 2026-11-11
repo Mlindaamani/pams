@@ -1815,3 +1815,22 @@ tenants also had almost no useful starter catalog.
 
 **Consequences.** Repeated purchasing works from either requests or POs, vendor selection stays
 consistent with catalog choices, and new demo/tenant catalogs are immediately useful.
+
+---
+
+## ADR-093 — Separate transition-log and global-audit permissions
+
+**Context.** `audit:read` granted both the global Audit log page and the transition log shown on a
+request. Tenants wanted users to see request transitions without exposing the organisation-wide audit
+trail.
+
+**Decision.**
+- Add `audit:transition_read` for request transition logs.
+- Add `GET /purchase-requests/{id}/transitions`, protected by that permission and normal request
+  visibility/ownership checks.
+- Keep `/audit-events` and the global Audit log page protected by `audit:read`.
+- Update the request detail page to use the transition-specific permission.
+- Grant transition access to ADMIN, REQUESTER, APPROVER, FINANCE, PROCUREMENT_OFFICER and AUDITOR by
+  default; administrators can revoke it per role.
+
+**Consequences.** Audit-wide access and request-scoped transition visibility are independent.

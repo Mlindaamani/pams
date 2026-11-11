@@ -20,6 +20,16 @@ describe('CASL ability', () => {
     expect(ability.can('approve', 'Approval')).toBe(false);
   });
 
+  it('separates global audit from request transition logs', () => {
+    const transitions = defineAbilityFor(['audit:transition_read']);
+    expect(transitions.can('read-transitions', 'PurchaseRequest')).toBe(true);
+    expect(transitions.can('read', 'Audit')).toBe(false);
+
+    const globalAudit = defineAbilityFor(['audit:read']);
+    expect(globalAudit.can('read', 'Audit')).toBe(true);
+    expect(globalAudit.can('read-transitions', 'PurchaseRequest')).toBe(false);
+  });
+
   it('does not infer permissions from role names', () => {
     const ability = defineAbilityFor([]);
     expect(ability.can('create', 'PurchaseRequest')).toBe(false);

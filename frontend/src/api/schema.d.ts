@@ -1684,6 +1684,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/purchase-requests/{id}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["transitions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/purchase-requests/{id}/actions": {
         parameters: {
             query?: never;
@@ -3334,6 +3350,24 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
+        AuditEventResponse: {
+            /** Format: uuid */
+            id?: string;
+            aggregateType?: string;
+            /** Format: uuid */
+            aggregateId?: string;
+            action?: string;
+            actorSubject?: string;
+            actorName?: string;
+            payload?: components["schemas"]["JsonNode"];
+            /** Format: date-time */
+            occurredAt?: string;
+        };
+        AuditPageResponse: {
+            content?: components["schemas"]["AuditEventResponse"][];
+            nextCursor?: string;
+        };
+        JsonNode: unknown;
         PurchaseRequestActionsResponse: {
             actions?: string[];
             /** Format: uuid */
@@ -3676,24 +3710,6 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
-        AuditEventResponse: {
-            /** Format: uuid */
-            id?: string;
-            aggregateType?: string;
-            /** Format: uuid */
-            aggregateId?: string;
-            action?: string;
-            actorSubject?: string;
-            actorName?: string;
-            payload?: components["schemas"]["JsonNode"];
-            /** Format: date-time */
-            occurredAt?: string;
-        };
-        AuditPageResponse: {
-            content?: components["schemas"]["AuditEventResponse"][];
-            nextCursor?: string;
-        };
-        JsonNode: unknown;
         StreamingResponseBody: unknown;
         PageResponseApprovalPolicyResponse: {
             content?: components["schemas"]["ApprovalPolicyResponse"][];
@@ -7302,6 +7318,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApprovalInstanceResponse"];
+                };
+            };
+        };
+    };
+    transitions: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AuditPageResponse"];
                 };
             };
         };

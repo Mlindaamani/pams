@@ -1,5 +1,7 @@
 package com.company.procurement.request.api;
 
+import com.company.procurement.audit.application.AuditQueryService;
+import com.company.procurement.audit.application.dto.AuditPageResponse;
 import com.company.procurement.request.api.dto.PurchaseRequestRequest;
 import com.company.procurement.request.api.dto.PurchaseRequestResponse;
 import com.company.procurement.request.api.mapper.PurchaseRequestMapper;
@@ -51,14 +53,17 @@ public class PurchaseRequestController {
   private final PurchaseRequestService requests;
   private final PurchaseRequestActionService actionService;
   private final PurchaseRequestMapper mapper;
+  private final AuditQueryService audit;
 
   public PurchaseRequestController(
       PurchaseRequestService requests,
       PurchaseRequestActionService actionService,
-      PurchaseRequestMapper mapper) {
+      PurchaseRequestMapper mapper,
+      AuditQueryService audit) {
     this.requests = requests;
     this.actionService = actionService;
     this.mapper = mapper;
+    this.audit = audit;
   }
 
   @PostMapping
@@ -159,6 +164,14 @@ public class PurchaseRequestController {
     return ResponseEntity.ok()
         .eTag(ConditionalRequests.etag(cancelled.getVersion()))
         .body(mapper.toResponse(cancelled));
+  }
+
+  @GetMapping("/{id}/transitions")
+  @PreAuthorize("@permissions.has('audit:transition_read')")
+  public AuditPageResponse transitions(
+      @PathVariable UUID id, @RequestParam(defaultValue = "25") int limit) {
+    requests.requireVisible(id);
+    return audit.page(null, limit, "purchase_request", id, null, null, null);
   }
 
   @GetMapping("/{id}/actions")

@@ -32,6 +32,7 @@ import {
   deleteAttachment,
   getRequest,
   getRequestActions,
+  getRequestTransitions,
   getTimeline,
   listAttachments,
   submitRequest,
@@ -39,7 +40,6 @@ import {
 } from './api';
 import { createPurchaseOrder } from '@/features/purchaseorders/api';
 import { listVendors } from '@/features/vendors/api';
-import { auditPage } from '@/features/audit/api';
 import { ApprovalProgress } from './ApprovalProgress';
 import { TransitionLog } from './TransitionLog';
 import {
@@ -87,9 +87,9 @@ export function RequestDetailPage() {
     queryFn: () => listAttachments(id!),
   });
   const audit = useQuery({
-    queryKey: ['request', id, 'audit'],
-    queryFn: () => auditPage({ aggregateId: id, limit: 25 }),
-    enabled: ability.can('read', 'Audit'),
+    queryKey: ['request', id, 'transitions'],
+    queryFn: () => getRequestTransitions(id!),
+    enabled: ability.can('read-transitions', 'PurchaseRequest'),
   });
   const vendors = useQuery({
     queryKey: ['vendors', 'po-dialog'],
@@ -377,7 +377,7 @@ export function RequestDetailPage() {
       </Box>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: ability.can('read', 'Audit') ? 8 : 12 }}>
+        <Grid size={{ xs: 12, md: ability.can('read-transitions', 'PurchaseRequest') ? 8 : 12 }}>
           <Card>
             <CardContent>
               <Stack
