@@ -6,6 +6,9 @@ import com.company.procurement.shared.error.BadRequestException;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -105,6 +108,83 @@ public class AuditQueryService {
                     content.get(content.size() - 1).id()))
             : null;
     return new AuditPageResponse(content, nextCursor);
+  }
+
+  @Transactional(readOnly = true)
+  public void exportCsv(
+      UUID organizationId,
+      OutputStream output,
+      String aggregateType,
+      UUID aggregateId,
+      String action,
+      Instant from,
+      Instant to) {
+    jdbcTemplate.queryForObject(
+        "select set_config('app.current_org', ?, true)", String.class, organizationId.toString());
+    StringBuilder sql =
+        new StringBuilder(
+            """
+            select id, aggregate_type, aggregate_id, action, actor_subject, actor_name,
+                   payload::text as payload, occurred_at
+              from audit_event
+             where organization_id = ?
+            """);
+    List<Object> arguments = new ArrayList<>();
+    arguments.add(organizationId);
+    if (aggregateType != null && !aggregateType.isBlank()) {
+      sql.append(" and aggregate_type = ?");
+      arguments.add(aggregateType);
+    }
+    if (aggregateId != null) {
+      sql.append(" and aggregate_id = ?");
+      arguments.add(aggregateId);
+    }
+    if (action != null && !action.isBlank()) {
+      sql.append(" and action = ?");
+      arguments.add(action);
+    }
+    if (from != null) {
+      sql.append(" and occurred_at >= ?");
+      arguments.add(java.sql.Timestamp.from(from));
+    }
+    if (to != null) {
+      sql.append(" and occurred_at < ?");
+      arguments.add(java.sql.Timestamp.from(to));
+    }
+    sql.append(" order by occurred_at desc, id desc");
+
+    PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+    writer.write('\uFEFF');
+    writer.println(
+        "event_id,occurred_at,action,aggregate_type,aggregate_id,actor_subject,actor_name,payload");
+    jdbcTemplate.query(
+        sql.toString(),
+        (rs, rowNum) -> {
+          writer.println(
+              String.join(
+                  ",",
+                  csv(rs.getObject("id", UUID.class).toString()),
+                  csv(rs.getTimestamp("occurred_at").toInstant().toString()),
+                  csv(rs.getString("action")),
+                  csv(rs.getString("aggregate_type")),
+                  csv(rs.getObject("aggregate_id", UUID.class).toString()),
+                  csv(rs.getString("actor_subject")),
+                  csv(rs.getString("actor_name")),
+                  csv(rs.getString("payload"))));
+          return null;
+        },
+        arguments.toArray());
+    writer.flush();
+    if (writer.checkError()) {
+      throw new IllegalStateException("Could not stream audit export");
+    }
+  }
+
+  private static String csv(String value) {
+    if (value == null) {
+      return "";
+    }
+    return '"' + value.replace("\"", "\"\"") + '"';
   }
 
   private JsonNode parse(String payload) {

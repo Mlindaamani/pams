@@ -90,6 +90,7 @@ export function defineAbilityFor(permissions: string[], features: string[] = [])
     can('export', 'Report');
   }
   if (has('audit:read')) can('read', 'Audit');
+  if (feature('audit_export') && has('audit:read')) can('export', 'Audit');
   if (feature('approvals') && has('approval_policy:manage')) can(['read', 'manage'], 'Policy');
   if (has('department:read')) can('read', 'Department');
   if (has('department:manage')) can('manage', 'Department');

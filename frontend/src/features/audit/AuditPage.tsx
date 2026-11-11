@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Button, Divider, Drawer, Stack, TextField, Typography } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import { Can } from '@/auth/AbilityProvider';
+import { downloadApiFile, problemMessage } from '@/api/client';
+import { toast } from '@/components/Toast';
 import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateTime } from '@/lib/format';
@@ -37,7 +41,25 @@ export function AuditPage() {
 
   return (
     <>
-      <PageHeader title="Audit log" />
+      <PageHeader
+        title="Audit log"
+        actions={
+          <Can I="export" a="Audit">
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={() => {
+                void downloadApiFile(
+                  exportPath({ action, aggregateType, aggregateId, from, to }),
+                  'audit-log.csv',
+                ).catch((error: unknown) => toast.error(problemMessage(error)));
+              }}
+            >
+              Export CSV
+            </Button>
+          </Can>
+        }
+      />
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <TextField
           label="Action"
@@ -151,4 +173,20 @@ export function AuditPage() {
       </Drawer>
     </>
   );
+}
+
+function exportPath(filters: {
+  action: string;
+  aggregateType: string;
+  aggregateId: string;
+  from: string;
+  to: string;
+}): string {
+  const params = new URLSearchParams();
+  if (filters.action) params.set('action', filters.action);
+  if (filters.aggregateType) params.set('aggregateType', filters.aggregateType);
+  if (filters.aggregateId) params.set('aggregateId', filters.aggregateId);
+  if (filters.from) params.set('from', new Date(filters.from).toISOString());
+  if (filters.to) params.set('to', new Date(filters.to).toISOString());
+  return `/api/v1/audit-events/export${params.size > 0 ? `?${params.toString()}` : ''}`;
 }

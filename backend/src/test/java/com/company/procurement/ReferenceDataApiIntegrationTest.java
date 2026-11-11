@@ -3,12 +3,16 @@ package com.company.procurement;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -991,6 +995,32 @@ class ReferenceDataApiIntegrationTest {
                             "primaryColor", "navy",
                             "secondaryColor", "#654321"))))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void auditExportIsEnterpriseGatedAndReturnsCsv() throws Exception {
+    UUID enterpriseId =
+        createPlatformTenant(
+            "audit-exp-" + UUID.randomUUID().toString().substring(0, 8), "ENTERPRISE");
+    UUID starterId =
+        createPlatformTenant(
+            "audit-noexp-" + UUID.randomUUID().toString().substring(0, 8), "STARTER");
+
+    MvcResult export =
+        mockMvc
+            .perform(get("/api/v1/audit-events/export").with(token(enterpriseId, "ADMIN")))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+    mockMvc
+        .perform(asyncDispatch(export))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Disposition", containsString("audit-log.csv")))
+        .andExpect(content().string(containsString("event_id,occurred_at,action")));
+
+    mockMvc
+        .perform(get("/api/v1/audit-events/export").with(token(starterId, "ADMIN")))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("feature-not-enabled"));
   }
 
   @Test

@@ -116,6 +116,36 @@ export async function unwrap<T>(result: Promise<FetchResult<T>>): Promise<T> {
   return data as T;
 }
 
+export async function downloadApiFile(path: string, fallbackName: string): Promise<void> {
+  const url = new URL(path, appConfig.apiBaseUrl || window.location.origin);
+  const headers = new Headers({ 'X-Request-ID': crypto.randomUUID() });
+  if (accessToken && !isPublicApiPath(url.toString())) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+  const response = await globalThis.fetch(url, { headers });
+  if (!response.ok) {
+    const raw = await response.text();
+    let problem: ProblemDetail = { status: response.status };
+    try {
+      problem = { ...problem, ...(JSON.parse(raw) as ProblemDetail) };
+    } catch {
+      if (raw.trim()) problem.detail = raw;
+    }
+    throw new ApiError(response.status, problem);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? fallbackName;
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}
+
 export function idempotencyKey(): string {
   return crypto.randomUUID();
 }
