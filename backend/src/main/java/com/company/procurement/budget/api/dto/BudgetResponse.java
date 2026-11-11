@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record BudgetResponse(
     UUID id,
+    String budgetNumber,
     UUID departmentId,
     int fiscalYear,
     String category,

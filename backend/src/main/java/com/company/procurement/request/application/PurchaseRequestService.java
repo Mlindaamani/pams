@@ -16,6 +16,8 @@ import com.company.procurement.shared.authorization.PermissionService;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.PreconditionFailedException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.numbering.DocumentNumberGenerator;
+import com.company.procurement.shared.numbering.DocumentType;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.subscription.application.SubscriptionAccessService;
@@ -43,6 +45,7 @@ public class PurchaseRequestService {
   private final PermissionService permissions;
   private final SubscriptionAccessService subscriptionAccess;
   private final Clock clock;
+  private final DocumentNumberGenerator numbers;
 
   public PurchaseRequestService(
       PurchaseRequestRepository requests,
@@ -55,7 +58,8 @@ public class PurchaseRequestService {
       CurrentActorProvider actorProvider,
       PermissionService permissions,
       SubscriptionAccessService subscriptionAccess,
-      Clock clock) {
+      Clock clock,
+      DocumentNumberGenerator numbers) {
     this.requests = requests;
     this.departments = departments;
     this.catalogItems = catalogItems;
@@ -67,6 +71,7 @@ public class PurchaseRequestService {
     this.permissions = permissions;
     this.subscriptionAccess = subscriptionAccess;
     this.clock = clock;
+    this.numbers = numbers;
   }
 
   @Transactional
@@ -77,6 +82,8 @@ public class PurchaseRequestService {
     PurchaseRequest request =
         new PurchaseRequest(
             organizationId,
+            numbers.next(
+                organizationId, DocumentType.PURCHASE_REQUEST, LocalDate.now(clock).getYear()),
             currentUser.subject(),
             currentUser.username(),
             command.departmentId(),

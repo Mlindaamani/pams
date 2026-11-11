@@ -46,7 +46,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class PurchaseRequestController {
 
   private static final Set<String> SORTABLE =
-      Set.of("createdAt", "totalAmount", "status", "neededBy", "submittedAt");
+      Set.of("createdAt", "requestNumber", "totalAmount", "status", "neededBy", "submittedAt");
 
   private final PurchaseRequestService requests;
   private final PurchaseRequestActionService actionService;

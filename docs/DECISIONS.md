@@ -1640,3 +1640,27 @@ Administrators needed a visual way to reorder stages and move approvers between 
 
 **Consequences.** Workflow configuration is now visual and keyboard-accessible. Policy changes still
 go through the same validated create-version API.
+
+---
+
+## ADR-085 — Tenant/year document reference numbers
+
+**Context.** Purchase orders and invoices had human-readable numbers, but requests, budgets, goods
+receipts and vendor payments were identifiable only by UUID. Users needed stable references for
+search, email and operational follow-up.
+
+**Decision.**
+- Add a shared `document_sequence` table keyed by organization, document type and year.
+- Generate immutable references server-side at creation:
+  - `PR-{year}-{000001}` for purchase requests,
+  - `BUD-{year}-{000001}` for budgets,
+  - `GRN-{year}-{000001}` for goods receipts,
+  - `PAY-{year}-{000001}` for vendor payments.
+- Backfill existing records by document year and creation order in `V36`.
+- Add unique tenant-scoped indexes and RLS to the sequence table.
+- Expose references in API responses and make them the first column in their tables.
+- Allow request search by title or reference.
+- Preserve references through edits and state transitions.
+
+**Consequences.** Documents can be referenced safely outside PAMS. Purchase orders and invoices keep
+their existing `PO-` and `INV-` numbering.

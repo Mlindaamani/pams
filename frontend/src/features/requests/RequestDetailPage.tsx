@@ -219,7 +219,7 @@ export function RequestDetailPage() {
               />
             </Stack>
             <Typography variant="caption" color="text.secondary">
-              {data.requesterName} · Request {data.id?.slice(0, 8)}
+              {data.requestNumber} · {data.requesterName}
             </Typography>
           </Box>
 

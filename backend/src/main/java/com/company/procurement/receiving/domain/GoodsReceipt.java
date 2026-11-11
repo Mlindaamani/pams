@@ -21,6 +21,9 @@ import org.hibernate.annotations.Filter;
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
 public class GoodsReceipt extends TenantEntity {
 
+  @Column(name = "receipt_number", nullable = false, updatable = false, length = 40)
+  private String receiptNumber;
+
   @Column(name = "purchase_order_id", nullable = false, updatable = false)
   private UUID purchaseOrderId;
 
@@ -49,12 +52,14 @@ public class GoodsReceipt extends TenantEntity {
 
   public GoodsReceipt(
       UUID organizationId,
+      String receiptNumber,
       UUID purchaseOrderId,
       LocalDate receivedDate,
       String deliveryNoteReference,
       String notes,
       String recordedByName) {
     super(organizationId);
+    this.receiptNumber = Objects.requireNonNull(receiptNumber, "receiptNumber");
     this.purchaseOrderId = Objects.requireNonNull(purchaseOrderId, "purchaseOrderId");
     this.receivedDate = Objects.requireNonNull(receivedDate, "receivedDate");
     this.deliveryNoteReference = deliveryNoteReference;
@@ -67,6 +72,10 @@ public class GoodsReceipt extends TenantEntity {
     lines.add(
         new GoodsReceiptLine(
             getOrganizationId(), this, purchaseOrderLineId, description, unit, quantity));
+  }
+
+  public String getReceiptNumber() {
+    return receiptNumber;
   }
 
   public UUID getPurchaseOrderId() {

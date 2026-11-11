@@ -17,6 +17,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
 public class Budget extends SoftDeletableEntity {
 
+  @Column(name = "budget_number", nullable = false, updatable = false, length = 40)
+  private String budgetNumber;
+
   @Column(name = "department_id", nullable = false, updatable = false)
   private UUID departmentId;
 
@@ -47,12 +50,14 @@ public class Budget extends SoftDeletableEntity {
 
   public Budget(
       UUID organizationId,
+      String budgetNumber,
       UUID departmentId,
       int fiscalYear,
       String category,
       String currency,
       BigDecimal allocatedAmount) {
     super(organizationId);
+    this.budgetNumber = Objects.requireNonNull(budgetNumber, "budgetNumber");
     this.departmentId = Objects.requireNonNull(departmentId, "departmentId");
     this.fiscalYear = fiscalYear;
     this.category = trimToNull(category);
@@ -75,6 +80,10 @@ public class Budget extends SoftDeletableEntity {
 
   public BigDecimal consumed() {
     return reservedAmount.add(committedAmount).add(actualAmount);
+  }
+
+  public String getBudgetNumber() {
+    return budgetNumber;
   }
 
   public UUID getDepartmentId() {

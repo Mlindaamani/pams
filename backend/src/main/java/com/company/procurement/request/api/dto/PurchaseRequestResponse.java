@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record PurchaseRequestResponse(
     UUID id,
+    String requestNumber,
     String requesterSubject,
     String requesterName,
     UUID departmentId,

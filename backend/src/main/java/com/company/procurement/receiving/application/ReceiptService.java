@@ -8,6 +8,8 @@ import com.company.procurement.receiving.domain.GoodsReceipt;
 import com.company.procurement.receiving.domain.GoodsReceiptRepository;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.numbering.DocumentNumberGenerator;
+import com.company.procurement.shared.numbering.DocumentType;
 import com.company.procurement.shared.outbox.OutboxEventTypes;
 import com.company.procurement.shared.outbox.OutboxService;
 import com.company.procurement.shared.security.CurrentUser;
@@ -32,6 +34,7 @@ public class ReceiptService {
   private final UserProfileLookupService userProfiles;
   private final CurrentUser currentUser;
   private final Clock clock;
+  private final DocumentNumberGenerator numbers;
 
   public ReceiptService(
       GoodsReceiptRepository receipts,
@@ -40,7 +43,8 @@ public class ReceiptService {
       OutboxService outbox,
       UserProfileLookupService userProfiles,
       CurrentUser currentUser,
-      Clock clock) {
+      Clock clock,
+      DocumentNumberGenerator numbers) {
     this.receipts = receipts;
     this.orders = orders;
     this.audit = audit;
@@ -48,6 +52,7 @@ public class ReceiptService {
     this.userProfiles = userProfiles;
     this.currentUser = currentUser;
     this.clock = clock;
+    this.numbers = numbers;
   }
 
   @Transactional
@@ -73,6 +78,7 @@ public class ReceiptService {
     GoodsReceipt receipt =
         new GoodsReceipt(
             organizationId,
+            numbers.next(organizationId, DocumentType.GOODS_RECEIPT, receivedDate.getYear()),
             purchaseOrderId,
             receivedDate,
             command.deliveryNoteReference(),

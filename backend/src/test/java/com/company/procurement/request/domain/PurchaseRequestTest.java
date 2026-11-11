@@ -17,6 +17,7 @@ class PurchaseRequestTest {
   private final PurchaseRequest request =
       new PurchaseRequest(
           UUID.randomUUID(),
+          "PR-2026-000001",
           "subject-1",
           "requester",
           UUID.randomUUID(),

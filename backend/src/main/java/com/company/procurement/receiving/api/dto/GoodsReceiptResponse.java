@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record GoodsReceiptResponse(
     UUID id,
+    String receiptNumber,
     UUID purchaseOrderId,
     LocalDate receivedDate,
     String deliveryNoteReference,

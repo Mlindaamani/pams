@@ -9,6 +9,8 @@ import com.company.procurement.shared.domain.ReportingDataChangedEvent;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.numbering.DocumentNumberGenerator;
+import com.company.procurement.shared.numbering.DocumentType;
 import com.company.procurement.shared.tenant.TenantContext;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -27,18 +29,21 @@ public class BudgetService {
   private final Clock clock;
   private final CurrentActorProvider actorProvider;
   private final ApplicationEventPublisher events;
+  private final DocumentNumberGenerator numbers;
 
   public BudgetService(
       BudgetRepository budgets,
       DepartmentService departments,
       Clock clock,
       CurrentActorProvider actorProvider,
-      ApplicationEventPublisher events) {
+      ApplicationEventPublisher events,
+      DocumentNumberGenerator numbers) {
     this.budgets = budgets;
     this.departments = departments;
     this.clock = clock;
     this.actorProvider = actorProvider;
     this.events = events;
+    this.numbers = numbers;
   }
 
   @Transactional
@@ -54,6 +59,7 @@ public class BudgetService {
         budgets.save(
             new Budget(
                 organizationId,
+                numbers.next(organizationId, DocumentType.BUDGET, command.fiscalYear()),
                 command.departmentId(),
                 command.fiscalYear(),
                 category,

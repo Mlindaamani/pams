@@ -2206,6 +2206,7 @@ export interface components {
         PurchaseRequestResponse: {
             /** Format: uuid */
             id?: string;
+            requestNumber?: string;
             requesterSubject?: string;
             requesterName?: string;
             /** Format: uuid */
@@ -2416,6 +2417,7 @@ export interface components {
         BudgetResponse: {
             /** Format: uuid */
             id?: string;
+            budgetNumber?: string;
             /** Format: uuid */
             departmentId?: string;
             /** Format: int32 */
@@ -2644,6 +2646,7 @@ export interface components {
         PaymentView: {
             /** Format: uuid */
             id?: string;
+            paymentNumber?: string;
             /** Format: uuid */
             vendorId?: string;
             status?: string;
@@ -2819,6 +2822,7 @@ export interface components {
         GoodsReceiptResponse: {
             /** Format: uuid */
             id?: string;
+            receiptNumber?: string;
             /** Format: uuid */
             purchaseOrderId?: string;
             /** Format: date */

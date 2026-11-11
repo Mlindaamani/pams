@@ -95,6 +95,12 @@ export function BudgetsPage() {
           getRowId={(budget) => budget.id!}
           columns={[
             {
+              key: 'budgetNumber',
+              label: 'Reference',
+              render: (budget) => budget.budgetNumber,
+              sortValue: (budget) => budget.budgetNumber ?? '',
+            },
+            {
               key: 'department',
               label: 'Department',
               render: (budget) =>

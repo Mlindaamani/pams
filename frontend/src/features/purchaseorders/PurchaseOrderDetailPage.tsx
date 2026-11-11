@@ -586,6 +586,11 @@ export function PurchaseOrderDetailPage() {
                   emptyMessage="No goods received yet."
                   columns={[
                     {
+                      key: 'receiptNumber',
+                      label: 'Reference',
+                      render: (receipt) => receipt.receiptNumber ?? '—',
+                    },
+                    {
                       key: 'date',
                       label: 'Received',
                       render: (receipt) => dateOnly(receipt.receivedDate),

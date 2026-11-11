@@ -1,6 +1,7 @@
 package com.company.procurement;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -102,6 +103,7 @@ class PurchaseRequestApiIntegrationTest {
         .perform(get("/api/v1/purchase-requests/{id}", requestId).with(token(orgA, "REQUESTER")))
         .andExpect(status().isOk())
         .andExpect(header().string("ETag", "\"0\""))
+        .andExpect(jsonPath("$.requestNumber").value(matchesPattern("PR-\\d{4}-\\d{6}")))
         .andExpect(jsonPath("$.total.amount").value("250.0000"))
         .andExpect(jsonPath("$.status").value("DRAFT"))
         .andExpect(jsonPath("$.lines.length()").value(2));
@@ -165,6 +167,35 @@ class PurchaseRequestApiIntegrationTest {
     mockMvc
         .perform(get("/api/v1/purchase-requests/{id}", requestId).with(token(orgA, "REQUESTER")))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void referenceNumbersAreSearchableAndStable() throws Exception {
+    UUID requestId =
+        createRequest(orgA, departmentA, "Referenced request", lines(1, "25.00"), false);
+    MvcResult detail =
+        mockMvc
+            .perform(
+                get("/api/v1/purchase-requests/{id}", requestId).with(token(orgA, "REQUESTER")))
+            .andExpect(status().isOk())
+            .andReturn();
+    String requestNumber =
+        JsonPath.read(detail.getResponse().getContentAsString(), "$.requestNumber");
+
+    mockMvc
+        .perform(
+            get("/api/v1/purchase-requests")
+                .param("q", requestNumber)
+                .with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].id").value(requestId.toString()))
+        .andExpect(jsonPath("$.content[0].requestNumber").value(requestNumber));
+
+    UUID budgetId = createBudget(orgA, departmentA, "1000.00");
+    mockMvc
+        .perform(get("/api/v1/budgets/{id}", budgetId).with(token(orgA, "FINANCE")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.budgetNumber").value(matchesPattern("BUD-\\d{4}-\\d{6}")));
   }
 
   @Test

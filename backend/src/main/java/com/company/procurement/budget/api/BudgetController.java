@@ -34,7 +34,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @Tag(name = "Budgets", description = "Departmental budgets and reservations")
 public class BudgetController {
 
-  private static final Set<String> SORTABLE = Set.of("createdAt", "fiscalYear", "allocatedAmount");
+  private static final Set<String> SORTABLE =
+      Set.of("createdAt", "budgetNumber", "fiscalYear", "allocatedAmount");
 
   private final BudgetService budgets;
   private final BudgetMapper mapper;

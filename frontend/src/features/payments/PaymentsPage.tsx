@@ -82,8 +82,14 @@ export function PaymentsPage() {
             emptyMessage="No vendor payments scheduled."
             columns={[
               {
+                key: 'paymentNumber',
+                label: 'Reference',
+                render: (payment) => payment.paymentNumber ?? '—',
+                sortValue: (payment) => payment.paymentNumber ?? '',
+              },
+              {
                 key: 'payment',
-                label: 'Payment',
+                label: 'Vendor',
                 render: (payment) => (
                   <Box>
                     <Typography variant="body2" fontWeight={600}>

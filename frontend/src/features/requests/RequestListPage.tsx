@@ -72,7 +72,7 @@ export function RequestListPage() {
           ))}
         </TextField>
         <TextField
-          label="Search title"
+          label="Search reference or title"
           value={q}
           onChange={(event) => setQ(event.target.value)}
           fullWidth
@@ -90,6 +90,22 @@ export function RequestListPage() {
             rows={rows}
             getRowId={(request) => request.id!}
             columns={[
+              {
+                key: 'requestNumber',
+                label: 'Reference',
+                render: (request) => (
+                  <Link
+                    component={RouterLink}
+                    to={`/requests/${request.id}`}
+                    color="primary.main"
+                    underline="hover"
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {request.requestNumber}
+                  </Link>
+                ),
+                sortValue: (request) => request.requestNumber ?? '',
+              },
               {
                 key: 'title',
                 label: 'Title',

@@ -11,6 +11,7 @@ public class GoodsReceiptMapper {
   public GoodsReceiptResponse toResponse(GoodsReceipt receipt) {
     return new GoodsReceiptResponse(
         receipt.getId(),
+        receipt.getReceiptNumber(),
         receipt.getPurchaseOrderId(),
         receipt.getReceivedDate(),
         receipt.getDeliveryNoteReference(),

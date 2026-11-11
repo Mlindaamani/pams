@@ -4,6 +4,8 @@ import com.company.procurement.audit.application.AuditEventService;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.numbering.DocumentNumberGenerator;
+import com.company.procurement.shared.numbering.DocumentType;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import java.math.BigDecimal;
@@ -25,13 +27,19 @@ public class VendorPaymentService {
   private final CurrentUser currentUser;
   private final AuditEventService audit;
   private final Clock clock;
+  private final DocumentNumberGenerator numbers;
 
   public VendorPaymentService(
-      JdbcTemplate jdbc, CurrentUser currentUser, AuditEventService audit, Clock clock) {
+      JdbcTemplate jdbc,
+      CurrentUser currentUser,
+      AuditEventService audit,
+      Clock clock,
+      DocumentNumberGenerator numbers) {
     this.jdbc = jdbc;
     this.currentUser = currentUser;
     this.audit = audit;
     this.clock = clock;
+    this.numbers = numbers;
   }
 
   @Transactional
@@ -100,15 +108,18 @@ public class VendorPaymentService {
     }
     UUID paymentId = UUID.randomUUID();
     Instant now = clock.instant();
+    String paymentNumber =
+        numbers.next(organizationId, DocumentType.VENDOR_PAYMENT, command.paymentDate().getYear());
     jdbc.update(
         """
         insert into vendor_payment
-            (id, organization_id, vendor_id, status, payment_date, method, reference, currency,
-             total_amount, notes, created_at, created_by, updated_at, updated_by)
-        values (?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, organization_id, payment_number, vendor_id, status, payment_date, method, reference,
+             currency, total_amount, notes, created_at, created_by, updated_at, updated_by)
+        values (?, ?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         paymentId,
         organizationId,
+        paymentNumber,
         command.vendorId(),
         java.sql.Date.valueOf(command.paymentDate()),
         command.method(),
@@ -301,6 +312,7 @@ public class VendorPaymentService {
             paymentId);
     return new PaymentView(
         payment.id(),
+        payment.paymentNumber(),
         payment.vendorId(),
         payment.status(),
         payment.paymentDate(),
@@ -318,13 +330,14 @@ public class VendorPaymentService {
     return jdbc
         .query(
             """
-            select id, vendor_id, status, payment_date, method, reference, currency, total_amount,
-                   notes, paid_at, version
+            select id, payment_number, vendor_id, status, payment_date, method, reference, currency,
+                   total_amount, notes, paid_at, version
               from vendor_payment where organization_id = ? and id = ?
             """,
             (rs, row) ->
                 new PaymentRow(
                     rs.getObject("id", UUID.class),
+                    rs.getString("payment_number"),
                     rs.getObject("vendor_id", UUID.class),
                     rs.getString("status"),
                     rs.getDate("payment_date").toLocalDate(),
@@ -356,6 +369,7 @@ public class VendorPaymentService {
 
   public record PaymentView(
       UUID id,
+      String paymentNumber,
       UUID vendorId,
       String status,
       LocalDate paymentDate,
@@ -388,6 +402,7 @@ public class VendorPaymentService {
 
   private record PaymentRow(
       UUID id,
+      String paymentNumber,
       UUID vendorId,
       String status,
       LocalDate paymentDate,

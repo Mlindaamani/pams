@@ -70,10 +70,11 @@ public class PurchaseRequestRepositoryAdapter implements PurchaseRequestReposito
         predicates.add(cb.lessThanOrEqualTo(root.get("totalAmount"), filter.amountMax()));
       }
       if (filter.titleContains() != null && !filter.titleContains().isBlank()) {
+        String pattern = "%" + filter.titleContains().trim().toLowerCase() + "%";
         predicates.add(
-            cb.like(
-                cb.lower(root.get("title")),
-                "%" + filter.titleContains().trim().toLowerCase() + "%"));
+            cb.or(
+                cb.like(cb.lower(root.get("title")), pattern),
+                cb.like(cb.lower(root.get("requestNumber")), pattern)));
       }
       return cb.and(predicates.toArray(Predicate[]::new));
     };

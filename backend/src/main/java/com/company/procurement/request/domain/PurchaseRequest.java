@@ -29,6 +29,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
 public class PurchaseRequest extends SoftDeletableEntity {
 
+  @Column(name = "request_number", nullable = false, updatable = false, length = 40)
+  private String requestNumber;
+
   @Column(name = "requester_subject", nullable = false, updatable = false, length = 200)
   private String requesterSubject;
 
@@ -95,6 +98,7 @@ public class PurchaseRequest extends SoftDeletableEntity {
 
   public PurchaseRequest(
       UUID organizationId,
+      String requestNumber,
       String requesterSubject,
       String requesterName,
       UUID departmentId,
@@ -104,6 +108,7 @@ public class PurchaseRequest extends SoftDeletableEntity {
       String currency,
       boolean budgetExceptionRequested) {
     super(organizationId);
+    this.requestNumber = requireText(requestNumber, "requestNumber");
     this.requesterSubject = requireText(requesterSubject, "requesterSubject");
     this.requesterName = requireText(requesterName, "requesterName");
     this.departmentId = Objects.requireNonNull(departmentId, "departmentId");
@@ -233,6 +238,10 @@ public class PurchaseRequest extends SoftDeletableEntity {
             .map(PurchaseRequestLine::getLineTotal)
             .reduce(BigDecimal.ZERO, BigDecimal::add)
             .setScale(4, RoundingMode.HALF_UP);
+  }
+
+  public String getRequestNumber() {
+    return requestNumber;
   }
 
   public String getRequesterSubject() {
