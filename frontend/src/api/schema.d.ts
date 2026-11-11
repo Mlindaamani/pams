@@ -868,6 +868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/demo-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_6"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/tenants": {
         parameters: {
             query?: never;
@@ -877,7 +893,7 @@ export interface paths {
         };
         get: operations["list_7"];
         put?: never;
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1069,7 +1085,7 @@ export interface paths {
         };
         get: operations["list_8"];
         put?: never;
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1085,7 +1101,7 @@ export interface paths {
         };
         get: operations["list_9"];
         put?: never;
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1101,7 +1117,7 @@ export interface paths {
         };
         get: operations["list_10"];
         put?: never;
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1149,7 +1165,7 @@ export interface paths {
         };
         get: operations["list_11"];
         put?: never;
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1181,7 +1197,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1197,7 +1213,7 @@ export interface paths {
         };
         get: operations["list_12"];
         put?: never;
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1229,7 +1245,7 @@ export interface paths {
         };
         get: operations["list_13"];
         put?: never;
-        post: operations["create_13"];
+        post: operations["create_14"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1341,7 +1357,7 @@ export interface paths {
         };
         get: operations["list_14"];
         put?: never;
-        post: operations["create_14"];
+        post: operations["create_15"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1676,6 +1692,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["approval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plans_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2766,6 +2798,14 @@ export interface components {
         ApprovalCommentRequest: {
             comment?: string;
         };
+        DemoRequest: {
+            name: string;
+            /** Format: email */
+            email: string;
+            company: string;
+            phone?: string;
+            message?: string;
+        };
         CreateTenantRequest: {
             name: string;
             slug: string;
@@ -3089,6 +3129,25 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        PublicPlan: {
+            code?: string;
+            name?: string;
+            description?: string;
+            monthlyPrice?: number;
+            annualPrice?: number;
+            currency?: string;
+            /** Format: int32 */
+            trialDays?: number;
+            /** Format: int32 */
+            maxUsers?: number;
+            /** Format: int32 */
+            maxDepartments?: number;
+            /** Format: int32 */
+            maxRequestsMonth?: number;
+            /** Format: int32 */
+            maxStorageMb?: number;
+            features?: string[];
         };
         PageResponseOrganizationResponse: {
             content?: components["schemas"]["OrganizationResponse"][];
@@ -5468,6 +5527,28 @@ export interface operations {
             };
         };
     };
+    create_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_7: {
         parameters: {
             query?: {
@@ -5494,7 +5575,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -5796,7 +5877,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -5840,7 +5921,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -5890,7 +5971,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -5983,7 +6064,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -6031,7 +6112,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -6082,7 +6163,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -6156,7 +6237,7 @@ export interface operations {
             };
         };
     };
-    create_13: {
+    create_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -6441,7 +6522,7 @@ export interface operations {
             };
         };
     };
-    create_14: {
+    create_15: {
         parameters: {
             query?: never;
             header?: never;
@@ -6957,6 +7038,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApprovalView"];
+                };
+            };
+        };
+    };
+    plans_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicPlan"][];
                 };
             };
         };

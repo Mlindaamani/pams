@@ -1525,3 +1525,22 @@ making cash planning and overdue follow-up difficult.
 
 **Consequences.** Finance can see overdue payables and plan payment runs. Remittance advice and
 cash-flow forecasting remain follow-ups.
+
+---
+
+## ADR-080 — Public landing, pricing and demo requests
+
+**Context.** The application had no public acquisition surface. Unauthenticated visitors were sent
+directly to Keycloak, and there was no way to present pricing or capture demos.
+
+**Decision.**
+- Add public `/welcome`, `/pricing` and `/demo` routes.
+- Redirect unauthenticated protected routes to `/welcome`, preserving the intended return path.
+- Expose a public, read-only plan catalogue without Stripe IDs or tenant data.
+- Add a public demo-request form persisted to `demo_request`.
+- Change the default post-logout destination to `/welcome`, removing the sign-out login loop.
+- Keep assisted signup: demo request → qualification → platform tenant creation.
+- Add public endpoint tests and browser coverage for landing, pricing and demo submission.
+
+**Consequences.** Prospects can evaluate PAMS and request a demo without an account. Self-serve
+signup, lead administration, rate limiting and CAPTCHA are follow-up increments.

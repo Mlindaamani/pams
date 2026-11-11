@@ -25,7 +25,7 @@ export function RequireAuth({ children }: PropsWithChildren) {
   }
   if (!auth.isAuthenticated) {
     rememberReturnPath(`${location.pathname}${location.search}`);
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/welcome" replace state={{ from: location }} />;
   }
   return <>{children}</>;
 }

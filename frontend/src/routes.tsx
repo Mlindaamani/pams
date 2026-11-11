@@ -42,6 +42,9 @@ import { TenantsPage } from '@/features/platform/TenantsPage';
 import { NotFoundPage } from '@/features/system/NotFoundPage';
 import { ForbiddenPage } from '@/features/system/ForbiddenPage';
 import { AuditPage } from '@/features/audit/AuditPage';
+import { LandingPage } from '@/features/marketing/LandingPage';
+import { PricingPage } from '@/features/marketing/PricingPage';
+import { DemoRequestPage } from '@/features/marketing/DemoRequestPage';
 import { PaymentsPage } from '@/features/payments/PaymentsPage';
 import { PaymentFormPage } from '@/features/payments/PaymentFormPage';
 import { PaymentAgingPage } from '@/features/payments/PaymentAgingPage';
@@ -63,6 +66,9 @@ function guard(action: Action, subject: Subject, element: JSX.Element) {
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/welcome', element: <LandingPage /> },
+  { path: '/pricing', element: <PricingPage /> },
+  { path: '/demo', element: <DemoRequestPage /> },
   {
     path: '/',
     element: (

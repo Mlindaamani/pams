@@ -52,7 +52,8 @@ public class SecurityConfig {
                         "/openapi.json",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
-                        "/api/v1/webhooks/stripe")
+                        "/api/v1/webhooks/stripe",
+                        "/api/v1/public/**")
                     .permitAll()
                     .requestMatchers("/actuator/health/**", "/actuator/info")
                     .permitAll()

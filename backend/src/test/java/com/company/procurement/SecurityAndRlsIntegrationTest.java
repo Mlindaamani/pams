@@ -44,6 +44,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ActiveProfiles("test")
 @Sql(
     statements = {
+      "DELETE FROM demo_request",
       "DELETE FROM outbox_event",
       "DELETE FROM audit_event",
       "DELETE FROM platform_audit_event",
@@ -77,6 +78,30 @@ class SecurityAndRlsIntegrationTest {
   void setUp() throws Exception {
     orgA = createOrganization("sec-org-a");
     orgB = createOrganization("sec-org-b");
+  }
+
+  @Test
+  void publicPricingAndDemoRequestsAreAvailableWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/public/plans"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].code").exists())
+        .andExpect(jsonPath("$[0].name").exists());
+
+    mockMvc
+        .perform(
+            post("/api/v1/public/demo-requests")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "name", "Prospect",
+                            "email", "prospect@example.com",
+                            "company", "Prospect Ltd",
+                            "message", "We need procurement controls"))))
+        .andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/v1/vendors")).andExpect(status().isUnauthorized());
   }
 
   @Test
