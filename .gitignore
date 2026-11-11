@@ -10,6 +10,7 @@ backend/target/
 .env.local
 
 # Node / frontend
+*.tsbuildinfo
 node_modules/
 frontend/dist/
 frontend/coverage/
