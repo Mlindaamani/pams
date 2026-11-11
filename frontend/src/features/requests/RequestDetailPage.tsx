@@ -493,7 +493,7 @@ export function RequestDetailPage() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 4 }}>
-          {ability.can('read', 'Audit') ? (
+          {ability.can('read-transitions', 'PurchaseRequest') ? (
             <TransitionLog events={audit.data?.content ?? []} loading={audit.isLoading} />
           ) : null}
         </Grid>

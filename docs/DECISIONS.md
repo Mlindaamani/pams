@@ -1834,3 +1834,18 @@ trail.
   default; administrators can revoke it per role.
 
 **Consequences.** Audit-wide access and request-scoped transition visibility are independent.
+
+---
+
+## ADR-094 — Global audit access restricted to Auditor and Admin
+
+**Context.** Some tenant roles had accumulated `audit:read`, so transition-log visibility still
+appeared to depend on the global audit permission.
+
+**Decision.**
+- Remove `audit:read` from every role except AUDITOR and ADMIN.
+- Render the request Transition log strictly from `audit:transition_read`.
+- Keep the global Audit log page and `/audit-events` on `audit:read`.
+
+**Consequences.** Request transition logs no longer require global audit access, and the global
+audit trail is limited to audit and administration roles by default.
