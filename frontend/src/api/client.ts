@@ -9,12 +9,21 @@ export function setApiToken(token: string | null) {
 }
 
 export const api = createClient<paths>({
-  baseUrl: appConfig.apiBaseUrl || undefined,
+  baseUrl: appConfig.apiBaseUrl || window.location.origin,
+  fetch: (input: Request) => globalThis.fetch(input),
 });
+
+export function isPublicApiPath(url: string): boolean {
+  try {
+    return new URL(url, window.location.origin).pathname.startsWith('/api/v1/public/');
+  } catch {
+    return url.includes('/api/v1/public/');
+  }
+}
 
 api.use({
   onRequest({ request }) {
-    if (accessToken) {
+    if (accessToken && !isPublicApiPath(request.url)) {
       request.headers.set('Authorization', `Bearer ${accessToken}`);
     }
     if (!request.headers.has('X-Request-ID')) {

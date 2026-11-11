@@ -4,6 +4,8 @@ import type { components } from '@/api/schema';
 
 export type Tenant = components['schemas']['OrganizationResponse'];
 export type TenantDetail = components['schemas']['TenantDetailResponse'];
+export type DemoRequest = components['schemas']['DemoRequestResponse'];
+export type DemoRequestStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CLOSED';
 
 export interface CurrencySpend {
   currency: string;
@@ -147,4 +149,24 @@ export async function getTenantDetail(id: string): Promise<TenantDetail> {
       params: { path: { id } },
     }),
   );
+}
+
+export async function listDemoRequests(params: {
+  q?: string;
+  status?: DemoRequestStatus;
+  page?: number;
+  size?: number;
+}): Promise<Page<DemoRequest>> {
+  return unwrap(
+    api.GET('/api/v1/platform/demo-requests', {
+      params: {
+        query: {
+          ...params,
+          page: params.page ?? 0,
+          size: params.size ?? 20,
+          sort: 'createdAt,desc',
+        },
+      },
+    }),
+  ) as Promise<Page<DemoRequest>>;
 }

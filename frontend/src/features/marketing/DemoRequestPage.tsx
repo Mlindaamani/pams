@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { problemMessage } from '@/api/client';
 import { toast } from '@/components/Toast';
 import { submitDemoRequest } from './api';
 import { PublicLayout } from './PublicLayout';
@@ -40,7 +41,7 @@ export function DemoRequestPage() {
       setSent(true);
       toast.success('Demo request received.');
     },
-    onError: () => toast.error('Demo request could not be submitted. Please try again.'),
+    onError: (error) => toast.error(problemMessage(error)),
   });
 
   return (

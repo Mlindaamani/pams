@@ -10,6 +10,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import InboxIcon from '@mui/icons-material/Inbox';
 import { Can } from '@/auth/AbilityProvider';
+import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import { PageHeader, Loading } from '@/components/Page';
 import { listRequests } from '@/features/requests/api';
 import { approvalInbox } from '@/features/approvals/api';
@@ -90,6 +91,8 @@ export function DashboardPage() {
           </Can>
         }
       />
+      {ability.can('manage', 'User') && <OnboardingChecklist />}
+
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 4 }}>
           <Card>

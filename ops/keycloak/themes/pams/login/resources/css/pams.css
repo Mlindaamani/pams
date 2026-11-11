@@ -56,7 +56,7 @@ body {
   padding: 28px 24px 18px !important;
   color: transparent !important;
   font-size: 0 !important;
-  background-image: url('../img/pams-logo.svg');
+  background-image: url("../img/pams-logo.svg");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 188px auto;
@@ -165,7 +165,6 @@ a:hover,
     background-size: 150px auto;
   }
 }
-
 
 .login-pf-page .form-group {
   margin-bottom: 18px;

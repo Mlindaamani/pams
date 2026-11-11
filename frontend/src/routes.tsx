@@ -28,6 +28,7 @@ import { SystemPage } from '@/features/system/SystemPage';
 import { RolesPermissionsPage } from '@/features/admin/RolesPermissionsPage';
 import { WorkflowConfigPage } from '@/features/admin/WorkflowConfigPage';
 import { PlatformDashboardPage } from '@/features/platform/PlatformDashboardPage';
+import { PlatformDemoRequestsPage } from '@/features/platform/PlatformDemoRequestsPage';
 import { PlatformFeatureFormPage } from '@/features/platform/PlatformFeatureFormPage';
 import { PlatformPlanFormPage } from '@/features/platform/PlatformPlanFormPage';
 import { PlatformPlansPage } from '@/features/platform/PlatformPlansPage';
@@ -100,6 +101,10 @@ export const router = createBrowserRouter([
       { path: 'payments/new', element: guard('manage', 'Payment', <PaymentFormPage />) },
       { path: 'payments/aging', element: guard('read', 'Payment', <PaymentAgingPage />) },
       { path: 'platform/dashboard', element: guard('read', 'Platform', <PlatformDashboardPage />) },
+      {
+        path: 'platform/demo-requests',
+        element: guard('read', 'Tenant', <PlatformDemoRequestsPage />),
+      },
       {
         path: 'platform/performance',
         element: <Navigate to="/platform/tenants?tab=performance" replace />,

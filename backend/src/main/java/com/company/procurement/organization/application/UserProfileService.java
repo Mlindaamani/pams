@@ -204,9 +204,8 @@ public class UserProfileService {
     if (existing != null) {
       return existing;
     }
-    if (!currentUser.hasRole("PLATFORM_ADMIN")) {
-      throw new ResourceNotFoundException("No profile is provisioned for the current user");
-    }
+    String defaultDepartment =
+        currentUser.hasRole("PLATFORM_ADMIN") ? "Platform administration" : "General";
     UUID departmentId =
         departments.search(organizationId, null, PageRequest.of(0, 1)).stream()
             .findFirst()
@@ -216,7 +215,7 @@ public class UserProfileService {
                     departments
                         .save(
                             new com.company.procurement.organization.domain.Department(
-                                organizationId, "Platform administration"))
+                                organizationId, defaultDepartment))
                         .getId());
     UserProfile profile =
         new UserProfile(

@@ -47,6 +47,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import ContactMailIcon from '@mui/icons-material/ContactMail';
 import PaletteIcon from '@mui/icons-material/Palette';
 import WebhookIcon from '@mui/icons-material/Webhook';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -106,6 +107,13 @@ const standaloneItems: NavItem[] = [
     action: 'read',
     subject: 'Tenant',
     icon: <CreditCardIcon />,
+  },
+  {
+    label: 'Demo requests',
+    to: '/platform/demo-requests',
+    action: 'read',
+    subject: 'Tenant',
+    icon: <ContactMailIcon />,
   },
   {
     label: 'Subscription plans',

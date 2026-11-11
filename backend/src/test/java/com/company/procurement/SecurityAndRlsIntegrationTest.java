@@ -81,6 +81,42 @@ class SecurityAndRlsIntegrationTest {
   }
 
   @Test
+  void firstLoginProvisioningCreatesAProfileAndOnboardingChecklist() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/users/me").with(token(orgA, "REQUESTER")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").exists())
+        .andExpect(jsonPath("$.email").exists())
+        .andExpect(jsonPath("$.displayName").exists());
+
+    mockMvc
+        .perform(get("/api/v1/onboarding").with(token(orgA, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.hasDepartment").value(true))
+        .andExpect(jsonPath("$.totalSteps").value(5));
+  }
+
+  @Test
+  void platformAdminsCanReadDemoRequests() throws Exception {
+    jdbcTemplate.update(
+        "insert into demo_request (name, email, company, message, status, created_at) values (?, ?, ?, ?, 'NEW', now())",
+        "Prospect",
+        "prospect@example.com",
+        "Prospect Ltd",
+        "Interested in PAMS");
+
+    mockMvc
+        .perform(get("/api/v1/platform/demo-requests").with(token(orgA, "PLATFORM_ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].name").value("Prospect"))
+        .andExpect(jsonPath("$.content[0].status").value("NEW"));
+
+    mockMvc
+        .perform(get("/api/v1/platform/demo-requests").with(token(orgA, "ADMIN")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void publicPricingAndDemoRequestsAreAvailableWithoutAuthentication() throws Exception {
     mockMvc
         .perform(get("/api/v1/public/plans"))
