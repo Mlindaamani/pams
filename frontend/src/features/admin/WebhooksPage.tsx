@@ -13,9 +13,11 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -49,6 +51,46 @@ const emptyDraft = (): WebhookInput => ({
   eventTypes: ['PurchaseOrderIssued'],
   active: true,
 });
+
+function CopyableUrl({ value }: { value: string }) {
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success('Endpoint URL copied.');
+    } catch {
+      toast.error('Could not copy endpoint URL.');
+    }
+  };
+
+  return (
+    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
+      <Tooltip title={value}>
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{
+            minWidth: 0,
+            fontFamily: 'monospace',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {value}
+        </Typography>
+      </Tooltip>
+      <Tooltip title="Copy endpoint URL">
+        <IconButton
+          size="small"
+          aria-label="Copy endpoint URL"
+          onClick={() => void copy()}
+          sx={{ flexShrink: 0 }}
+        >
+          <ContentCopyIcon sx={{ fontSize: 15 }} />
+        </IconButton>
+      </Tooltip>
+    </Stack>
+  );
+}
 
 export function WebhooksPage() {
   const queryClient = useQueryClient();
@@ -176,8 +218,8 @@ export function WebhooksPage() {
             key: 'url',
             label: 'Endpoint URL',
             render: (row) => (
-              <Box>
-                <Typography variant="body2">{row.url}</Typography>
+              <Box sx={{ minWidth: 0, maxWidth: { xs: 220, md: 420 } }}>
+                <CopyableUrl value={row.url ?? ''} />
                 {row.description && (
                   <Typography variant="caption" color="text.secondary">
                     {row.description}
@@ -248,11 +290,9 @@ export function WebhooksPage() {
               alignItems="center"
               sx={{ mb: 2 }}
             >
-              <Box>
+              <Box sx={{ minWidth: 0, maxWidth: { xs: '70%', md: 560 } }}>
                 <Typography variant="h6">Deliveries</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selected.url}
-                </Typography>
+                <CopyableUrl value={selected.url ?? ''} />
               </Box>
               <Button size="small" onClick={() => setSelected(null)}>
                 Close
