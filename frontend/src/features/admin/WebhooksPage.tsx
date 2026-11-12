@@ -21,6 +21,10 @@ import {
   Typography,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import KeyIcon from '@mui/icons-material/Key';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
@@ -261,20 +265,51 @@ export function WebhooksPage() {
             key: 'actions',
             label: 'Actions',
             align: 'right',
+            width: 180,
             render: (row) => (
-              <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap">
-                <Button size="small" onClick={() => setSelected(row)}>
-                  Deliveries
-                </Button>
-                <Button size="small" onClick={() => openEdit(row)}>
-                  Edit
-                </Button>
-                <Button size="small" onClick={() => rotate.mutate(row)} disabled={rotate.isPending}>
-                  Rotate secret
-                </Button>
-                <Button size="small" color="error" onClick={() => setDeleteTarget(row)}>
-                  Delete
-                </Button>
+              <Stack
+                direction="row"
+                spacing={0.5}
+                justifyContent="flex-end"
+                alignItems="center"
+                flexWrap="nowrap"
+              >
+                <Tooltip title="View deliveries">
+                  <IconButton
+                    size="small"
+                    aria-label="View deliveries"
+                    onClick={() => setSelected(row)}
+                  >
+                    <ListAltIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Edit endpoint">
+                  <IconButton size="small" aria-label="Edit endpoint" onClick={() => openEdit(row)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Rotate secret">
+                  <span>
+                    <IconButton
+                      size="small"
+                      aria-label="Rotate signing secret"
+                      onClick={() => rotate.mutate(row)}
+                      disabled={rotate.isPending}
+                    >
+                      <KeyIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                <Tooltip title="Delete endpoint">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    aria-label="Delete endpoint"
+                    onClick={() => setDeleteTarget(row)}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Stack>
             ),
           },
