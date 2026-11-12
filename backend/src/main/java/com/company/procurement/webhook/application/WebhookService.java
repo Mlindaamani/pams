@@ -1,19 +1,25 @@
 package com.company.procurement.webhook.application;
 
 import com.company.procurement.audit.application.AuditEventService;
+import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.PreconditionFailedException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.webhook.domain.WebhookDelivery;
 import com.company.procurement.webhook.domain.WebhookDeliveryRepository;
+import com.company.procurement.webhook.domain.WebhookEventTypes;
 import com.company.procurement.webhook.domain.WebhookSubscription;
 import com.company.procurement.webhook.domain.WebhookSubscriptionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,18 +31,21 @@ public class WebhookService {
   private final WebhookSecretGenerator secrets;
   private final AuditEventService audit;
   private final Clock clock;
+  private final ObjectMapper objectMapper;
 
   public WebhookService(
       WebhookSubscriptionRepository subscriptions,
       WebhookDeliveryRepository deliveries,
       WebhookSecretGenerator secrets,
       AuditEventService audit,
-      Clock clock) {
+      Clock clock,
+      ObjectMapper objectMapper) {
     this.subscriptions = subscriptions;
     this.deliveries = deliveries;
     this.secrets = secrets;
     this.audit = audit;
     this.clock = clock;
+    this.objectMapper = objectMapper;
   }
 
   @Transactional
@@ -112,6 +121,59 @@ public class WebhookService {
   }
 
   @Transactional(readOnly = true)
+  public Page<WebhookDelivery> deliveryLog(
+      UUID subscriptionId,
+      com.company.procurement.webhook.domain.WebhookDeliveryStatus status,
+      String eventType,
+      Pageable pageable) {
+    return deliveries.search(TenantContext.require(), subscriptionId, status, eventType, pageable);
+  }
+
+  @Transactional(readOnly = true)
+  public long deliveryCount(UUID subscriptionId) {
+    return deliveries.countBySubscription(TenantContext.require(), subscriptionId);
+  }
+
+  @Transactional
+  public WebhookDelivery sendTestEvent(UUID subscriptionId) {
+    WebhookSubscription subscription = get(subscriptionId);
+    if (!subscription.isActive()) {
+      throw new BusinessRuleException("Activate the endpoint before sending a test event");
+    }
+    String payload;
+    try {
+      payload =
+          objectMapper.writeValueAsString(
+              Map.of(
+                  "event",
+                  WebhookEventTypes.WEBHOOK_TEST,
+                  "endpoint",
+                  subscription.getUrl(),
+                  "message",
+                  "This is a PAMS webhook test event",
+                  "timestamp",
+                  clock.instant().toString()));
+    } catch (JsonProcessingException ex) {
+      throw new IllegalStateException("Could not build webhook test payload", ex);
+    }
+    WebhookDelivery delivery =
+        new WebhookDelivery(
+            TenantContext.require(),
+            subscriptionId,
+            java.util.UUID.randomUUID(),
+            WebhookEventTypes.WEBHOOK_TEST,
+            payload,
+            clock.instant());
+    WebhookDelivery saved = deliveries.save(delivery);
+    audit.recordCurrentActor(
+        "webhook_delivery",
+        saved.getId(),
+        "webhook_test_event_queued",
+        Map.of("subscriptionId", subscriptionId.toString()));
+    return saved;
+  }
+
+  @Transactional(readOnly = true)
   public List<WebhookDelivery> deliveries(UUID subscriptionId, int limit) {
     UUID organizationId = TenantContext.require();
     get(subscriptionId);
@@ -137,6 +199,14 @@ public class WebhookService {
         "webhook_delivery_retried",
         Map.of("eventType", saved.getEventType()));
     return saved;
+  }
+
+  @Transactional(readOnly = true)
+  public Map<UUID, String> subscriptionUrls() {
+    return list().stream()
+        .collect(
+            java.util.stream.Collectors.toMap(
+                WebhookSubscription::getId, WebhookSubscription::getUrl));
   }
 
   private WebhookSubscription get(UUID id) {

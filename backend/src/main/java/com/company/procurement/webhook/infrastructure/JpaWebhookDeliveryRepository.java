@@ -8,10 +8,14 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface JpaWebhookDeliveryRepository extends JpaRepository<WebhookDelivery, UUID> {
+public interface JpaWebhookDeliveryRepository
+    extends JpaRepository<WebhookDelivery, UUID>, JpaSpecificationExecutor<WebhookDelivery> {
+
+  long countByOrganizationIdAndSubscriptionId(UUID organizationId, UUID subscriptionId);
 
   Optional<WebhookDelivery> findByIdAndOrganizationId(UUID id, UUID organizationId);
 

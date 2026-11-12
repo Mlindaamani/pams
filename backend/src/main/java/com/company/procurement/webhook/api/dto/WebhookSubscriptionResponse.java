@@ -12,6 +12,7 @@ public record WebhookSubscriptionResponse(
     boolean active,
     Instant lastSuccessAt,
     Instant lastFailureAt,
+    long deliveryCount,
     Instant createdAt,
     Instant updatedAt,
     long version) {}

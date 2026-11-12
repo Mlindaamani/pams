@@ -7,8 +7,10 @@ import java.util.UUID;
 public record WebhookDeliveryResponse(
     UUID id,
     UUID subscriptionId,
+    String subscriptionUrl,
     UUID eventId,
     String eventType,
+    String payload,
     WebhookDeliveryStatus status,
     int attempts,
     Instant nextAttemptAt,

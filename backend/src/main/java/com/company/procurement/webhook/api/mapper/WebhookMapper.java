@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 public class WebhookMapper {
 
   public WebhookSubscriptionResponse toResponse(WebhookSubscription subscription) {
+    return toResponse(subscription, 0);
+  }
+
+  public WebhookSubscriptionResponse toResponse(
+      WebhookSubscription subscription, long deliveryCount) {
     return new WebhookSubscriptionResponse(
         subscription.getId(),
         subscription.getUrl(),
@@ -19,17 +24,24 @@ public class WebhookMapper {
         subscription.isActive(),
         subscription.getLastSuccessAt(),
         subscription.getLastFailureAt(),
+        deliveryCount,
         subscription.getCreatedAt(),
         subscription.getUpdatedAt(),
         subscription.getVersion());
   }
 
   public WebhookDeliveryResponse toResponse(WebhookDelivery delivery) {
+    return toResponse(delivery, null);
+  }
+
+  public WebhookDeliveryResponse toResponse(WebhookDelivery delivery, String subscriptionUrl) {
     return new WebhookDeliveryResponse(
         delivery.getId(),
         delivery.getSubscriptionId(),
+        subscriptionUrl,
         delivery.getEventId(),
         delivery.getEventType(),
+        delivery.getPayload(),
         delivery.getStatus(),
         delivery.getAttempts(),
         delivery.getNextAttemptAt(),

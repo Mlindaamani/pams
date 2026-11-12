@@ -1863,3 +1863,26 @@ calculation, so the purchase order still exposed Record invoice and could accept
 - Invalidate purchase-order actions after recording an invoice.
 
 **Consequences.** Fully invoiced or fully paid purchase orders no longer offer Record invoice.
+
+---
+
+## ADR-096 — Webhook endpoint and delivery-log workspace
+
+**Context.** Webhooks were a single table with an inline delivery panel. Operators needed a
+tenant-wide delivery log with filters, endpoint health counts and per-delivery inspection.
+
+**Decision.**
+- Split the page into **Endpoints** and **Delivery Logs** tabs.
+- Endpoints show endpoint URL, active status, event count, delivery count, last success and a
+  vertical action menu.
+- Endpoint actions: edit, send test event, rotate secret, turn on/off, view delivery logs, delete.
+- Delivery Logs support endpoint, status and event filters.
+- Delivery rows show event, endpoint, status, attempts, response and last attempt.
+- Clicking a delivery opens a right-side drawer with attempt details, event ID, formatted payload and
+  receiver response.
+- Add tenant-wide `GET /webhooks/deliveries` with endpoint/status/event filters.
+- Add `POST /webhooks/{id}/test-event`, queued through the normal dispatcher and audited.
+- Include payload and endpoint URL in delivery responses.
+
+**Consequences.** Operators can inspect and troubleshoot webhook delivery without leaving the page,
+while endpoint configuration stays separate from delivery history.

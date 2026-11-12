@@ -1,6 +1,8 @@
 package com.company.procurement.webhook.api;
 
+import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
+import com.company.procurement.shared.web.PageRequests;
 import com.company.procurement.webhook.api.dto.CreateWebhookRequest;
 import com.company.procurement.webhook.api.dto.UpdateWebhookRequest;
 import com.company.procurement.webhook.api.dto.WebhookCreatedResponse;
@@ -9,13 +11,19 @@ import com.company.procurement.webhook.api.dto.WebhookSecretResponse;
 import com.company.procurement.webhook.api.dto.WebhookSubscriptionResponse;
 import com.company.procurement.webhook.api.mapper.WebhookMapper;
 import com.company.procurement.webhook.application.WebhookService;
+import com.company.procurement.webhook.domain.WebhookDelivery;
+import com.company.procurement.webhook.domain.WebhookDeliveryStatus;
 import com.company.procurement.webhook.domain.WebhookSubscription;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,7 +54,30 @@ public class WebhookController {
 
   @GetMapping
   public List<WebhookSubscriptionResponse> list() {
-    return webhooks.list().stream().map(mapper::toResponse).toList();
+    return webhooks.list().stream()
+        .map(
+            subscription ->
+                mapper.toResponse(subscription, webhooks.deliveryCount(subscription.getId())))
+        .toList();
+  }
+
+  @GetMapping("/deliveries")
+  public PageResponse<WebhookDeliveryResponse> deliveryLog(
+      @RequestParam(required = false) UUID endpointId,
+      @RequestParam(required = false) WebhookDeliveryStatus status,
+      @RequestParam(required = false) String eventType,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "25") int size,
+      @RequestParam(defaultValue = "createdAt,desc") String sort) {
+    Pageable pageable =
+        PageRequests.of(
+            page, size, sort, Set.of("createdAt", "lastAttemptAt", "attempts", "status"));
+    Page<WebhookDelivery> deliveries =
+        webhooks.deliveryLog(endpointId, status, eventType, pageable);
+    Map<UUID, String> urls = webhooks.subscriptionUrls();
+    return PageResponse.from(
+        deliveries,
+        delivery -> mapper.toResponse(delivery, urls.get(delivery.getSubscriptionId())));
   }
 
   @PostMapping
@@ -90,6 +121,12 @@ public class WebhookController {
   public ResponseEntity<Void> delete(@PathVariable UUID id, HttpServletRequest httpRequest) {
     webhooks.delete(id, ConditionalRequests.requireIfMatch(httpRequest));
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{id}/test-event")
+  public ResponseEntity<WebhookDeliveryResponse> testEvent(@PathVariable UUID id) {
+    WebhookDelivery delivery = webhooks.sendTestEvent(id);
+    return ResponseEntity.accepted().body(mapper.toResponse(delivery));
   }
 
   @PostMapping("/{id}/rotate-secret")

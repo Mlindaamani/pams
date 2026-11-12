@@ -9,6 +9,7 @@ public final class WebhookEventTypes {
   public static final String PURCHASE_ORDER_ISSUED = OutboxEventTypes.PURCHASE_ORDER_ISSUED;
   public static final String GOODS_RECEIPT_RECORDED = OutboxEventTypes.GOODS_RECEIPT_RECORDED;
   public static final String VENDOR_INVOICE_RECORDED = OutboxEventTypes.VENDOR_INVOICE_RECORDED;
+  public static final String WEBHOOK_TEST = "WebhookTest";
 
   public static final Set<String> ALL =
       new LinkedHashSet<>(

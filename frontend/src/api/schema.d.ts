@@ -340,6 +340,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/{id}/test-event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["testEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/{id}/rotate-secret": {
         parameters: {
             query?: never;
@@ -1460,6 +1476,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["deliveryLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/vendor-payments/{id}": {
         parameters: {
             query?: never;
@@ -2233,6 +2265,8 @@ export interface components {
             lastSuccessAt?: string;
             /** Format: date-time */
             lastFailureAt?: string;
+            /** Format: int64 */
+            deliveryCount?: number;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
@@ -2738,19 +2772,16 @@ export interface components {
             subscription?: components["schemas"]["WebhookSubscriptionResponse"];
             signingSecret?: string;
         };
-        WebhookSecretResponse: {
-            signingSecret?: string;
-            /** Format: int64 */
-            version?: number;
-        };
         WebhookDeliveryResponse: {
             /** Format: uuid */
             id?: string;
             /** Format: uuid */
             subscriptionId?: string;
+            subscriptionUrl?: string;
             /** Format: uuid */
             eventId?: string;
             eventType?: string;
+            payload?: string;
             /** @enum {string} */
             status?: "PENDING" | "SUCCEEDED" | "DEAD_LETTER";
             /** Format: int32 */
@@ -2767,6 +2798,11 @@ export interface components {
             durationMs?: number;
             /** Format: date-time */
             createdAt?: string;
+        };
+        WebhookSecretResponse: {
+            signingSecret?: string;
+            /** Format: int64 */
+            version?: number;
         };
         CreateVendorRequest: {
             name: string;
@@ -3215,6 +3251,17 @@ export interface components {
             amountMin: number;
             amountMax?: number;
             steps: components["schemas"]["PolicyStepRequest"][];
+        };
+        PageResponseWebhookDeliveryResponse: {
+            content?: components["schemas"]["WebhookDeliveryResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
         };
         PageResponseVendorResponse: {
             content?: components["schemas"]["VendorResponse"][];
@@ -4835,6 +4882,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WebhookCreatedResponse"];
+                };
+            };
+        };
+    };
+    testEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WebhookDeliveryResponse"];
                 };
             };
         };
@@ -6983,6 +7052,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WebhookDeliveryResponse"][];
+                };
+            };
+        };
+    };
+    deliveryLog: {
+        parameters: {
+            query?: {
+                endpointId?: string;
+                status?: "PENDING" | "SUCCEEDED" | "DEAD_LETTER";
+                eventType?: string;
+                page?: number;
+                size?: number;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseWebhookDeliveryResponse"];
                 };
             };
         };

@@ -1019,8 +1019,8 @@ class PurchaseOrderAndNotificationIntegrationTest {
     ReceivedRequest received = new ReceivedRequest();
     HttpServer server = startWebhookServer(200, received);
     try {
-      WebhookCreated webhook =
-          createWebhook("http://localhost:" + server.getAddress().getPort() + "/hook", "deliver");
+      String hookUrl = "http://localhost:" + server.getAddress().getPort() + "/hook";
+      WebhookCreated webhook = createWebhook(hookUrl, "deliver");
       UUID requestId = createApprovedRequest("Webhook PO", "100.00");
       issue(createPurchaseOrder(requestId));
 
@@ -1042,6 +1042,17 @@ class PurchaseOrderAndNotificationIntegrationTest {
           .andExpect(jsonPath("$[0].attempts").value(1))
           .andExpect(jsonPath("$[0].responseStatus").value(200))
           .andExpect(jsonPath("$[0].eventType").value("PurchaseOrderIssued"));
+
+      mockMvc
+          .perform(
+              get("/api/v1/webhooks/deliveries")
+                  .param("endpointId", webhook.id().toString())
+                  .param("status", "SUCCEEDED")
+                  .param("eventType", "PurchaseOrderIssued")
+                  .with(token(org, "ADMIN")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.content[0].eventType").value("PurchaseOrderIssued"))
+          .andExpect(jsonPath("$.content[0].subscriptionUrl").value(hookUrl));
     } finally {
       server.stop(0);
     }
@@ -1087,6 +1098,40 @@ class PurchaseOrderAndNotificationIntegrationTest {
           .perform(get("/api/v1/webhooks/{id}/deliveries", webhook.id()).with(token(org, "ADMIN")))
           .andExpect(jsonPath("$[0].status").value("SUCCEEDED"))
           .andExpect(jsonPath("$[0].attempts").value(1));
+    } finally {
+      server.stop(0);
+    }
+  }
+
+  @Test
+  void testEventsAreQueuedDeliveredAndFilteredInLogs() throws Exception {
+    ReceivedRequest received = new ReceivedRequest();
+    HttpServer server = startWebhookServer(200, received);
+    try {
+      String hookUrl = "http://localhost:" + server.getAddress().getPort() + "/hook";
+      WebhookCreated webhook = createWebhook(hookUrl, "test event");
+
+      mockMvc
+          .perform(
+              post("/api/v1/webhooks/{id}/test-event", webhook.id())
+                  .with(token(org, "ADMIN"))
+                  .header(IDEMPOTENCY, "webhook-test-event"))
+          .andExpect(status().isAccepted())
+          .andExpect(jsonPath("$.eventType").value("WebhookTest"))
+          .andExpect(jsonPath("$.status").value("PENDING"));
+
+      assertThat(webhookDeliveryDispatcher.dispatchBatch()).isEqualTo(1);
+      assertThat(received.eventType.get()).isEqualTo("WebhookTest");
+
+      mockMvc
+          .perform(
+              get("/api/v1/webhooks/deliveries")
+                  .param("endpointId", webhook.id().toString())
+                  .param("eventType", "WebhookTest")
+                  .with(token(org, "ADMIN")))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.content[0].status").value("SUCCEEDED"))
+          .andExpect(jsonPath("$.content[0].subscriptionUrl").value(hookUrl));
     } finally {
       server.stop(0);
     }

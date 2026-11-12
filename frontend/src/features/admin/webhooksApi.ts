@@ -1,5 +1,5 @@
 import { api, etag, idempotencyKey, unwrap } from '@/api/client';
-import type { WebhookCreated, WebhookDelivery, WebhookSubscription } from '@/api/types';
+import type { Page, WebhookCreated, WebhookDelivery, WebhookSubscription } from '@/api/types';
 
 export interface WebhookInput {
   url: string;
@@ -60,6 +60,38 @@ export async function listWebhookDeliveries(id: string): Promise<WebhookDelivery
   return unwrap(
     api.GET('/api/v1/webhooks/{id}/deliveries', {
       params: { path: { id }, query: { limit: 50 } },
+    }),
+  );
+}
+
+export async function listDeliveryLog(params: {
+  endpointId?: string;
+  status?: string;
+  eventType?: string;
+  page?: number;
+  size?: number;
+}): Promise<Page<WebhookDelivery>> {
+  return unwrap(
+    api.GET('/api/v1/webhooks/deliveries', {
+      params: {
+        query: {
+          endpointId: params.endpointId,
+          status: params.status as never,
+          eventType: params.eventType,
+          page: params.page ?? 0,
+          size: params.size ?? 100,
+          sort: 'createdAt,desc',
+        },
+      },
+    }),
+  ) as Promise<Page<WebhookDelivery>>;
+}
+
+export async function sendWebhookTestEvent(id: string): Promise<WebhookDelivery> {
+  return unwrap(
+    api.POST('/api/v1/webhooks/{id}/test-event', {
+      params: { path: { id } },
+      headers: { 'Idempotency-Key': idempotencyKey() },
     }),
   );
 }

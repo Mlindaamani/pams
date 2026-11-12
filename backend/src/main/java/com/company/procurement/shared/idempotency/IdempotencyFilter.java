@@ -49,7 +49,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
       Pattern.compile("^/api/v1/platform/tenants(/[^/]+/(suspend|activate))?$");
   private static final Pattern WEBHOOK_PATH =
       Pattern.compile(
-          "^/api/v1/webhooks(/[^/]+/(rotate-secret|deliveries)|/deliveries/[^/]+/retry)?$");
+          "^/api/v1/webhooks(/[^/]+/(rotate-secret|test-event|deliveries)|/deliveries/[^/]+/retry)?$");
 
   private final IdempotencyService idempotencyService;
   private final ObjectMapper objectMapper;
