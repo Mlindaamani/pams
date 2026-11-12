@@ -54,11 +54,29 @@ import {
   type WebhookInput,
 } from './webhooksApi';
 
-const EVENTS = [
-  { value: 'PurchaseOrderIssued', label: 'Purchase order issued' },
-  { value: 'GoodsReceiptRecorded', label: 'Goods receipt recorded' },
-  { value: 'VendorInvoiceRecorded', label: 'Vendor invoice recorded' },
+const EVENT_GROUPS = [
+  {
+    id: 'purchase_orders',
+    label: 'Purchase orders',
+    helperText: 'Notify ERP and vendor systems when an approved purchase order is issued.',
+    events: [{ value: 'PurchaseOrderIssued', label: 'Issued' }],
+  },
+  {
+    id: 'goods_receipts',
+    label: 'Goods receipts',
+    helperText: 'Trigger receiving, inventory and project-delivery updates when goods arrive.',
+    events: [{ value: 'GoodsReceiptRecorded', label: 'Recorded' }],
+  },
+  {
+    id: 'vendor_invoices',
+    label: 'Vendor invoices',
+    helperText:
+      'Send recorded invoice details and matching status to finance and accounting systems.',
+    events: [{ value: 'VendorInvoiceRecorded', label: 'Recorded' }],
+  },
 ];
+
+const EVENTS = EVENT_GROUPS.flatMap((group) => group.events);
 
 const DELIVERY_EVENTS = [...EVENTS, { value: 'WebhookTest', label: 'Test event' }];
 
@@ -542,20 +560,36 @@ export function WebhooksPage() {
               fullWidth
             />
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Events
-              </Typography>
-              <Stack>
-                {EVENTS.map((event) => (
-                  <FormControlLabel
-                    key={event.value}
-                    control={
-                      <Checkbox
-                        checked={draft.eventTypes.includes(event.value)}
-                        onChange={() => toggleEvent(event.value)}
-                      />
-                    }
-                    label={event.label}
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 1 }}
+              >
+                <Typography variant="subtitle2">Events</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {draft.eventTypes.length} of {EVENTS.length} selected
+                </Typography>
+              </Stack>
+              <Stack spacing={1.5}>
+                {EVENT_GROUPS.map((group) => (
+                  <EventGroupCard
+                    key={group.id}
+                    group={group}
+                    selected={draft.eventTypes}
+                    onToggleEvent={toggleEvent}
+                    onToggleGroup={() => {
+                      const groupValues = group.events.map((event) => event.value);
+                      const allSelected = groupValues.every((value) =>
+                        draft.eventTypes.includes(value),
+                      );
+                      setDraft((current) => ({
+                        ...current,
+                        eventTypes: allSelected
+                          ? current.eventTypes.filter((value) => !groupValues.includes(value))
+                          : [...new Set([...current.eventTypes, ...groupValues])],
+                      }));
+                    }}
                   />
                 ))}
               </Stack>
@@ -807,6 +841,77 @@ function prettyJson(value?: string): string {
   } catch {
     return value;
   }
+}
+
+function EventGroupCard({
+  group,
+  selected,
+  onToggleEvent,
+  onToggleGroup,
+}: {
+  group: (typeof EVENT_GROUPS)[number];
+  selected: string[];
+  onToggleEvent: (eventType: string) => void;
+  onToggleGroup: () => void;
+}) {
+  const selectedCount = group.events.filter((event) => selected.includes(event.value)).length;
+  const allSelected = selectedCount === group.events.length;
+  const someSelected = selectedCount > 0 && !allSelected;
+  const helperId = `${group.id}-events-helper`;
+
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 2,
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Stack direction="row" alignItems="flex-start" spacing={0.5}>
+        <Checkbox
+          size="small"
+          checked={allSelected}
+          indeterminate={someSelected}
+          onChange={onToggleGroup}
+          slotProps={{
+            input: {
+              'aria-label': `Select all ${group.label} events`,
+              'aria-describedby': helperId,
+            },
+          }}
+        />
+        <Box sx={{ pt: 0.75 }}>
+          <Typography variant="subtitle2">{group.label}</Typography>
+          <Typography
+            id={helperId}
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            sx={{ mb: 0.5 }}
+          >
+            {group.helperText}
+          </Typography>
+          <Stack sx={{ ml: -1 }}>
+            {group.events.map((event) => (
+              <FormControlLabel
+                key={event.value}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={selected.includes(event.value)}
+                    onChange={() => onToggleEvent(event.value)}
+                  />
+                }
+                label={event.label}
+              />
+            ))}
+          </Stack>
+        </Box>
+      </Stack>
+    </Box>
+  );
 }
 
 function eventLabel(eventType?: string): string {
