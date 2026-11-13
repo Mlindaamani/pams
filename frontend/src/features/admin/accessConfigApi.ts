@@ -1,56 +1,20 @@
 import { api, unwrap } from '@/api/client';
 
-export interface PermissionModel {
-  code: string;
-  description: string;
-}
+import type {
+  AccessConfig,
+  RolePermissionPage,
+  RolePermissions,
+  WorkflowRule,
+  WorkflowStatus,
+} from './types';
 
-export interface RoleModel {
-  roleName: string;
-  displayName: string;
-  description: string;
-}
-
-export interface RolePermissions {
-  roleName: string;
-  permissions: string[];
-}
-
-export interface PermissionAssignment {
-  code: string;
-  description: string;
-  module: string;
-  assigned: boolean;
-}
-
-export interface RolePermissionPage {
-  roleName: string;
-  modules: string[];
-  permissions: PermissionAssignment[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
-
-export interface AccessConfig {
-  permissions: PermissionModel[];
-  roles: RoleModel[];
-  rolePermissions: RolePermissions[];
-}
-
-export interface WorkflowRule {
-  entityType: string;
-  fromStatus: string;
-  actionCode: string;
-  requiredPermission: string;
-}
-
-export interface WorkflowStatus {
-  statusCode: string;
-  displayName: string;
-  sortOrder: number;
-}
+export type {
+  AccessConfig,
+  RolePermissionPage,
+  RolePermissions,
+  WorkflowRule,
+  WorkflowStatus,
+} from './types';
 
 export async function getAccessConfig(): Promise<AccessConfig> {
   return unwrap(api.GET('/api/v1/admin/access')) as Promise<AccessConfig>;

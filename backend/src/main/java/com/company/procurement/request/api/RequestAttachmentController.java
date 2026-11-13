@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/** REST API for quotes and specifications stored in MinIO. */
 @RestController
 @RequestMapping("/api/v1/purchase-requests/{requestId}/attachments")
 @Tag(name = "Request attachments", description = "Quotes and specifications stored in MinIO")

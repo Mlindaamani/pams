@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for aP payment scheduling and recording. */
 @RestController
 @RequestMapping("/api/v1/vendor-payments")
 @Tag(name = "Vendor payments", description = "AP payment scheduling and recording")

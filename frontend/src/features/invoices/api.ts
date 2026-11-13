@@ -1,10 +1,6 @@
 import { api, etag, idempotencyKey, unwrap } from '@/api/client';
-import type { paths } from '@/api/schema';
 import type { Page, RecordVendorInvoiceRequest, VendorInvoice } from '@/api/types';
-
-type InvoiceStatus = NonNullable<
-  paths['/api/v1/vendor-invoices']['get']['parameters']['query']
->['status'];
+import type { InvoiceStatus } from './types';
 
 export async function listVendorInvoices(params: {
   status?: InvoiceStatus;

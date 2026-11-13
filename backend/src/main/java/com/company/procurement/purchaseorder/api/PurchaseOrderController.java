@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for conversion of approved requests, issuance and PDF. */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Purchase orders", description = "Conversion of approved requests, issuance and PDF")

@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for departmental budgets and reservations. */
 @RestController
 @RequestMapping("/api/v1/budgets")
 @Tag(name = "Budgets", description = "Departmental budgets and reservations")

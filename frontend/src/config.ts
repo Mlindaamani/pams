@@ -25,7 +25,7 @@ export const appConfig: RuntimeConfig = {
   clientId:
     window.__APP_CONFIG__?.clientId ??
     (import.meta.env.VITE_OIDC_CLIENT_ID as string) ??
-    'pams-api',
+    'pams-frontend',
   redirectUri: window.__APP_CONFIG__?.redirectUri ?? `${origin}/`,
   postLogoutRedirectUri: window.__APP_CONFIG__?.postLogoutRedirectUri ?? `${origin}/welcome`,
   scope: window.__APP_CONFIG__?.scope ?? 'openid profile email',

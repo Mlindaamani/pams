@@ -41,7 +41,9 @@ export async function cancelPayment(id: string): Promise<Payment> {
   );
 }
 
-export type AgingReport = import('@/api/schema').components['schemas']['AgingReport'];
+import type { AgingReport } from './types';
+
+export type { AgingReport } from './types';
 
 export async function getPaymentAging(): Promise<AgingReport> {
   return unwrap(api.GET('/api/v1/vendor-payments/aging'));

@@ -41,21 +41,7 @@ import { listDepartments } from '@/features/reference/api';
 import { listUsers } from './usersApi';
 import { createPolicy, getPolicy, updatePolicy } from './api';
 
-type ConditionType = 'ALWAYS' | 'BUDGET_EXCEPTION' | 'DEPARTMENT';
-type ApproverType = 'ROLE' | 'REQUESTER_MANAGER' | 'USER';
-
-interface StepForm {
-  id: string;
-  name: string;
-  approverType: ApproverType;
-  approverRole: string;
-  approverUserId: string;
-  slaHours: number;
-  stage: number;
-  minApprovals: string;
-  conditionType: ConditionType;
-  conditionDepartmentId: string;
-}
+import type { ApproverType, ConditionType, StepForm } from './types';
 
 const initialSteps: StepForm[] = [
   {

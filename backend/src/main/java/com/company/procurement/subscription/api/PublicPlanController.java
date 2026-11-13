@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for public pricing plan catalogue.. */
 @RestController
 @RequestMapping("/api/v1/public/plans")
 public class PublicPlanController {

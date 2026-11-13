@@ -209,7 +209,7 @@ flowchart LR
 - [ ] Secrets manager or encrypted secret store; no production secrets in `.env`
 - [ ] TLS everywhere, HSTS and secure cookies
 - [ ] Keycloak in production mode with its own database backup
-- [ ] Keycloak service account working without master-admin fallback
+- [x] Keycloak service account working without master-admin fallback
 - [ ] Reverse proxy, request size limits, rate limits and WAF/edge protection
 - [ ] Uptime monitoring, synthetic checks and on-call alerting
 - [ ] Error tracking with release/version tagging

@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Dispatches outbox events to registered handlers. */
 @Service
 public class OutboxDispatcher {
 

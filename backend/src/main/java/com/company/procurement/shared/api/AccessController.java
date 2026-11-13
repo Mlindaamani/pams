@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for effective permissions for the authenticated user. */
 @RestController
 @RequestMapping("/api/v1/me")
 @Tag(name = "Access", description = "Effective permissions for the authenticated user")

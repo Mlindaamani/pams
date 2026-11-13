@@ -9,6 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./ops/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pams} -d ${POSTGRES_DB:-pams}"]
       interval: 10s
@@ -45,11 +46,11 @@ services:
       KC_HTTP_PORT: "8080"
       KC_HEALTH_ENABLED: "true"
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pams}
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-pams}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./ops/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ${KEYCLOAK_REALM_IMPORT:-./ops/keycloak/realm-export.json}:/opt/keycloak/data/import/realm-export.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,8 +105,8 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_FROM: ${MAIL_FROM}
       PAMS_APP_URL: ${PAMS_APP_URL}
-      OTLP_TRACING_ENDPOINT: ${OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
-      TRACING_SAMPLING_PROBABILITY: ${TRACING_SAMPLING_PROBABILITY:-0.1}
+      OTLP_TRACING_ENDPOINT: ${OTLP_TRACING_ENDPOINT:-http://localhost:4318/v1/traces}
+      TRACING_SAMPLING_PROBABILITY: ${TRACING_SAMPLING_PROBABILITY:-0}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}
@@ -149,7 +150,7 @@ services:
     environment:
       PAMS_API_BASE_URL: ${PAMS_PUBLIC_API_URL}
       PAMS_OIDC_AUTHORITY: ${PAMS_PUBLIC_OIDC_AUTHORITY}
-      PAMS_OIDC_CLIENT_ID: ${PAMS_OIDC_CLIENT_ID:-pams-api}
+      PAMS_OIDC_CLIENT_ID: ${PAMS_OIDC_CLIENT_ID:-pams-frontend}
     depends_on:
       api:
         condition: service_healthy
@@ -159,16 +160,8 @@ services:
         limits:
           memory: 256m
 
-  tempo:
-    image: grafana/tempo:latest
-    command: ["-config.file=/etc/tempo.yml"]
-    volumes:
-      - ./ops/tempo/tempo.yml:/etc/tempo.yml:ro
-      - tempo-data:/var/tempo
-    restart: always
 
 volumes:
   postgres-data:
   redis-data:
   minio-data:
-  tempo-data:

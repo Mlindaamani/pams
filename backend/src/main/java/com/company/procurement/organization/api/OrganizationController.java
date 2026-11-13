@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for organization registry (tenant root). */
 @RestController
 @Tag(name = "Organizations", description = "Organization registry (tenant root)")
 @RequestMapping("/api/v1/organizations")

@@ -74,11 +74,7 @@ export function PlanChangePreviewPage() {
 
   return (
     <>
-      <PageHeader
-        title="Review plan change"
-        backTo="/admin/billing"
-        backLabel="Back to billing"
-      />
+      <PageHeader title="Review plan change" backTo="/admin/billing" backLabel="Back to billing" />
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Card>

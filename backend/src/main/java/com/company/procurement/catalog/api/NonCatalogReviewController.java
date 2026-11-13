@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for catalog items used by purchase requests. */
 @RestController
 @RequestMapping("/api/v1/catalog-items/non-catalog-review")
 @Tag(name = "Catalog", description = "Catalog items used by purchase requests")

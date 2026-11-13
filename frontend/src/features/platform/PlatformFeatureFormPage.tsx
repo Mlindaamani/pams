@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
+import type { FeatureDraft } from './types';
 import {
   createSubscriptionFeature,
   deactivateSubscriptionFeature,
@@ -32,15 +33,6 @@ const CATEGORIES = [
   { value: 'SECURITY', label: 'Security' },
   { value: 'SUPPORT', label: 'Support' },
 ];
-
-interface FeatureDraft {
-  code: string;
-  name: string;
-  description: string;
-  category: string;
-  active: boolean;
-  sortOrder: string;
-}
 
 const emptyDraft = (): FeatureDraft => ({
   code: '',

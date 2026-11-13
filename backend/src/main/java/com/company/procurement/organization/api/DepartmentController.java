@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for departments within the current organization. */
 @RestController
 @Tag(name = "Departments", description = "Departments within the current organization")
 @RequestMapping("/api/v1/departments")

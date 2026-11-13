@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for database-driven role and permission mappings. */
 @RestController
 @RequestMapping("/api/v1/admin/access")
 @PreAuthorize("@permissions.has('access:manage')")

@@ -8,7 +8,7 @@ import java.io.IOException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Stable public alias for the generated OpenAPI document (used by Bruno and generators). */
+/** Stable public alias for the generated OpenAPI document (used by API clients and generators). */
 @RestController
 public class OpenApiAliasController {
 

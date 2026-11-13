@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for tenant webhook subscriptions and signed delivery log. */
 @RestController
 @RequestMapping("/api/v1/webhooks")
 @PreAuthorize("@permissions.has('webhook:manage')")

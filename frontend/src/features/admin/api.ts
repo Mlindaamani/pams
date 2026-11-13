@@ -1,8 +1,7 @@
 import { api, unwrap } from '@/api/client';
-import type { components } from '@/api/schema';
 import type { ApprovalPolicy, Page } from '@/api/types';
 
-type WorkflowPolicyStepInput = components['schemas']['PolicyStepRequest'];
+import type { WorkflowPolicyStepInput } from './types';
 
 export async function getPolicy(id: string): Promise<ApprovalPolicy> {
   return unwrap(

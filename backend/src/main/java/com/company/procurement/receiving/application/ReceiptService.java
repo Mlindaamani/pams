@@ -24,6 +24,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Records goods receipts and updates received quantities. */
 @Service
 public class ReceiptService {
 

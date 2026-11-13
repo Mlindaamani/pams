@@ -239,7 +239,7 @@ a department and the JWT carries no department claim.
 
 **Decision.** Phase 2 keeps user profiles admin-managed via `/api/v1/users`. Automatic provisioning
 will land together with approval policies (Phase 4), when a configurable default department/role
-mapping exists. Existing Keycloak demo users can be created through Bruno.
+mapping exists. Existing Keycloak demo users can be created through the Keycloak Admin API.
 
 **Consequences.** A token for a user without a local profile can authenticate but cannot be assigned
 approval work; this is acceptable until the workflow phase. Documented so the gap is intentional.
@@ -1909,3 +1909,59 @@ endpoints by name in the delivery log, and delivery tuning was global rather tha
 
 **Consequences.** Webhook configuration is easier to scan and audit, receivers can have different
 retry/timeout needs, and integrations can subscribe to the full procurement lifecycle.
+
+---
+
+## ADR-098 — Persisted Keycloak with separated OIDC clients
+
+**Context.** Keycloak ran from the embedded H2 database without a mounted data directory, so users
+created through invitations or the Admin Console disappeared when the container was recreated.
+PostgreSQL already contained `user_profile` rows pointing at Keycloak subjects that no longer existed.
+The SPA also used the public `pams-api` client with direct password grants enabled.
+
+**Decision.**
+- Store Keycloak realms, users, roles, sessions and clients in a dedicated PostgreSQL database
+  (`keycloak`), created from the PostgreSQL init script for fresh volumes; existing volumes need a
+  one-time `CREATE DATABASE keycloak` command.
+- Preserve the running realm by exporting it with users before switching storage, then import that
+  export into the empty Keycloak database so existing Keycloak subject IDs remain stable.
+- Add the public `pams-frontend` client for Authorization Code + PKCE and disable interactive/password
+  flows on `pams-api`; keep `pams-api` as a confidential non-interactive identifier.
+- Keep `pams-admin` as the least-privilege backend service account, including `kc-admin-api` and the
+  realm-management roles required for user provisioning.
+- Add the local-only `pams-cli` client for curl and k6 password-grant smoke tests.
+- Declare the `organization_id` user-profile attribute in the realm export so new users always receive
+  the tenant claim.
+- Delete the Keycloak user when local profile creation fails during an invitation, rather than leaving
+  a disabled orphan account.
+- Add a dry-run orphan-profile reconciliation report that classifies each missing Keycloak subject as
+  relink, reassign, review or soft-delete before operators modify data.
+
+**Consequences.** Keycloak state survives container recreation, browser authentication no longer uses
+the API client, and clean realm imports reproduce the service-account and tenant-claim configuration.
+The realm export now contains the current demo users and their credential hashes; keep production
+secrets out of the committed export.
+
+---
+
+## ADR-099 — Source-mounted development and no bundled tracing collector
+
+**Context.** Every development change rebuilt the API and web images, which made the feedback loop
+slow. Tempo was also provisioned in both Compose files even though it was not being used.
+
+**Decision.**
+- Run the development API from source with a Maven container, bind-mounted backend directory, local
+  Maven cache and Spring Boot DevTools.
+- Run the development web app with the Vite dev server, bind-mounted frontend and persistent
+  `node_modules` volume for HMR.
+- Keep production images unchanged; only the development Compose services use source mounts.
+- Add `make backend-compile` to compile backend changes in the running container and trigger DevTools
+  restart.
+- Use the in-memory cache in the dev profile to avoid DevTools classloader conflicts with Redis-cached
+  Java records; production keeps Redis caching.
+- Remove the Tempo services and volumes from development and production Compose.
+- Disable tracing sampling while no collector is provisioned; retain the OTLP configuration for later.
+
+**Consequences.** Frontend changes reload immediately, backend image rebuilds are no longer needed,
+and the development stack uses fewer containers. Backend changes still require a compile step
+(`make backend-compile`) before DevTools restarts the application.

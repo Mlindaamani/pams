@@ -128,7 +128,8 @@ export function SystemPage() {
               <Box>
                 <Typography variant="body2" color="text.secondary">
                   Outbox polling, approval escalation and HTTP/JVM metrics are available on the
-                  Actuator management port. Traces are exported over OTLP to Tempo.
+                  Actuator management port. OTLP tracing is available when an external collector is
+                  configured.
                 </Typography>
               </Box>
             </CardContent>

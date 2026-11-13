@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Enforces subscription status and plan entitlements. */
 @Service
 public class SubscriptionAccessService {
 

@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import org.springframework.stereotype.Service;
 
+/** Renders purchase-order PDF documents. */
 @Service
 public class PurchaseOrderPdfService {
 

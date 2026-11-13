@@ -25,6 +25,8 @@ public interface KeycloakAdminPort {
 
   void disableUser(String subject);
 
+  void deleteUser(String subject);
+
   record KeycloakUserProfile(
       String subject, String username, String email, String firstName, String lastName) {}
 }

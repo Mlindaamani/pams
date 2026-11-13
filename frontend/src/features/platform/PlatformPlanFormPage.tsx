@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
+import type { PlanDraft } from './types';
 import {
   createPlatformPlan,
   deactivatePlatformPlan,
@@ -28,25 +29,6 @@ import {
   type PlanInput,
   type PlatformPlan,
 } from '@/features/subscription/api';
-
-interface PlanDraft {
-  code: string;
-  name: string;
-  description: string;
-  monthlyPrice: string;
-  annualPrice: string;
-  currency: string;
-  trialDays: string;
-  maxUsers: string;
-  maxDepartments: string;
-  maxRequestsMonth: string;
-  maxStorageMb: string;
-  featureCodes: string[];
-  active: boolean;
-  sortOrder: string;
-  stripePriceMonthly: string;
-  stripePriceAnnual: string;
-}
 
 const emptyDraft = (): PlanDraft => ({
   code: '',

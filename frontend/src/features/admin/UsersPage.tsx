@@ -22,18 +22,9 @@ import type { UserProfile } from '@/api/types';
 import { listDepartments } from '@/features/reference/api';
 import { deleteUser, inviteUser, listUsers, updateUser } from './usersApi';
 
-interface FormState {
-  email: string;
-  displayName: string;
-  departmentId: string;
-  managerId: string;
-  limitAmount: string;
-  limitCurrency: string;
-  active: boolean;
-  roles: string[];
-}
+import type { UserFormState } from './types';
 
-const emptyForm: FormState = {
+const emptyForm: UserFormState = {
   email: '',
   displayName: '',
   departmentId: '',
@@ -50,7 +41,7 @@ export function UsersPage() {
   const departments = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<UserProfile | null>(null);
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [form, setForm] = useState<UserFormState>(emptyForm);
   const [deleting, setDeleting] = useState<UserProfile | null>(null);
 
   const departmentName = useMemo(() => {

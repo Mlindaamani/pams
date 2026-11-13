@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for draft requests, totals, submission and budget reservation. */
 @RestController
 @RequestMapping("/api/v1/purchase-requests")
 @Tag(

@@ -13,6 +13,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./ops/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test:
         [
@@ -34,11 +35,18 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_HEALTH_ENABLED: "true"
       KC_HTTP_PORT: "8080"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-pams}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-pams}
     ports:
       - "${KEYCLOAK_PORT:-8081}:8080"
     volumes:
-      - ./ops/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ${KEYCLOAK_REALM_IMPORT:-./ops/keycloak/realm-export.json}:/opt/keycloak/data/import/realm-export.json:ro
       - ./ops/keycloak/themes:/opt/keycloak/themes:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test:
         [
@@ -96,14 +104,24 @@ services:
       - "${MAILPIT_UI_PORT:-8025}:8025"
     restart: unless-stopped
 
-# Backend API service
+# Backend API service (source-mounted Spring Boot DevTools runtime)
   api:
-    build:
-      context: ./backend
-    image: pams-backend:dev
+    image: maven:3.9-eclipse-temurin-21
     container_name: pams-api
     network_mode: host
+    working_dir: /app
+    user: "${PAMS_UID:-1000}:${PAMS_GID:-1000}"
+    command:
+      [
+        "sh",
+        "-c",
+        "mvn -q -DskipTests -Dmaven.repo.local=/tmp/.m2 spring-boot:run",
+      ]
+    volumes:
+      - ./backend:/app
+      - ./.m2:/tmp/.m2
     environment:
+      MAVEN_CONFIG: /tmp/.m2
       SPRING_PROFILES_ACTIVE: dev
       POSTGRES_HOST: localhost
       POSTGRES_PORT: "5432"
@@ -121,6 +139,7 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-pams-attachments}
       PAMS_APP_URL: ${PAMS_APP_URL:-http://localhost:3000}
       OTLP_TRACING_ENDPOINT: http://localhost:4318/v1/traces
+      TRACING_SAMPLING_PROBABILITY: "0"
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:3000/admin/billing?checkout=success}
@@ -147,39 +166,36 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -fsS http://127.0.0.1:9090/actuator/health/readiness || exit 1",
+          "bash -c 'echo > /dev/tcp/127.0.0.1/9090' || exit 1",
         ]
       interval: 15s
       timeout: 5s
-      retries: 10
-      start_period: 45s
+      retries: 20
+      start_period: 120s
     restart: unless-stopped
 
-# Tempo service for distributed tracing
-  tempo:
-    image: grafana/tempo:latest
-    container_name: pams-tempo
-    command: ["-config.file=/etc/tempo.yml"]
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "3200:3200"
-    volumes:
-      - ./ops/tempo/tempo.yml:/etc/tempo.yml:ro
-      - tempo-data:/var/tempo
-    restart: unless-stopped
-
-# Web frontend service
+# Web frontend service (Vite dev server with HMR)
   web:
-    build:
-      context: ./frontend
+    image: node:22-alpine
     container_name: pams-web
-    ports:
-      - "${WEB_PORT:-3000}:80"
+    network_mode: host
+    working_dir: /app
+    command:
+      [
+        "sh",
+        "-c",
+        "[ -f node_modules/.package-lock.json ] || npm ci; exec npm run dev -- --host 0.0.0.0 --port ${WEB_PORT:-3000}",
+      ]
+    volumes:
+      - ./frontend:/app
+      - web-node-modules:/app/node_modules
     environment:
       PAMS_API_BASE_URL: ${PAMS_PUBLIC_API_URL:-http://localhost:8080}
       PAMS_OIDC_AUTHORITY: ${PAMS_PUBLIC_OIDC_AUTHORITY:-http://localhost:8081/realms/pams}
-      PAMS_OIDC_CLIENT_ID: ${PAMS_OIDC_CLIENT_ID:-pams-api}
+      PAMS_OIDC_CLIENT_ID: ${PAMS_OIDC_CLIENT_ID:-pams-frontend}
+      VITE_API_BASE_URL: ${PAMS_PUBLIC_API_URL:-http://localhost:8080}
+      VITE_OIDC_AUTHORITY: ${PAMS_PUBLIC_OIDC_AUTHORITY:-http://localhost:8081/realms/pams}
+      VITE_OIDC_CLIENT_ID: ${PAMS_OIDC_CLIENT_ID:-pams-frontend}
     depends_on:
       keycloak:
         condition: service_healthy
@@ -204,4 +220,4 @@ services:
 volumes:
   postgres-data:
   minio-data:
-  tempo-data:
+  web-node-modules:

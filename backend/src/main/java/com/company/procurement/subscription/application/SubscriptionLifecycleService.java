@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+/** Runs trial, dunning and cancellation lifecycle notices. */
 @Service
 public class SubscriptionLifecycleService {
 

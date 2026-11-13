@@ -25,6 +25,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Aggregates platform-wide tenant and usage analytics. */
 @Service
 public class PlatformAnalyticsService {
 

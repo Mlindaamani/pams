@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for in-app notifications for the current user. */
 @RestController
 @RequestMapping("/api/v1/notifications")
 @PreAuthorize("@permissions.has('notification:read')")

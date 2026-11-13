@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+/** Provisions Keycloak administrators after tenant creation. */
 @Service
 public class TenantProvisioningService {
 

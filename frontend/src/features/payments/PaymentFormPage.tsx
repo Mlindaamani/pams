@@ -77,11 +77,7 @@ export function PaymentFormPage() {
 
   return (
     <>
-      <PageHeader
-        title="Schedule vendor payment"
-        backTo="/payments"
-        backLabel="Back to payments"
-      />
+      <PageHeader title="Schedule vendor payment" backTo="/payments" backLabel="Back to payments" />
       <Card>
         <CardContent>
           <Grid container spacing={2}>

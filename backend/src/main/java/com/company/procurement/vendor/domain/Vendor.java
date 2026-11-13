@@ -17,6 +17,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "vendor")
 @SQLRestriction("deleted_at IS NULL")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Vendor master record and lifecycle status. */
 public class Vendor extends SoftDeletableEntity {
 
   @Column(name = "name", nullable = false, length = 200)

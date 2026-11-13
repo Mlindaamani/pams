@@ -1,5 +1,4 @@
 import { api, etag, idempotencyKey, unwrap } from '@/api/client';
-import type { paths } from '@/api/schema';
 import type {
   ApprovalInstance,
   Attachment,
@@ -8,9 +7,9 @@ import type {
   PurchaseRequest,
   PurchaseRequestRequest,
 } from '@/api/types';
+import type { RequestActions, RequestFilters } from './types';
 
-type RequestQuery = NonNullable<paths['/api/v1/purchase-requests']['get']['parameters']['query']>;
-export type RequestFilters = RequestQuery;
+export type { RequestActions, RequestFilters } from './types';
 
 export async function listRequests(filters: RequestFilters): Promise<Page<PurchaseRequest>> {
   return unwrap(
@@ -97,11 +96,6 @@ export async function getTimeline(id: string): Promise<ApprovalInstance> {
       params: { path: { requestId: id } },
     }),
   );
-}
-
-export interface RequestActions {
-  actions: string[];
-  approvalStepId?: string;
 }
 
 export async function getRequestActions(id: string): Promise<RequestActions> {

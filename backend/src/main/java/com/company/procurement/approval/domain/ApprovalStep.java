@@ -18,6 +18,7 @@ import org.hibernate.annotations.Filter;
 @Entity
 @Table(name = "approval_step")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** One approval assignment and decision within an approval instance. */
 public class ApprovalStep extends TenantEntity {
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -5,6 +5,8 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const KEYCLOAK_URL = __ENV.KEYCLOAK_URL || 'http://localhost:8081';
 const USERNAME = __ENV.USERNAME || 'admin';
 const PASSWORD = __ENV.PASSWORD || 'admin';
+const CLIENT_ID = __ENV.CLIENT_ID || 'pams-cli';
+const CLIENT_SECRET = __ENV.CLIENT_SECRET || 'change-me-pams-cli-secret';
 
 export const options = {
   vus: Number(__ENV.VUS || 10),
@@ -20,7 +22,8 @@ export function setup() {
     `${KEYCLOAK_URL}/realms/pams/protocol/openid-connect/token`,
     {
       grant_type: 'password',
-      client_id: 'pams-api',
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
       username: USERNAME,
       password: PASSWORD,
     },

@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
+/** Caches tenant suspension status for request filtering. */
 @Service
 public class TenantStatusService implements TenantAvailabilityPort {
 

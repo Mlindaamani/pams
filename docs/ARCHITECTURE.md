@@ -10,7 +10,7 @@ Spring Boot modular monolith ── PostgreSQL 16 (Flyway, RLS)
         │        │        │        └── Redis (report cache)
         │        │        └── MinIO (attachments)
         │        └── SMTP (Mailpit dev / provider prod)
-        └── Keycloak (OIDC) + outbox/notifications + OTLP → Tempo
+        └── Keycloak (OIDC) + outbox/notifications + OTLP (optional collector)
 ```
 
 ## Modules

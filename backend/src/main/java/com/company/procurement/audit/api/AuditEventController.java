@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+/** REST API for append-only business audit trail with keyset pagination. */
 @RestController
 @RequestMapping("/api/v1/audit-events")
 @Tag(name = "Audit log", description = "Append-only business audit trail with keyset pagination")

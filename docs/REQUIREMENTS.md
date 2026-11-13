@@ -332,8 +332,7 @@ Migrations:
 - **Metrics:** Micrometer/Actuator metrics; custom business metrics (requests submitted, approvals by outcome, outbox lag, cycle time).
 - **Logging:** structured JSON (Logback + logstash encoder or Spring Boot 3.4+ structured logging); each line includes `traceId`, `spanId`, `requestId`, `userId`, `orgId`.
 - **Correlation:** accept/generate `X-Request-ID`, echo in the response and in error bodies.
-- **Tracing:** Micrometer Tracing + OpenTelemetry exporter (OTLP) → Jaeger/Tempo in the Compose stack.
-- **Tracing:** OTLP traces to Tempo; no in-app dashboard service is provisioned.
+- **Tracing:** Micrometer Tracing + OpenTelemetry exporter (OTLP); no collector is bundled in Compose.
 - HikariCP metrics enabled; slow query logging threshold configured.
 
 ---
@@ -374,7 +373,7 @@ Rules:
 
 ### 13.3 Docker Compose
 Provide:
-- `docker-compose.yml` (dev): `postgres`, `redis`, `keycloak` (with realm import JSON), `minio`, `mailpit`, `tempo`, `api`, `web`.
+- `docker-compose.yml` (dev): `postgres`, `redis`, `keycloak` (with realm import JSON), `minio`, `mailpit`, source-mounted `api`, and Vite `web`.
 - `docker-compose.prod.yml` override: no dev tools, resource limits, restart policies, internal networks, secrets via env/secret files.
 - Named volumes for persistent data; healthchecks and `depends_on: condition: service_healthy`.
 - A `Makefile` (or `justfile`) with: `up`, `down`, `logs`, `test`, `build`, `migrate`, `openapi`, `lint`.
@@ -429,7 +428,7 @@ Projection-based reports, Redis caching with eviction, streamed CSV export, keys
 OpenAPI client generation, auth, all screens listed in section 14, Vitest + Playwright tests, nginx image.
 
 **Phase 8 – Observability & production hardening**
-Actuator separation, Tempo tracing, structured logging, rate limiting, prod Compose, image hardening, vulnerability scans, performance test (k6 or Gatling) with documented results, runbook in `docs/RUNBOOK.md`.
+Actuator separation, OTLP tracing hooks, structured logging, rate limiting, prod Compose, image hardening, vulnerability scans, performance test (k6 or Gatling) with documented results, runbook in `docs/RUNBOOK.md`.
 
 **Phase 9 (stretch)** – Goods receipt, invoice three-way match, webhooks, Kafka replacing the outbox dispatcher.
 
@@ -466,7 +465,7 @@ Actuator separation, Tempo tracing, structured logging, rate limiting, prod Comp
 
 - `backend/` Spring Boot application (modular monolith)
 - `frontend/` React + TS application
-- `ops/` Compose files, Dockerfiles, Keycloak realm export, Tempo config, nginx config
+- `ops/` Compose extras, Dockerfiles, Keycloak realm export, nginx config
 - `docs/` `ARCHITECTURE.md` (with diagrams), `DECISIONS.md`, `API.md` (or link to OpenAPI), `RUNBOOK.md`, `SECURITY.md`
 - `README.md` with quick start (`make up`), default dev credentials, and how to run tests
 - `.env.example`, `Makefile`, CI pipeline config

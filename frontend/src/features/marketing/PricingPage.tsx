@@ -20,8 +20,7 @@ import { Loading } from '@/components/Page';
 import { dateOnly } from '@/lib/format';
 import { listPublicPlans } from './api';
 import { PublicLayout } from './PublicLayout';
-
-type BillingCycle = 'MONTHLY' | 'ANNUAL';
+import type { BillingCycle } from './types';
 
 export function PricingPage() {
   const plans = useQuery({ queryKey: ['public-plans'], queryFn: listPublicPlans });

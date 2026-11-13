@@ -1,6 +1,9 @@
 import { api, etag, idempotencyKey, unwrap } from '@/api/client';
-import type { components, paths } from '@/api/schema';
+import type { paths } from '@/api/schema';
 import type { GoodsReceipt, Page, PurchaseOrder, RecordReceiptRequest } from '@/api/types';
+import type { PurchaseOrderActions, PurchaseOrderApproval } from './types';
+
+export type { PurchaseOrderActions, PurchaseOrderApproval } from './types';
 
 export async function listPurchaseOrders(params: {
   status?: NonNullable<paths['/api/v1/purchase-orders']['get']['parameters']['query']>['status'];
@@ -69,10 +72,6 @@ export async function getPurchaseOrder(id: string): Promise<PurchaseOrder> {
   return unwrap(api.GET('/api/v1/purchase-orders/{id}', { params: { path: { id } } }));
 }
 
-export interface PurchaseOrderActions {
-  actions: string[];
-}
-
 export async function getPurchaseOrderActions(id: string): Promise<PurchaseOrderActions> {
   return unwrap(
     api.GET('/api/v1/purchase-orders/{id}/actions', { params: { path: { id } } }),
@@ -114,8 +113,6 @@ export async function recordGoodsReceipt(
     }),
   );
 }
-
-export type PurchaseOrderApproval = components['schemas']['ApprovalView'];
 
 export async function getPurchaseOrderApproval(id: string): Promise<PurchaseOrderApproval> {
   return unwrap(

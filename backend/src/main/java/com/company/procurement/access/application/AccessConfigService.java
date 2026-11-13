@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Maintains role-permission assignments and workflow action rules. */
 @Service
 public class AccessConfigService {
 

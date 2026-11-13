@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for vendor master data and status lifecycle. */
 @RestController
 @Tag(name = "Vendors", description = "Vendor master data and status lifecycle")
 @RequestMapping("/api/v1/vendors")

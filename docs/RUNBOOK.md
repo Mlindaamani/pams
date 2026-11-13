@@ -4,8 +4,15 @@
 
 ```bash
 cp .env.example .env
-make up                 # PostgreSQL, Keycloak, MinIO, Redis, Mailpit, web, monitoring
-./backend/mvnw -f backend/pom.xml spring-boot:run
+make up                 # PostgreSQL, Keycloak, MinIO, Redis, Mailpit, API and Vite web
+```
+
+Development Compose mounts the frontend source for Vite HMR and the backend source for Spring Boot
+DevTools. After backend edits run:
+
+```bash
+make backend-compile    # compile in the API container and trigger DevTools restart
+# After frontend dependency changes, recreate the web container or run npm ci in it.
 ```
 
 | Service | URL |
@@ -16,7 +23,50 @@ make up                 # PostgreSQL, Keycloak, MinIO, Redis, Mailpit, web, moni
 | Keycloak | http://localhost:8081 |
 | Mailpit | http://localhost:8025 |
 | MinIO console | http://localhost:9001 |
-| Tempo | http://localhost:3200 (OTLP 4317/4318) |
+
+## Keycloak persistence and clients
+
+Keycloak stores realms, users, roles, sessions and client configuration in PostgreSQL database
+`keycloak`. Fresh PostgreSQL volumes create it through `ops/postgres/init/01-keycloak-db.sql`; the API
+database `pams` is not used by Keycloak. Do not switch back to the embedded H2 database; it is wiped
+when the container is recreated.
+
+For an existing PostgreSQL volume created before that init script, create the database once:
+
+```bash
+docker exec pams-postgres psql -U pams -d postgres -c "CREATE DATABASE keycloak;"
+```
+
+| Client | Type | Used by |
+|---|---|---|
+| `pams-frontend` | Public, Authorization Code + PKCE | React SPA |
+| `pams-api` | Confidential, no interactive flow | API/resource-server identifier |
+| `pams-admin` | Confidential service account | Spring Boot Keycloak Admin API |
+| `pams-cli` | Confidential, password grant | Local curl and k6 smoke tests only |
+
+`KEYCLOAK_REALM_IMPORT` points at the realm JSON imported on first boot. The committed
+`ops/keycloak/realm-export.json` includes the clients, service-account roles, `kc-admin-api` scope,
+`organization_id` user-profile attribute and current demo users. To preserve a running realm during
+an upgrade, export it first and point `KEYCLOAK_REALM_IMPORT` at that file for the first boot. Realm
+import is skipped when the realm already exists.
+
+```bash
+# Export the realm with users before replacing Keycloak storage.
+docker compose stop keycloak
+mkdir -p /tmp/pams-keycloak-export && chmod 777 /tmp/pams-keycloak-export
+docker run --rm --network pams_default \
+  -v /tmp/pams-keycloak-export:/export \
+  -e KC_DB=postgres \
+  -e KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak \
+  -e KC_DB_USERNAME=pams -e KC_DB_PASSWORD=pams \
+  quay.io/keycloak/keycloak:26.8.2 export --db postgres \
+  --file /export/pams-realm.json --realm pams --users same_file
+docker compose up -d keycloak
+
+# Verify users and clients survive container recreation.
+docker compose up -d --force-recreate keycloak
+ops/keycloak/verify-admin-client.sh
+```
 
 ## Health and readiness
 
@@ -34,8 +84,8 @@ per 60s). Exceeding the bucket returns `429` with `Retry-After`. Disable only in
 
 - Dev: readable logs with `requestId`/`traceId`.
 - Prod: JSON logs with `service`, `traceId`, `spanId`, `requestId`.
-- OTLP traces are sent to `${OTLP_TRACING_ENDPOINT}` (Tempo in Compose). Sampling defaults to 100%
-  in dev and 10% in prod.
+- OTLP tracing is disabled (`TRACING_SAMPLING_PROBABILITY=0`) while no collector is provisioned.
+  Set `OTLP_TRACING_ENDPOINT` and sampling again when Tempo or another collector is restored.
 - Every request accepts/generates `X-Request-ID`; it is echoed and included in error responses.
 
 ## Outbox and schedules
@@ -47,13 +97,27 @@ per 60s). Exceeding the bucket returns `429` with `Retry-After`. Disable only in
 - Approval escalation runs hourly with reminders then escalation.
 - ShedLock data lives in the `shedlock` table.
 
+### Local token for API tools
+
+The SPA uses `pams-frontend`; password grants are disabled there. Use the local-only `pams-cli`
+client for curl and k6:
+
+```bash
+curl -s -X POST http://localhost:8081/realms/pams/protocol/openid-connect/token \
+  -d grant_type=password -d client_id=pams-cli \
+  -d client_secret=change-me-pams-cli-secret -d username=admin -d password=admin
+```
+
 ## Database backup/restore
 
 ```bash
 docker exec pams-postgres pg_dump -U pams -Fc pams > pams.dump
+docker exec pams-postgres pg_dump -U pams -Fc keycloak > keycloak.dump
 docker exec -i pams-postgres pg_restore -U pams -d pams --clean --if-exists < pams.dump
+docker exec -i pams-postgres pg_restore -U pams -d keycloak --clean --if-exists < keycloak.dump
 ```
 
+Back up `pams` and `keycloak` together: the application profiles reference Keycloak subject IDs.
 Flyway migrations run on startup; never edit an applied migration.
 
 ## Production
@@ -85,7 +149,7 @@ endpoints with `p95 < 300ms` and error-rate `< 1%` thresholds. Record results he
 
 ## Incident checklist
 
-1. Check `/admin/system`, readiness and Tempo trace ingestion.
+1. Check `/admin/system` and readiness.
 2. Inspect API logs by `traceId`/`requestId`.
 3. Check outbox backlog/dead letters and `shedlock` locks.
 4. Verify Keycloak availability and issuer URL, then DB/Redis/MinIO health.
@@ -133,52 +197,65 @@ endpoints with `p95 < 300ms` and error-rate `< 1%` thresholds. Record results he
 - If Keycloak admin or Stripe credentials are absent, the corresponding actions fail with a clear
   validation message; tenants and trial records are still created.
 
-### One-time Keycloak admin client setup
+### Keycloak admin client verification and repair
 
-Run with the Keycloak master admin password:
+The committed realm export creates `pams-admin`, assigns `manage-users`, `view-users`,
+`query-users` and `view-realm`, and attaches the `kc-admin-api` default client scope. Verify a clean
+import with:
+
+```bash
+ops/keycloak/verify-admin-client.sh
+```
+
+If the Admin API returns `401`, repair the client with the master admin password:
 
 ```bash
 KEYCLOAK_ADMIN_PASSWORD='<master-admin-password>' \
 KEYCLOAK_ADMIN_CLIENT_SECRET='change-me-keycloak-admin-secret' \
 ops/keycloak/setup-admin-client.sh
+ops/keycloak/verify-admin-client.sh
 ```
 
-This creates/updates the confidential `pams-admin` service-account client and grants
-`manage-users`, `view-users` and `query-users` from `realm-management`. Ensure `.env` contains the
-same `KEYCLOAK_ADMIN_CLIENT_SECRET`, then restart the API:
-
-```bash
-docker compose up -d --force-recreate api
-```
-
-Alternatively create it in the Keycloak UI: **Clients → Create client → pams-admin**, enable
-client authentication and service accounts, copy the client secret to `.env`, then assign the three
-realm-management roles under **Service accounts roles**.
+Ensure `.env` contains the same `KEYCLOAK_ADMIN_CLIENT_SECRET`; restart the API after changing it.
 
 ### Keycloak user-profile attribute for tenant claims
 
-New Keycloak users need an `organization_id` user-profile attribute so the JWT mapper can emit the
-tenant claim. In **Realm settings → User profile**, add:
-
-- Attribute: `organization_id`
-- Display name: `Organization ID`
-- View: admin, user
-- Edit: admin
-- Multivalued: off
-
-Without this, Keycloak may create the user but silently discard the `organization_id` attribute.
-Existing users can be fixed by setting the attribute under **Users → user → Attributes**.
+The realm export declares the `organization_id` user-profile attribute, and the client protocol
+mappers emit it as a JWT claim. It is visible to admins and users, editable by admins only and not
+multivalued. If an older realm is imported without it, add it under **Realm settings → User profile**,
+then restart the API and sign in again.
 
 ### Keycloak admin authentication fallback
 
-The preferred production setup is the `pams-admin` service account. In dev, if the service-account
-Admin API token is rejected, configure:
+The preferred and default setup is the `pams-admin` service account. The master-admin password
+fallback is an emergency-only option for local repair:
 
 ```text
 KEYCLOAK_ADMIN_AUTH_REALM=master
-KEYCLOAK_ADMIN_USER=admin
-KEYCLOAK_ADMIN_PASSWORD=<master admin password>
+KEYCLOAK_ADMIN_FALLBACK_USER=admin
+KEYCLOAK_ADMIN_FALLBACK_PASSWORD=<master admin password>
 ```
 
-The backend then obtains an Admin API token with the master admin password grant. Remove these
-values in production and use a working service account.
+Use it only to repair a broken service account, then remove the fallback values. Production must use
+`pams-admin`.
+
+### Existing orphaned profiles
+
+If Keycloak was previously recreated without persistent storage, some PostgreSQL profiles may point
+at Keycloak subjects that no longer exist. Report them with:
+
+```bash
+python3 ops/keycloak/reconcile_orphan_profiles.py
+python3 ops/keycloak/reconcile_orphan_profiles.py --json
+```
+
+The script is a dry run and never changes data. Action meanings:
+
+- `REINVITE_AND_RELINK` — user owns current requests, POs, favorites or notifications; re-invite, then relink their profile and operational references.
+- `REINVITE_OR_REASSIGN` — user is only referenced as a manager/delegator; re-invite or reassign those references.
+- `REASSIGN_REFS_THEN_SOFT_DELETE` — duplicate/inactive identity with references; reassign them, then soft-delete the profile.
+- `REVIEW_DUPLICATE_HISTORY` — duplicate email with historical approvals/audit; review before merging or soft-deleting.
+- `SOFT_DELETE` / `SOFT_DELETE_DUPLICATE` — no activity or references; soft-delete is safe after backup.
+- `--fail-on-orphans` exits with status `2`, useful for operational checks.
+
+Reassign managers, delegations and favorites before soft-deleting. Do not mutate historical audit subjects.

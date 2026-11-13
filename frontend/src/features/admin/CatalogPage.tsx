@@ -36,20 +36,9 @@ import {
   updateCatalogItem,
 } from '@/features/reference/api';
 
-interface FormState {
-  sku: string;
-  name: string;
-  unit: string;
-  amount: string;
-  currency: string;
-  category: string;
-  defaultVendorId: string;
-  departmentScope: 'ALL' | 'SELECTED';
-  departmentIds: string[];
-  active: boolean;
-}
+import type { CatalogFormState } from './types';
 
-const emptyForm: FormState = {
+const emptyForm: CatalogFormState = {
   sku: '',
   name: '',
   unit: 'EA',
@@ -73,7 +62,7 @@ export function CatalogPage() {
   const departments = useQuery({ queryKey: ['departments'], queryFn: listDepartments });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogItem | null>(null);
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [form, setForm] = useState<CatalogFormState>(emptyForm);
   const [deleting, setDeleting] = useState<CatalogItem | null>(null);
   const [bulkIds, setBulkIds] = useState<string[] | null>(null);
   const [tab, setTab] = useState(0);

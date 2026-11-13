@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for partial and complete receipts against purchase orders. */
 @RestController
 @RequestMapping("/api/v1/purchase-orders/{purchaseOrderId}/receipts")
 @Tag(name = "Goods receipts", description = "Partial and complete receipts against purchase orders")

@@ -77,10 +77,10 @@ Enterprise, multi-tenant procurement API with approval workflows.
 - Backend: multi-stage Dockerfile, layered jar, non-root user, `-XX:MaxRAMPercentage=75`, health check on readiness, graceful shutdown.
 - Frontend: Node build → nginx with SPA fallback and runtime `/config.js`.
 - `docker compose up` must work from a clean checkout. Use healthchecks and `depends_on: condition: service_healthy`. Provide a `Makefile` (`up`, `down`, `logs`, `test`, `build`, `lint`).
-- Observability: Actuator metrics on a separate management port, OTLP tracing to Tempo, JSON logs with `traceId`, `X-Request-ID` correlation. No Grafana or Prometheus services are provisioned.
+- Observability: Actuator metrics on a separate management port, OTLP tracing hooks (collector optional), JSON logs with `traceId`, `X-Request-ID` correlation. No Grafana, Prometheus or Tempo services are provisioned.
 
 ## Frontend (React + TS)
-- Feature-based folders (`features/requests`, `features/approvals`, ...). API client **generated from OpenAPI**; don't hand-write duplicate types.
+- Feature-based folders (`features/requests`, `features/approvals`, ...). Feature-specific types and interfaces live in `features/<feature>/types`; shared generated API types stay in `@/api`. API client **generated from OpenAPI**; don't hand-write duplicate types.
 - Auth: OIDC Authorization Code + PKCE, token in memory, role-based route guards.
 - TanStack Query for server state; React Hook Form + Zod for forms; map `ProblemDetail` errors to UI; handle `409/412` with a "data changed, reload" flow.
 - Loading, empty, and error states on every screen; keyboard accessible.

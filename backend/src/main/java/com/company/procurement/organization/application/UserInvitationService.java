@@ -12,11 +12,15 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/** Invites users through Keycloak and creates local profiles. */
 @Service
 public class UserInvitationService {
 
+  private static final Logger log = LoggerFactory.getLogger(UserInvitationService.class);
   private static final Set<String> ALLOWED_ROLES =
       Set.of("ADMIN", "REQUESTER", "APPROVER", "PROCUREMENT_OFFICER", "FINANCE", "AUDITOR");
 
@@ -78,7 +82,11 @@ public class UserInvitationService {
                   command.approvalLimitAmount(),
                   command.approvalLimitCurrency()));
     } catch (RuntimeException ex) {
-      keycloak.disableUser(subject);
+      try {
+        keycloak.deleteUser(subject);
+      } catch (RuntimeException cleanupEx) {
+        log.warn("Could not remove the Keycloak user after profile creation failed", cleanupEx);
+      }
       throw ex;
     }
     String tenantName =

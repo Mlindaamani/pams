@@ -20,6 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Creates, updates, suspends and reactivates tenants. */
 @Service
 public class PlatformTenantService {
 

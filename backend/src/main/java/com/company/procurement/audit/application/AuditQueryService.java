@@ -19,6 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Queries and exports audit events with tenant isolation. */
 @Service
 public class AuditQueryService {
 

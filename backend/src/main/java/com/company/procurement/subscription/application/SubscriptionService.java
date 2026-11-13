@@ -32,6 +32,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Manages subscriptions, Stripe synchronization and billing analytics. */
 @Service
 public class SubscriptionService {
 

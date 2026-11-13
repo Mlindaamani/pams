@@ -1,7 +1,7 @@
 import { api, unwrap } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { OnboardingChecklist } from './types';
 
-export type OnboardingChecklist = components['schemas']['Checklist'];
+export type { OnboardingChecklist } from './types';
 
 export async function getOnboardingChecklist(): Promise<OnboardingChecklist> {
   return unwrap(api.GET('/api/v1/onboarding')) as Promise<OnboardingChecklist>;

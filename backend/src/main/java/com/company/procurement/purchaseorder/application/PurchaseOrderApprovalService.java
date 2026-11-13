@@ -33,12 +33,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Coordinates purchase-order approval steps and decisions. */
 @Service
 public class PurchaseOrderApprovalService {
 
   private static final String PENDING = "PENDING";
   private static final String APPROVED = "APPROVED";
-
 
   private final JdbcTemplate jdbc;
   private final PurchaseOrderRepository orders;

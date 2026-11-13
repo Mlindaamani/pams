@@ -2,7 +2,10 @@
 
 ## Authentication and authorization
 
-- Keycloak OIDC, Authorization Code + PKCE for the SPA; tokens stay in memory.
+- Keycloak OIDC, Authorization Code + PKCE for the SPA using the public `pams-frontend` client;
+  tokens stay in memory.
+- `pams-api` is confidential and non-interactive; `pams-cli` exists only for local smoke tests.
+- Keycloak state and users persist in a dedicated PostgreSQL database, not the API database.
 - API is a stateless OAuth2 Resource Server validating JWT signature/issuer/expiry.
 - Realm roles map to `ROLE_*`: REQUESTER, APPROVER, PROCUREMENT_OFFICER, FINANCE, ADMIN, AUDITOR.
 - Deny-by-default filter chain plus `@PreAuthorize` per endpoint; services enforce ownership and
@@ -62,8 +65,9 @@
 
 ## Keycloak admin credentials
 
-- Production must use a dedicated Keycloak service account with only user-management permissions.
-- The development password-grant fallback (`KEYCLOAK_ADMIN_USER`/`KEYCLOAK_ADMIN_PASSWORD`) must not
-  be used in production.
+- Production must use the dedicated `pams-admin` service account with only user-management
+  permissions and the `kc-admin-api` scope.
+- The emergency password-grant fallback (`KEYCLOAK_ADMIN_FALLBACK_USER`/
+  `KEYCLOAK_ADMIN_FALLBACK_PASSWORD`) must not be used in production.
 - Tenant users must have the `organization_id` user-profile attribute; otherwise they cannot be
   tenant-scoped even if Keycloak creates the account.

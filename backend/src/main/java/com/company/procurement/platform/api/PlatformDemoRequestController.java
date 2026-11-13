@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for public demo lead inbox. */
 @RestController
 @RequestMapping("/api/v1/platform/demo-requests")
 @Tag(name = "Platform demo requests", description = "Public demo lead inbox")

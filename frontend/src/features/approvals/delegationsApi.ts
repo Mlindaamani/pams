@@ -1,7 +1,7 @@
 import { api, unwrap } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { Delegation } from './types';
 
-export type Delegation = components['schemas']['DelegationResponse'];
+export type { Delegation } from './types';
 
 export async function listMyDelegations(): Promise<Delegation[]> {
   return unwrap(api.GET('/api/v1/delegations/mine'));

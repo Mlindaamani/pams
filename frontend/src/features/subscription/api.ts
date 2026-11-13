@@ -1,13 +1,29 @@
 import { api, unwrap } from '@/api/client';
-import type { components } from '@/api/schema';
 
-export type SubscriptionPlan = components['schemas']['PlanView'];
-export type TenantSubscription = components['schemas']['SubscriptionView'];
-export type SubscriptionUsage = components['schemas']['Usage'];
-export type SubscriptionSummary = components['schemas']['SubscriptionSummary'];
-export type BillingMetrics = components['schemas']['BillingMetrics'];
-export type ChangePreview = components['schemas']['ChangePreview'];
-export type ReconciliationReport = components['schemas']['ReconciliationReport'];
+import type {
+  BillingMetrics,
+  FeatureInput,
+  PlatformPlan,
+  PlanInput,
+  ReconciliationReport,
+  SubscriptionFeature,
+  SubscriptionPlan,
+  SubscriptionSummary,
+  TenantSubscription,
+} from './types';
+
+export type {
+  BillingMetrics,
+  FeatureInput,
+  PlatformPlan,
+  PlanInput,
+  ReconciliationReport,
+  SubscriptionFeature,
+  SubscriptionPlan,
+  SubscriptionSummary,
+  TenantSubscription,
+  SubscriptionUsage,
+} from './types';
 
 export async function listSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   return unwrap(api.GET('/api/v1/subscription/plans'));
@@ -96,11 +112,6 @@ export async function reactivateTenantSubscription(tenantId: string) {
     }),
   );
 }
-
-export type PlatformPlan = components['schemas']['PlanView'];
-export type PlanInput = components['schemas']['SubscriptionPlanRequest'];
-export type SubscriptionFeature = components['schemas']['FeatureView'];
-export type FeatureInput = components['schemas']['SubscriptionFeatureRequest'];
 
 export async function listAllPlatformPlans(): Promise<PlatformPlan[]> {
   return unwrap(api.GET('/api/v1/platform/subscription-plans'));

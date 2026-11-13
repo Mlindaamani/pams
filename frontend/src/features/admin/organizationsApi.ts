@@ -1,8 +1,8 @@
 import { api, unwrap } from '@/api/client';
 import type { Page } from '@/api/types';
-import type { components } from '@/api/schema';
+import type { Organization } from './types';
 
-export type Organization = components['schemas']['OrganizationResponse'];
+export type { Organization } from './types';
 
 export async function currentOrganization(): Promise<Organization> {
   const page = (await unwrap(

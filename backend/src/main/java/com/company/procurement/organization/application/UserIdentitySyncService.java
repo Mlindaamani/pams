@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Synchronizes Keycloak identity data with local user profiles. */
 @Service
 public class UserIdentitySyncService {
 

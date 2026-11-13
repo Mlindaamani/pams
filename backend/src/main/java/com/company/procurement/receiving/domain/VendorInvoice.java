@@ -23,6 +23,7 @@ import org.hibernate.annotations.Filter;
 @Entity
 @Table(name = "vendor_invoice")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Vendor invoice with matching, approval and payment state. */
 public class VendorInvoice extends TenantEntity {
 
   @Column(name = "purchase_order_id", nullable = false, updatable = false)

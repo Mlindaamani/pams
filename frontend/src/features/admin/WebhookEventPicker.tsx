@@ -1,5 +1,5 @@
 import { Box, Checkbox, FormControlLabel, Stack, Typography } from '@mui/material';
-import type { WebhookEventGroup } from './webhookEvents';
+import type { WebhookEventGroup } from './types';
 
 export function WebhookEventPicker({
   groups,

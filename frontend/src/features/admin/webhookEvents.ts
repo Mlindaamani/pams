@@ -1,14 +1,6 @@
-export interface WebhookEventOption {
-  value: string;
-  label: string;
-}
+import type { WebhookEventGroup } from './types';
 
-export interface WebhookEventGroup {
-  id: string;
-  label: string;
-  helperText: string;
-  events: WebhookEventOption[];
-}
+export type { WebhookEventGroup, WebhookEventOption } from './types';
 
 export const WEBHOOK_EVENT_GROUPS: WebhookEventGroup[] = [
   {

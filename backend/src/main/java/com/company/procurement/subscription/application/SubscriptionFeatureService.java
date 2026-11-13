@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Reads plan features and tenant entitlements. */
 @Service
 public class SubscriptionFeatureService {
 

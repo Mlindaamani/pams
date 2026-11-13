@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for operational status for administrators. */
 @RestController
 @RequestMapping("/api/v1/admin/system")
 @Tag(name = "System", description = "Operational status for administrators")

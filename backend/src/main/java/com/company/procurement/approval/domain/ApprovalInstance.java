@@ -25,6 +25,7 @@ import org.hibernate.annotations.Filter;
 @Entity
 @Table(name = "approval_instance")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Approval workflow instance for one purchase request. */
 public class ApprovalInstance extends TenantEntity {
 
   @Column(name = "purchase_request_id", nullable = false, updatable = false)

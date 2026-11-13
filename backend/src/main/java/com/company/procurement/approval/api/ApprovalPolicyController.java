@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for versioned, amount-tiered approval chains. */
 @RestController
 @RequestMapping("/api/v1/approval-policies")
 @Tag(name = "Approval policies", description = "Versioned, amount-tiered approval chains")

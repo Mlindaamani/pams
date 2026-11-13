@@ -16,6 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Manages tenant branding assets, colors and terminology. */
 @Service
 public class TenantBrandingService {
 

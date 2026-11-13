@@ -16,19 +16,18 @@ import { toast } from '@/components/Toast';
 import { EmptyState, Loading, PageHeader } from '@/components/Page';
 import { money } from '@/lib/format';
 import { approvalInbox, approve, bulkApprove, reject, requestChanges } from './api';
-
-type Action = 'approve' | 'reject' | 'request-changes';
+import type { ApprovalAction } from './types';
 
 export function ApprovalInboxPage() {
   const queryClient = useQueryClient();
   const inbox = useQuery({ queryKey: ['approvals', 'inbox'], queryFn: approvalInbox });
-  const [selected, setSelected] = useState<{ id: string; action: Action } | null>(null);
+  const [selected, setSelected] = useState<{ id: string; action: ApprovalAction } | null>(null);
   const [comment, setComment] = useState('');
   const [bulkIds, setBulkIds] = useState<string[] | null>(null);
   const [bulkComment, setBulkComment] = useState('');
 
   const action = useMutation({
-    mutationFn: async (input: { id: string; action: Action; comment: string }) => {
+    mutationFn: async (input: { id: string; action: ApprovalAction; comment: string }) => {
       if (input.action === 'approve') return approve(input.id, input.comment || undefined);
       if (input.action === 'reject') return reject(input.id, input.comment);
       return requestChanges(input.id, input.comment);

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for spend, approval cycle time and budget commitments. */
 @RestController
 @RequestMapping("/api/v1/reports")
 @Tag(name = "Reports", description = "Spend, approval cycle time and budget commitments")

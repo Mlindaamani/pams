@@ -15,6 +15,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "budget")
 @SQLRestriction("deleted_at IS NULL")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Departmental budget with reserved and committed balances. */
 public class Budget extends SoftDeletableEntity {
 
   @Column(name = "budget_number", nullable = false, updatable = false, length = 40)

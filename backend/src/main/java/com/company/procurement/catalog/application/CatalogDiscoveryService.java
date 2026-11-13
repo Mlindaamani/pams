@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Provides favorite and popular catalog discovery. */
 @Service
 public class CatalogDiscoveryService {
 

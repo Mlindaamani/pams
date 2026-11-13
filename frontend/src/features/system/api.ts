@@ -1,7 +1,7 @@
 import { api, unwrap } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { SystemStatus } from './types';
 
-export type SystemStatus = components['schemas']['SystemStatusResponse'];
+export type { SystemStatus } from './types';
 
 export async function getSystemStatus(): Promise<SystemStatus> {
   return unwrap(api.GET('/api/v1/admin/system/status'));

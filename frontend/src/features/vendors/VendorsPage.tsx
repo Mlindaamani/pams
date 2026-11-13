@@ -17,20 +17,9 @@ import { EmptyState, Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import type { Vendor } from '@/api/types';
 import { bulkDeleteVendors, createVendor, listVendors, setVendorStatus, updateVendor } from './api';
+import type { VendorFormState } from './types';
 
-interface FormState {
-  name: string;
-  taxId: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  addressLine: string;
-  bankName: string;
-  bankAccountName: string;
-  bankAccountNumber: string;
-}
-
-const emptyForm: FormState = {
+const emptyForm: VendorFormState = {
   name: '',
   taxId: '',
   contactName: '',
@@ -48,7 +37,7 @@ export function VendorsPage() {
   const vendors = useQuery({ queryKey: ['vendors'], queryFn: () => listVendors({ size: 100 }) });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Vendor | null>(null);
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [form, setForm] = useState<VendorFormState>(emptyForm);
   const [deleting, setDeleting] = useState<Vendor | null>(null);
   const [bulkIds, setBulkIds] = useState<string[] | null>(null);
   const [blacklisting, setBlacklisting] = useState<Vendor | null>(null);

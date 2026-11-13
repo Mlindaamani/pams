@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Records tenant-scoped business audit events. */
 @Service
 public class AuditEventService {
 

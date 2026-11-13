@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Maintains catalog visibility by department and favorites. */
 @Service
 public class CatalogAudienceService {
 

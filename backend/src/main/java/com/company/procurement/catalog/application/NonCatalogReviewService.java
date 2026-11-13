@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Queues and resolves non-catalog request lines. */
 @Service
 public class NonCatalogReviewService {
 

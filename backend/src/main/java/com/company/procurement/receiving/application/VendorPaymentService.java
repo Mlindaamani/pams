@@ -22,6 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Schedules, approves and settles vendor payments. */
 @Service
 public class VendorPaymentService {
 

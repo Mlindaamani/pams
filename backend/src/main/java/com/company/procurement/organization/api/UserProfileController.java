@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for user profiles, departments, managers and approval limits. */
 @RestController
 @Tag(name = "Users", description = "User profiles, departments, managers and approval limits")
 @RequestMapping("/api/v1/users")

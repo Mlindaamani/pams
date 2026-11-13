@@ -35,6 +35,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Manages purchase requests from draft through approval conversion. */
 @Service
 public class PurchaseRequestService {
 

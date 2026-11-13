@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for time-boxed approval delegation. */
 @RestController
 @RequestMapping("/api/v1/delegations")
 @Tag(name = "Delegations", description = "Time-boxed approval delegation")

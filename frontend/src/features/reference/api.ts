@@ -91,18 +91,9 @@ export async function bulkDeleteDepartments(ids: string[]): Promise<number> {
   return result.processed ?? 0;
 }
 
-export interface NonCatalogReviewLine {
-  id: string;
-  requestId: string;
-  requestNumber?: string;
-  requesterName?: string;
-  departmentName?: string;
-  description?: string;
-  unit?: string;
-  unitPrice?: number;
-  notes?: string;
-  createdAt?: string;
-}
+import type { NonCatalogReviewLine } from './types';
+
+export type { NonCatalogReviewLine } from './types';
 
 export async function listNonCatalogReview(): Promise<NonCatalogReviewLine[]> {
   return unwrap(api.GET('/api/v1/catalog-items/non-catalog-review')) as Promise<

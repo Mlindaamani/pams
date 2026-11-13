@@ -19,6 +19,7 @@ import org.hibernate.annotations.Filter;
 @Entity
 @Table(name = "goods_receipt")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Goods receipt recorded against a purchase order. */
 public class GoodsReceipt extends TenantEntity {
 
   @Column(name = "receipt_number", nullable = false, updatable = false, length = 40)

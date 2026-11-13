@@ -20,6 +20,7 @@ import org.hibernate.annotations.Filter;
 @Entity
 @Table(name = "webhook_subscription")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Tenant webhook endpoint, event subscription and delivery settings. */
 public class WebhookSubscription extends TenantEntity {
 
   @Column(name = "name", nullable = false, length = 200)

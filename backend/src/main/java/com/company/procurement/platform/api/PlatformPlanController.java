@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** REST API for create and manage SaaS plans. */
 @RestController
 @RequestMapping("/api/v1/platform/subscription-plans")
 @Tag(name = "Platform subscription plans", description = "Create and manage SaaS plans")

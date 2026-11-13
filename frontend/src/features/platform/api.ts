@@ -1,57 +1,21 @@
 import { api, etag, idempotencyKey, unwrap } from '@/api/client';
 import type { Page } from '@/api/types';
-import type { components } from '@/api/schema';
 
-export type Tenant = components['schemas']['OrganizationResponse'];
-export type TenantDetail = components['schemas']['TenantDetailResponse'];
-export type DemoRequest = components['schemas']['DemoRequestResponse'];
-export type DemoRequestStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CLOSED';
+import type {
+  DemoRequest,
+  DemoRequestStatus,
+  PlatformDashboard,
+  Tenant,
+  TenantDetail,
+} from './types';
 
-export interface CurrencySpend {
-  currency: string;
-  total: number;
-  orderCount: number;
-}
-
-export interface TenantMetric {
-  id: string;
-  name: string;
-  slug: string;
-  status: 'ACTIVE' | 'SUSPENDED';
-  users: number;
-  requests: number;
-  pendingApprovals: number;
-  mismatchedInvoices: number;
-  spendByCurrency: Record<string, number>;
-  lastActivity?: string;
-}
-
-export interface PlatformDashboard {
-  from: string;
-  to: string;
-  generatedAt: string;
-  summary: {
-    totalTenants: number;
-    activeTenants: number;
-    suspendedTenants: number;
-    newTenants: number;
-    totalUsers: number;
-    totalRequests: number;
-    pendingApprovals: number;
-    mismatchedInvoices: number;
-    outboxDeadLetters: number;
-  };
-  spendByCurrency: CurrencySpend[];
-  requestStatus: { status: string; count: number }[];
-  monthlySpend: { month: string; currency: string; total: number; orderCount: number }[];
-  monthlyRequests: {
-    month: string;
-    submitted: number;
-    approved: number;
-    rejected: number;
-  }[];
-  tenants: TenantMetric[];
-}
+export type {
+  DemoRequest,
+  DemoRequestStatus,
+  PlatformDashboard,
+  Tenant,
+  TenantDetail,
+} from './types';
 
 export async function listTenants(params: {
   q?: string;

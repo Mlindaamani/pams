@@ -1,8 +1,7 @@
 import { api, unwrap } from '@/api/client';
-import type { components } from '@/api/schema';
+import type { BrandingInput, BrandingView } from './types';
 
-export type BrandingView = components['schemas']['BrandingView'];
-export type BrandingInput = components['schemas']['UpdateBrandingRequest'];
+export type { BrandingInput, BrandingView } from './types';
 
 export async function getBranding(): Promise<BrandingView> {
   return unwrap(api.GET('/api/v1/branding'));

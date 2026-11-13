@@ -27,6 +27,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "purchase_request")
 @SQLRestriction("deleted_at IS NULL")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Aggregate root for a purchase request and its line items. */
 public class PurchaseRequest extends SoftDeletableEntity {
 
   @Column(name = "request_number", nullable = false, updatable = false, length = 40)

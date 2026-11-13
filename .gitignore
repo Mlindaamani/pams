@@ -34,3 +34,10 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Local Keycloak realm export used for one-time user-preserving migration
+ops/keycloak/realm-export.local.json
+
+# Local Maven cache for the source-mounted backend container
+.m2/*
+!.m2/.gitkeep

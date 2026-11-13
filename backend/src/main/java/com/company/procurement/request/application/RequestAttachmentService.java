@@ -21,6 +21,7 @@ import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Stores and retrieves request attachments. */
 @Service
 public class RequestAttachmentService {
 

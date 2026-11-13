@@ -7,8 +7,7 @@ import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
 import { getAccessConfig, getRolePermissions, setRolePermission } from './accessConfigApi';
-
-type AssignmentFilter = 'all' | 'assigned' | 'available';
+import type { AssignmentFilter } from './types';
 
 export function RolesPermissionsPage() {
   const queryClient = useQueryClient();

@@ -26,6 +26,7 @@ import org.hibernate.annotations.Filter;
 @Entity
 @Table(name = "purchase_order")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Aggregate root for a purchase order and its issued/received lifecycle. */
 public class PurchaseOrder extends TenantEntity {
 
   @Column(name = "purchase_request_id", nullable = false, updatable = false)

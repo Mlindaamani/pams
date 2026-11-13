@@ -24,8 +24,8 @@ import {
   getWorkflowRules,
   getWorkflowStatuses,
   saveWorkflowRules,
-  type WorkflowRule,
 } from './accessConfigApi';
+import type { WorkflowActionMeta, WorkflowRule } from './types';
 
 const ENTITIES = [
   {
@@ -47,13 +47,7 @@ const ENTITIES = [
 
 type EntityType = (typeof ENTITIES)[number]['value'];
 
-interface ActionMeta {
-  label: string;
-  description: string;
-  permission: string;
-}
-
-const ACTIONS: Record<string, ActionMeta> = {
+const ACTIONS: Record<string, WorkflowActionMeta> = {
   EDIT: {
     label: 'Edit',
     description: 'Change the draft or a request returned for changes.',

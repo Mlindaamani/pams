@@ -224,6 +224,16 @@ public class KeycloakAdminAdapter implements KeycloakAdminPort {
         Map.of("enabled", false));
   }
 
+  @Override
+  public void deleteUser(String subject) {
+    if (!properties.configured() || subject == null || subject.isBlank()) return;
+    HttpResponse<String> response =
+        send("DELETE", "/admin/realms/" + properties.realm() + "/users/" + subject, token(), null);
+    if (response.statusCode() >= 400 && response.statusCode() != 404) {
+      throw new BusinessRuleException("Could not delete Keycloak user");
+    }
+  }
+
   private String token() {
     String authRealm;
     String form;

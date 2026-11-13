@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+/** REST API for invoice capture and three-way matching. */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Vendor invoices", description = "Invoice capture and three-way matching")

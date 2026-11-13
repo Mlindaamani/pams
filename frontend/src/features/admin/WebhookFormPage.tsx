@@ -23,16 +23,7 @@ import { WebhookEventPicker } from './WebhookEventPicker';
 import { WebhookSecretDialog } from './WebhookSecretDialog';
 import { WEBHOOK_EVENT_GROUPS, WEBHOOK_EVENTS } from './webhookEvents';
 
-interface WebhookFormState {
-  name: string;
-  url: string;
-  description: string;
-  eventTypes: string[];
-  signingMethod: string;
-  timeoutSeconds: number;
-  maxAttempts: number;
-  active: boolean;
-}
+import type { WebhookFormState } from './types';
 
 function initialState(subscription?: WebhookSubscription): WebhookFormState {
   return {

@@ -5,8 +5,8 @@ import { Box, Button, Card, CardContent, Chip, Grid, Stack, Typography } from '@
 import { Can } from '@/auth/AbilityProvider';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateTime } from '@/lib/format';
-import type { ApprovalPolicy } from '@/api/types';
 import { getPolicy } from './api';
+import type { PolicyStep } from './types';
 
 export function WorkflowPolicyDetailPage() {
   const { id } = useParams();
@@ -168,8 +168,6 @@ export function WorkflowPolicyDetailPage() {
     </>
   );
 }
-
-type PolicyStep = NonNullable<ApprovalPolicy['steps']>[number];
 
 function Info({ label, value }: { label: string; value: ReactNode }) {
   return (

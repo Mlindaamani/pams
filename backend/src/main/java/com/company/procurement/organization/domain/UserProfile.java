@@ -15,6 +15,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "user_profile")
 @SQLRestriction("deleted_at IS NULL")
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
+/** Tenant user profile linked to a Keycloak subject. */
 public class UserProfile extends SoftDeletableEntity {
 
   @Column(name = "keycloak_subject", nullable = false, length = 200)

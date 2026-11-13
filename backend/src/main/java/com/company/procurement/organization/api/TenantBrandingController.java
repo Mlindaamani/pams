@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/** REST API for tenant workspace branding. */
 @RestController
 @RequestMapping("/api/v1/branding")
 @Tag(name = "Branding", description = "Tenant workspace branding")
