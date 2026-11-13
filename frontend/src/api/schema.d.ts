@@ -2249,14 +2249,21 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         UpdateWebhookRequest: {
+            name?: string;
             url: string;
             description?: string;
             eventTypes: string[];
+            signingMethod?: string;
+            /** Format: int32 */
+            timeoutSeconds?: number;
+            /** Format: int32 */
+            maxAttempts?: number;
             active: boolean;
         };
         WebhookSubscriptionResponse: {
             /** Format: uuid */
             id?: string;
+            name?: string;
             url?: string;
             description?: string;
             eventTypes?: string[];
@@ -2265,6 +2272,11 @@ export interface components {
             lastSuccessAt?: string;
             /** Format: date-time */
             lastFailureAt?: string;
+            signingMethod?: string;
+            /** Format: int32 */
+            timeoutSeconds?: number;
+            /** Format: int32 */
+            maxAttempts?: number;
             /** Format: int64 */
             deliveryCount?: number;
             /** Format: date-time */
@@ -2763,9 +2775,15 @@ export interface components {
             assigned?: boolean;
         };
         CreateWebhookRequest: {
+            name?: string;
             url: string;
             description?: string;
             eventTypes: string[];
+            signingMethod?: string;
+            /** Format: int32 */
+            timeoutSeconds?: number;
+            /** Format: int32 */
+            maxAttempts?: number;
             active?: boolean;
         };
         WebhookCreatedResponse: {
@@ -2777,6 +2795,7 @@ export interface components {
             id?: string;
             /** Format: uuid */
             subscriptionId?: string;
+            subscriptionName?: string;
             subscriptionUrl?: string;
             /** Format: uuid */
             eventId?: string;

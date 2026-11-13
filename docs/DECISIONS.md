@@ -1886,3 +1886,26 @@ tenant-wide delivery log with filters, endpoint health counts and per-delivery i
 
 **Consequences.** Operators can inspect and troubleshoot webhook delivery without leaving the page,
 while endpoint configuration stays separate from delivery history.
+
+---
+
+## ADR-097 — Page-based webhook setup with a 20-event catalogue
+
+**Context.** Webhook setup was a modal with only three events. Operators could not identify
+endpoints by name in the delivery log, and delivery tuning was global rather than per receiver.
+
+**Decision.**
+- Move Add/Edit webhook to dedicated pages (`/admin/webhooks/new`, `/admin/webhooks/:id/edit`) and
+  keep modals only for short confirmations and one-time secret display.
+- Require a human-readable endpoint name; fall back to the description or URL host for legacy rows.
+- Publish a 20-event catalogue grouped as requests (6), purchase orders (3), goods receipts (1),
+  vendor invoices (5), vendor payments (4) and vendor status (1), with helper text per module.
+- Show endpoint names in endpoint tables, delivery rows and endpoint filters, keeping the URL as
+  secondary copyable detail.
+- Store per-endpoint signing method (`HMAC_SHA256`), timeout (1–60 seconds, default 10) and max
+  attempts (1–10, default 5); the dispatcher reads these settings for each delivery.
+- Emit the new request, PO, invoice, payment and vendor-status outbox events at their state
+  transitions so subscribed endpoints receive them through the normal dispatcher.
+
+**Consequences.** Webhook configuration is easier to scan and audit, receivers can have different
+retry/timeout needs, and integrations can subscribe to the full procurement lifecycle.

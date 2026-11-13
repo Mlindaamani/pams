@@ -75,9 +75,14 @@ public class WebhookController {
     Page<WebhookDelivery> deliveries =
         webhooks.deliveryLog(endpointId, status, eventType, pageable);
     Map<UUID, String> urls = webhooks.subscriptionUrls();
+    Map<UUID, String> names = webhooks.subscriptionNames();
     return PageResponse.from(
         deliveries,
-        delivery -> mapper.toResponse(delivery, urls.get(delivery.getSubscriptionId())));
+        delivery ->
+            mapper.toResponse(
+                delivery,
+                names.get(delivery.getSubscriptionId()),
+                urls.get(delivery.getSubscriptionId())));
   }
 
   @PostMapping
@@ -86,9 +91,13 @@ public class WebhookController {
     WebhookService.CreatedSubscription created =
         webhooks.create(
             new WebhookService.CreateWebhookCommand(
+                request.name(),
                 request.url(),
                 request.description(),
                 request.eventTypes(),
+                request.signingMethod() == null ? "HMAC_SHA256" : request.signingMethod(),
+                request.timeoutSeconds() == null ? 10 : request.timeoutSeconds(),
+                request.maxAttempts() == null ? 5 : request.maxAttempts(),
                 request.active() == null || request.active()));
     WebhookSubscription subscription = created.subscription();
     URI location =
@@ -111,7 +120,14 @@ public class WebhookController {
             id,
             ConditionalRequests.requireIfMatch(httpRequest),
             new WebhookService.UpdateWebhookCommand(
-                request.url(), request.description(), request.eventTypes(), request.active()));
+                request.name(),
+                request.url(),
+                request.description(),
+                request.eventTypes(),
+                request.signingMethod() == null ? "HMAC_SHA256" : request.signingMethod(),
+                request.timeoutSeconds() == null ? 10 : request.timeoutSeconds(),
+                request.maxAttempts() == null ? 5 : request.maxAttempts(),
+                request.active()));
     return ResponseEntity.ok()
         .eTag(ConditionalRequests.etag(updated.getVersion()))
         .body(mapper.toResponse(updated));
@@ -144,7 +160,16 @@ public class WebhookController {
   @GetMapping("/{id}/deliveries")
   public List<WebhookDeliveryResponse> deliveries(
       @PathVariable UUID id, @RequestParam(defaultValue = "50") int limit) {
-    return webhooks.deliveries(id, limit).stream().map(mapper::toResponse).toList();
+    Map<UUID, String> urls = webhooks.subscriptionUrls();
+    Map<UUID, String> names = webhooks.subscriptionNames();
+    return webhooks.deliveries(id, limit).stream()
+        .map(
+            delivery ->
+                mapper.toResponse(
+                    delivery,
+                    names.get(delivery.getSubscriptionId()),
+                    urls.get(delivery.getSubscriptionId())))
+        .toList();
   }
 
   @PostMapping("/deliveries/{id}/retry")

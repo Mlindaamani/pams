@@ -5,6 +5,8 @@ import com.company.procurement.shared.actor.CurrentActorProvider;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.outbox.OutboxEventTypes;
+import com.company.procurement.shared.outbox.OutboxService;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.vendor.domain.Vendor;
 import com.company.procurement.vendor.domain.VendorRepository;
@@ -27,18 +29,21 @@ public class VendorService {
   private final JdbcTemplate jdbc;
   private final Clock clock;
   private final CurrentActorProvider actorProvider;
+  private final OutboxService outbox;
 
   public VendorService(
       VendorRepository vendors,
       AuditEventService audit,
       JdbcTemplate jdbc,
       Clock clock,
-      CurrentActorProvider actorProvider) {
+      CurrentActorProvider actorProvider,
+      OutboxService outbox) {
     this.vendors = vendors;
     this.audit = audit;
     this.jdbc = jdbc;
     this.clock = clock;
     this.actorProvider = actorProvider;
+    this.outbox = outbox;
   }
 
   @Transactional
@@ -103,28 +108,46 @@ public class VendorService {
   @Transactional
   public Vendor activate(UUID id) {
     Vendor vendor = get(id);
+    VendorStatus previous = vendor.getStatus();
     vendor.activate();
     Vendor saved = vendors.save(vendor);
     audit.recordCurrentActor("vendor", saved.getId(), "vendor_activated", Map.of());
+    enqueueStatusChange(saved, previous);
     return saved;
   }
 
   @Transactional
   public Vendor suspend(UUID id) {
     Vendor vendor = get(id);
+    VendorStatus previous = vendor.getStatus();
     vendor.suspend();
     Vendor saved = vendors.save(vendor);
     audit.recordCurrentActor("vendor", saved.getId(), "vendor_suspended", Map.of());
+    enqueueStatusChange(saved, previous);
     return saved;
   }
 
   @Transactional
   public Vendor blacklist(UUID id) {
     Vendor vendor = get(id);
+    VendorStatus previous = vendor.getStatus();
     vendor.blacklist();
     Vendor saved = vendors.save(vendor);
     audit.recordCurrentActor("vendor", saved.getId(), "vendor_blacklisted", Map.of());
+    enqueueStatusChange(saved, previous);
     return saved;
+  }
+
+  private void enqueueStatusChange(Vendor vendor, VendorStatus previous) {
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_STATUS_CHANGED,
+        "vendor",
+        vendor.getId(),
+        Map.of(
+            "vendorId", vendor.getId().toString(),
+            "name", vendor.getName(),
+            "previousStatus", previous.name(),
+            "status", vendor.getStatus().name()));
   }
 
   @Transactional

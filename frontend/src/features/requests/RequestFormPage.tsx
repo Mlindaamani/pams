@@ -263,7 +263,11 @@ export function RequestFormPage() {
 
   return (
     <>
-      <PageHeader title={edit ? 'Edit request' : 'New purchase request'} />
+      <PageHeader
+        title={edit ? 'Edit request' : 'New purchase request'}
+        backTo={edit && id ? `/requests/${id}` : '/requests'}
+        backLabel={edit ? 'Back to request' : 'Back to requests'}
+      />
       <form onSubmit={handleSubmit((values) => mutation.mutate(values))}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 8 }}>

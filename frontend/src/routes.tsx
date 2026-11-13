@@ -21,6 +21,8 @@ import { CatalogPage } from '@/features/admin/CatalogPage';
 import { OrganizationPage } from '@/features/admin/OrganizationPage';
 import { BrandingPage } from '@/features/admin/BrandingPage';
 import { WebhooksPage } from '@/features/admin/WebhooksPage';
+import { WebhookFormPage } from '@/features/admin/WebhookFormPage';
+import { WebhookDetailPage } from '@/features/admin/WebhookDetailPage';
 import { DelegationsPage } from '@/features/approvals/DelegationsPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
 import { SystemPage } from '@/features/system/SystemPage';
@@ -189,6 +191,18 @@ export const router = createBrowserRouter([
       },
       { path: 'admin/policies', element: <Navigate to="/admin/workflow?tab=policies" replace /> },
       { path: 'admin/webhooks', element: guard('read', 'Webhook', <WebhooksPage />) },
+      {
+        path: 'admin/webhooks/new',
+        element: guard('manage', 'Webhook', <WebhookFormPage />),
+      },
+      {
+        path: 'admin/webhooks/:id',
+        element: guard('read', 'Webhook', <WebhookDetailPage />),
+      },
+      {
+        path: 'admin/webhooks/:id/edit',
+        element: guard('manage', 'Webhook', <WebhookFormPage />),
+      },
       { path: 'audit', element: guard('read', 'Audit', <AuditPage />) },
       { path: 'notifications', element: <NotificationsPage /> },
       { path: '403', element: <ForbiddenPage /> },

@@ -106,11 +106,9 @@ export function InvoiceDetailPage() {
     <>
       <PageHeader
         title={`Invoice ${data.invoiceNumber ?? ''}`}
+        backTo="/invoices"
         actions={
           <Stack direction="row" spacing={1}>
-            <Button component={RouterLink} to="/invoices" variant="outlined">
-              Back
-            </Button>
             <Button
               onClick={async () => {
                 const blob = await vendorInvoicePdf(data.id!);

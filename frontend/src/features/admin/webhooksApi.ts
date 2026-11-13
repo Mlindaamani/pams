@@ -2,9 +2,13 @@ import { api, etag, idempotencyKey, unwrap } from '@/api/client';
 import type { Page, WebhookCreated, WebhookDelivery, WebhookSubscription } from '@/api/types';
 
 export interface WebhookInput {
+  name: string;
   url: string;
   description?: string;
   eventTypes: string[];
+  signingMethod: string;
+  timeoutSeconds: number;
+  maxAttempts: number;
   active: boolean;
 }
 

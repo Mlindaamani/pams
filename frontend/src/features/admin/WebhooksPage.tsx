@@ -1,32 +1,24 @@
 import { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert,
   Box,
   Button,
   Card,
   CardContent,
-  Checkbox,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   Drawer,
-  FormControlLabel,
   IconButton,
   Menu,
   MenuItem,
   Stack,
-  Switch,
   Tab,
   Tabs,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import KeyIcon from '@mui/icons-material/Key';
@@ -35,6 +27,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import ReplayIcon from '@mui/icons-material/Replay';
 import SendIcon from '@mui/icons-material/Send';
+import { Can } from '@/auth/AbilityProvider';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
@@ -43,7 +36,6 @@ import { problemMessage } from '@/api/client';
 import { dateTime } from '@/lib/format';
 import type { WebhookDelivery, WebhookSubscription } from '@/api/types';
 import {
-  createWebhook,
   deleteWebhook,
   listDeliveryLog,
   listWebhooks,
@@ -51,34 +43,10 @@ import {
   rotateWebhookSecret,
   sendWebhookTestEvent,
   updateWebhook,
-  type WebhookInput,
 } from './webhooksApi';
-
-const EVENT_GROUPS = [
-  {
-    id: 'purchase_orders',
-    label: 'Purchase orders',
-    helperText: 'Notify ERP and vendor systems when an approved purchase order is issued.',
-    events: [{ value: 'PurchaseOrderIssued', label: 'Issued' }],
-  },
-  {
-    id: 'goods_receipts',
-    label: 'Goods receipts',
-    helperText: 'Trigger receiving, inventory and project-delivery updates when goods arrive.',
-    events: [{ value: 'GoodsReceiptRecorded', label: 'Recorded' }],
-  },
-  {
-    id: 'vendor_invoices',
-    label: 'Vendor invoices',
-    helperText:
-      'Send recorded invoice details and matching status to finance and accounting systems.',
-    events: [{ value: 'VendorInvoiceRecorded', label: 'Recorded' }],
-  },
-];
-
-const EVENTS = EVENT_GROUPS.flatMap((group) => group.events);
-
-const DELIVERY_EVENTS = [...EVENTS, { value: 'WebhookTest', label: 'Test event' }];
+import { WebhookSecretDialog } from './WebhookSecretDialog';
+import { CopyableUrl } from './WebhookCopyableUrl';
+import { WEBHOOK_DELIVERY_EVENTS, webhookEventLabel } from './webhookEvents';
 
 const DELIVERY_STATUSES = [
   { value: 'PENDING', label: 'Pending' },
@@ -86,20 +54,11 @@ const DELIVERY_STATUSES = [
   { value: 'DEAD_LETTER', label: 'Dead letter' },
 ];
 
-const emptyDraft = (): WebhookInput => ({
-  url: '',
-  description: '',
-  eventTypes: ['PurchaseOrderIssued'],
-  active: true,
-});
-
 export function WebhooksPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const webhooks = useQuery({ queryKey: ['webhooks'], queryFn: listWebhooks });
   const [tab, setTab] = useState<'endpoints' | 'logs'>('endpoints');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<WebhookSubscription | null>(null);
-  const [draft, setDraft] = useState<WebhookInput>(emptyDraft);
   const [secret, setSecret] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WebhookSubscription | null>(null);
   const [menu, setMenu] = useState<{
@@ -130,26 +89,6 @@ export function WebhooksPage() {
     void queryClient.invalidateQueries({ queryKey: ['webhook-delivery-log'] });
   };
 
-  const create = useMutation({
-    mutationFn: () => createWebhook(draft),
-    onSuccess: (result) => {
-      setDialogOpen(false);
-      invalidate();
-      if (result.signingSecret) setSecret(result.signingSecret);
-      toast.success('Webhook endpoint created.');
-    },
-    onError: (error) => toast.error(problemMessage(error)),
-  });
-  const update = useMutation({
-    mutationFn: () => updateWebhook(editing!.id!, editing!.version ?? 0, draft),
-    onSuccess: () => {
-      setDialogOpen(false);
-      setEditing(null);
-      invalidate();
-      toast.success('Webhook endpoint updated.');
-    },
-    onError: (error) => toast.error(problemMessage(error)),
-  });
   const remove = useMutation({
     mutationFn: () => deleteWebhook(deleteTarget!.id!, deleteTarget!.version ?? 0),
     onSuccess: () => {
@@ -172,9 +111,13 @@ export function WebhooksPage() {
   const toggleActive = useMutation({
     mutationFn: (subscription: WebhookSubscription) =>
       updateWebhook(subscription.id!, subscription.version ?? 0, {
+        name: subscription.name ?? subscription.url ?? 'Webhook endpoint',
         url: subscription.url ?? '',
         description: subscription.description,
         eventTypes: subscription.eventTypes ?? [],
+        signingMethod: subscription.signingMethod ?? 'HMAC_SHA256',
+        timeoutSeconds: subscription.timeoutSeconds ?? 10,
+        maxAttempts: subscription.maxAttempts ?? 5,
         active: !subscription.active,
       }),
     onSuccess: (_result, subscription) => {
@@ -202,35 +145,6 @@ export function WebhooksPage() {
     onError: (error) => toast.error(problemMessage(error)),
   });
 
-  const openCreate = () => {
-    setEditing(null);
-    setDraft(emptyDraft());
-    setDialogOpen(true);
-  };
-
-  const openEdit = (subscription: WebhookSubscription) => {
-    setEditing(subscription);
-    setDraft({
-      url: subscription.url ?? '',
-      description: subscription.description ?? '',
-      eventTypes: subscription.eventTypes ?? [],
-      active: subscription.active ?? true,
-    });
-    setDialogOpen(true);
-  };
-
-  const toggleEvent = (eventType: string) => {
-    setDraft((current) => ({
-      ...current,
-      eventTypes: current.eventTypes.includes(eventType)
-        ? current.eventTypes.filter((value) => value !== eventType)
-        : [...current.eventTypes, eventType],
-    }));
-  };
-
-  const saveDisabled =
-    !draft.url.trim() || draft.eventTypes.length === 0 || create.isPending || update.isPending;
-
   if (webhooks.isLoading) return <Loading />;
 
   return (
@@ -238,16 +152,13 @@ export function WebhooksPage() {
       <PageHeader
         title="Webhooks"
         actions={
-          <Button variant="contained" onClick={openCreate}>
-            Add endpoint
-          </Button>
+          <Can I="manage" a="Webhook">
+            <Button variant="contained" onClick={() => navigate('/admin/webhooks/new')}>
+              Add endpoint
+            </Button>
+          </Can>
         }
       />
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Deliveries are HMAC-SHA256 signed with the endpoint secret. The secret is shown only once
-        when created or rotated.
-      </Alert>
-
       <Tabs value={tab} onChange={(_, value: 'endpoints' | 'logs') => setTab(value)} sx={{ mb: 2 }}>
         <Tab value="endpoints" label="Endpoints" />
         <Tab value="logs" label="Delivery Logs" />
@@ -259,19 +170,27 @@ export function WebhooksPage() {
           rows={webhooks.data ?? []}
           getRowId={(subscription) => subscription.id ?? ''}
           emptyMessage="No webhook endpoints configured."
+          onRowClick={(subscription) => navigate(`/admin/webhooks/${subscription.id}`)}
           columns={[
             {
               key: 'url',
               label: 'Endpoint',
               render: (row) => (
-                <Box sx={{ minWidth: 0, maxWidth: { xs: 220, md: 420 } }}>
-                  <CopyableUrl value={row.url ?? ''} />
-                  {row.description && (
-                    <Typography variant="caption" color="text.secondary">
-                      {row.description}
-                    </Typography>
-                  )}
-                </Box>
+                <Typography
+                  component={RouterLink}
+                  to={`/admin/webhooks/${row.id}`}
+                  variant="body2"
+                  fontWeight={600}
+                  noWrap
+                  sx={{
+                    maxWidth: 420,
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {row.name ?? row.url}
+                </Typography>
               ),
             },
             {
@@ -309,17 +228,20 @@ export function WebhooksPage() {
               align: 'right',
               width: 90,
               render: (row) => (
-                <Tooltip title="Endpoint actions">
-                  <IconButton
-                    size="small"
-                    aria-label="Endpoint actions"
-                    onClick={(event) =>
-                      setMenu({ anchorEl: event.currentTarget, subscription: row })
-                    }
-                  >
-                    <MoreVertIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <Can I="manage" a="Webhook">
+                  <Tooltip title="Endpoint actions">
+                    <IconButton
+                      size="small"
+                      aria-label="Endpoint actions"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setMenu({ anchorEl: event.currentTarget, subscription: row });
+                      }}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Can>
               ),
             },
           ]}
@@ -342,7 +264,7 @@ export function WebhooksPage() {
                   <MenuItem value="">All endpoints</MenuItem>
                   {(webhooks.data ?? []).map((subscription) => (
                     <MenuItem key={subscription.id} value={subscription.id}>
-                      {subscription.url}
+                      {subscription.name ?? subscription.url}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -374,7 +296,7 @@ export function WebhooksPage() {
                   sx={{ minWidth: 240 }}
                 >
                   <MenuItem value="">All events</MenuItem>
-                  {DELIVERY_EVENTS.map((event) => (
+                  {WEBHOOK_DELIVERY_EVENTS.map((event) => (
                     <MenuItem key={event.value} value={event.value}>
                       {event.label}
                     </MenuItem>
@@ -394,15 +316,15 @@ export function WebhooksPage() {
               {
                 key: 'event',
                 label: 'Event',
-                render: (delivery) => eventLabel(delivery.eventType),
+                render: (delivery) => webhookEventLabel(delivery.eventType),
               },
               {
                 key: 'endpoint',
                 label: 'Endpoint',
                 render: (delivery) => (
-                  <Box sx={{ minWidth: 0, maxWidth: { xs: 220, md: 320 } }}>
-                    <CopyableUrl value={delivery.subscriptionUrl ?? 'Endpoint unavailable'} />
-                  </Box>
+                  <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 320 }}>
+                    {delivery.subscriptionName ?? delivery.subscriptionUrl ?? 'Endpoint'}
+                  </Typography>
                 ),
               },
               {
@@ -478,7 +400,7 @@ export function WebhooksPage() {
       >
         <MenuItem
           onClick={() => {
-            if (menu) openEdit(menu.subscription);
+            if (menu) navigate(`/admin/webhooks/${menu.subscription.id}/edit`);
             setMenu(null);
           }}
         >
@@ -539,126 +461,12 @@ export function WebhooksPage() {
         </MenuItem>
       </Menu>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editing ? 'Edit webhook endpoint' : 'Add webhook endpoint'}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="Endpoint URL"
-              value={draft.url}
-              onChange={(event) => setDraft((current) => ({ ...current, url: event.target.value }))}
-              placeholder="https://example.com/hooks/pams"
-              fullWidth
-              required
-            />
-            <TextField
-              label="Description"
-              value={draft.description}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, description: event.target.value }))
-              }
-              fullWidth
-            />
-            <Box>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 1 }}
-              >
-                <Typography variant="subtitle2">Events</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {draft.eventTypes.length} of {EVENTS.length} selected
-                </Typography>
-              </Stack>
-              <Stack spacing={1.5}>
-                {EVENT_GROUPS.map((group) => (
-                  <EventGroupCard
-                    key={group.id}
-                    group={group}
-                    selected={draft.eventTypes}
-                    onToggleEvent={toggleEvent}
-                    onToggleGroup={() => {
-                      const groupValues = group.events.map((event) => event.value);
-                      const allSelected = groupValues.every((value) =>
-                        draft.eventTypes.includes(value),
-                      );
-                      setDraft((current) => ({
-                        ...current,
-                        eventTypes: allSelected
-                          ? current.eventTypes.filter((value) => !groupValues.includes(value))
-                          : [...new Set([...current.eventTypes, ...groupValues])],
-                      }));
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={draft.active}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, active: event.target.checked }))
-                  }
-                />
-              }
-              label="Active"
-            />
-            {editing && (
-              <Typography variant="body2" color="text.secondary">
-                Use “Rotate secret” from the actions menu if the signing secret was lost.
-              </Typography>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            disabled={saveDisabled}
-            onClick={() => (editing ? update.mutate() : create.mutate())}
-          >
-            {editing ? 'Save' : 'Create'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={Boolean(secret)} onClose={() => setSecret(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Webhook signing secret</DialogTitle>
-        <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Copy this secret now. It will not be shown again.
-          </Alert>
-          <TextField
-            value={secret ?? ''}
-            fullWidth
-            multiline
-            slotProps={{ htmlInput: { readOnly: true } }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            startIcon={<ContentCopyIcon />}
-            onClick={async () => {
-              if (secret) {
-                await navigator.clipboard.writeText(secret);
-                toast.success('Secret copied to clipboard.');
-              }
-            }}
-          >
-            Copy
-          </Button>
-          <Button variant="contained" onClick={() => setSecret(null)}>
-            Done
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <WebhookSecretDialog secret={secret} onClose={() => setSecret(null)} />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete webhook endpoint"
-        message={`Delete ${deleteTarget?.url ?? 'this endpoint'} and its delivery history?`}
+        message={`Delete ${deleteTarget?.name ?? deleteTarget?.url ?? 'this endpoint'} and its delivery history?`}
         confirmLabel="Delete endpoint"
         busy={remove.isPending}
         onCancel={() => setDeleteTarget(null)}
@@ -700,9 +508,9 @@ function DeliveryDetailDrawer({
         <Stack spacing={2} sx={{ height: '100%', overflowY: 'auto' }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="h6">{eventLabel(delivery.eventType)}</Typography>
+              <Typography variant="h6">{webhookEventLabel(delivery.eventType)}</Typography>
               <Typography variant="body2" color="text.secondary">
-                To
+                {delivery.subscriptionName ?? 'To'}
               </Typography>
               <CopyableUrl value={delivery.subscriptionUrl ?? 'Endpoint unavailable'} />
             </Box>
@@ -843,81 +651,6 @@ function prettyJson(value?: string): string {
   }
 }
 
-function EventGroupCard({
-  group,
-  selected,
-  onToggleEvent,
-  onToggleGroup,
-}: {
-  group: (typeof EVENT_GROUPS)[number];
-  selected: string[];
-  onToggleEvent: (eventType: string) => void;
-  onToggleGroup: () => void;
-}) {
-  const selectedCount = group.events.filter((event) => selected.includes(event.value)).length;
-  const allSelected = selectedCount === group.events.length;
-  const someSelected = selectedCount > 0 && !allSelected;
-  const helperId = `${group.id}-events-helper`;
-
-  return (
-    <Box
-      sx={{
-        p: 1.5,
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 2,
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Stack direction="row" alignItems="flex-start" spacing={0.5}>
-        <Checkbox
-          size="small"
-          checked={allSelected}
-          indeterminate={someSelected}
-          onChange={onToggleGroup}
-          slotProps={{
-            input: {
-              'aria-label': `Select all ${group.label} events`,
-              'aria-describedby': helperId,
-            },
-          }}
-        />
-        <Box sx={{ pt: 0.75 }}>
-          <Typography variant="subtitle2">{group.label}</Typography>
-          <Typography
-            id={helperId}
-            variant="caption"
-            color="text.secondary"
-            display="block"
-            sx={{ mb: 0.5 }}
-          >
-            {group.helperText}
-          </Typography>
-          <Stack sx={{ ml: -1 }}>
-            {group.events.map((event) => (
-              <FormControlLabel
-                key={event.value}
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={selected.includes(event.value)}
-                    onChange={() => onToggleEvent(event.value)}
-                  />
-                }
-                label={event.label}
-              />
-            ))}
-          </Stack>
-        </Box>
-      </Stack>
-    </Box>
-  );
-}
-
-function eventLabel(eventType?: string): string {
-  return DELIVERY_EVENTS.find((event) => event.value === eventType)?.label ?? eventType ?? '—';
-}
-
 function statusLabel(status?: string): string {
   return DELIVERY_STATUSES.find((value) => value.value === status)?.label ?? status ?? '—';
 }
@@ -935,44 +668,4 @@ function responseLabel(delivery: WebhookDelivery): string {
       : String(delivery.responseStatus);
   }
   return delivery.errorMessage ?? '—';
-}
-
-function CopyableUrl({ value }: { value: string }) {
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success('Endpoint URL copied.');
-    } catch {
-      toast.error('Could not copy endpoint URL.');
-    }
-  };
-
-  return (
-    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
-      <Tooltip title={value}>
-        <Typography
-          variant="body2"
-          noWrap
-          sx={{
-            minWidth: 0,
-            fontFamily: 'monospace',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {value}
-        </Typography>
-      </Tooltip>
-      <Tooltip title="Copy endpoint URL">
-        <IconButton
-          size="small"
-          aria-label="Copy endpoint URL"
-          onClick={() => void copy()}
-          sx={{ flexShrink: 0 }}
-        >
-          <ContentCopyIcon sx={{ fontSize: 15 }} />
-        </IconButton>
-      </Tooltip>
-    </Stack>
-  );
 }

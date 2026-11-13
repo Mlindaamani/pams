@@ -1,7 +1,26 @@
-import { Box, Card, CardContent, Grid, Skeleton, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  IconButton,
+  Skeleton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Link as RouterLink } from 'react-router-dom';
 import { type ReactNode } from 'react';
 
-export function PageHeader({ title, actions }: { title: string; actions?: ReactNode }) {
+interface PageHeaderProps {
+  title: string;
+  actions?: ReactNode;
+  backTo?: string;
+  backLabel?: string;
+}
+
+export function PageHeader({ title, actions, backTo, backLabel = 'Back' }: PageHeaderProps) {
   return (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -10,9 +29,25 @@ export function PageHeader({ title, actions }: { title: string; actions?: ReactN
       spacing={1}
       sx={{ mb: 2 }}
     >
-      <Typography variant="h5" component="h1">
-        {title}
-      </Typography>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+        {backTo && (
+          <Tooltip title={backLabel}>
+            <IconButton
+              component={RouterLink}
+              to={backTo}
+              aria-label={backLabel}
+              size="small"
+              edge="start"
+              sx={{ color: 'primary.main' }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+        <Typography variant="h5" component="h1" sx={{ minWidth: 0 }}>
+          {title}
+        </Typography>
+      </Stack>
       {actions}
     </Stack>
   );

@@ -15,7 +15,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
@@ -179,16 +178,11 @@ export function PlatformPlanFormPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to="/platform/plans"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        Back to plans
-      </Button>
-      <PageHeader title={editing ? `Edit ${plan?.name ?? 'plan'}` : 'New subscription plan'} />
+      <PageHeader
+        title={editing ? `Edit ${plan?.name ?? 'plan'}` : 'New subscription plan'}
+        backTo="/platform/plans"
+        backLabel="Back to plans"
+      />
       <Card>
         <CardContent>
           <Grid container spacing={2}>

@@ -11,7 +11,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useRefreshEntitlements } from '@/auth/AbilityProvider';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
@@ -75,16 +74,11 @@ export function PlanChangePreviewPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to="/admin/billing"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        Back to billing
-      </Button>
-      <PageHeader title="Review plan change" />
+      <PageHeader
+        title="Review plan change"
+        backTo="/admin/billing"
+        backLabel="Back to billing"
+      />
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Card>

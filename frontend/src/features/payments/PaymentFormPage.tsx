@@ -14,7 +14,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
@@ -78,16 +77,11 @@ export function PaymentFormPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to="/payments"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        Back to payments
-      </Button>
-      <PageHeader title="Schedule vendor payment" />
+      <PageHeader
+        title="Schedule vendor payment"
+        backTo="/payments"
+        backLabel="Back to payments"
+      />
       <Card>
         <CardContent>
           <Grid container spacing={2}>

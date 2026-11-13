@@ -15,7 +15,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
@@ -139,21 +138,16 @@ export function PlatformSubscriptionDetailPage() {
 
   return (
     <>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        spacing={2}
-        sx={{ mb: 1 }}
-      >
-        <Button component={Link} to="/platform/revenue" size="small" startIcon={<ArrowBackIcon />}>
-          Back to revenue
-        </Button>
-        <Button component={Link} to={`/platform/tenants/${id}`} variant="outlined" size="small">
-          Tenant details
-        </Button>
-      </Stack>
-      <PageHeader title={tenant.name ?? 'Tenant subscription'} />
+      <PageHeader
+        title={tenant.name ?? 'Tenant subscription'}
+        backTo="/platform/revenue"
+        backLabel="Back to revenue"
+        actions={
+          <Button component={Link} to={`/platform/tenants/${id}`} variant="outlined" size="small">
+            Tenant details
+          </Button>
+        }
+      />
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {tenant.slug} · platform-side subscription administration
       </Typography>

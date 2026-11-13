@@ -18,12 +18,16 @@ public class WebhookMapper {
       WebhookSubscription subscription, long deliveryCount) {
     return new WebhookSubscriptionResponse(
         subscription.getId(),
+        subscription.getName(),
         subscription.getUrl(),
         subscription.getDescription(),
         List.copyOf(subscription.eventTypeSet()),
         subscription.isActive(),
         subscription.getLastSuccessAt(),
         subscription.getLastFailureAt(),
+        subscription.getSigningMethod(),
+        subscription.getTimeoutSeconds(),
+        subscription.getMaxAttempts(),
         deliveryCount,
         subscription.getCreatedAt(),
         subscription.getUpdatedAt(),
@@ -31,13 +35,19 @@ public class WebhookMapper {
   }
 
   public WebhookDeliveryResponse toResponse(WebhookDelivery delivery) {
-    return toResponse(delivery, null);
+    return toResponse(delivery, null, null);
   }
 
   public WebhookDeliveryResponse toResponse(WebhookDelivery delivery, String subscriptionUrl) {
+    return toResponse(delivery, null, subscriptionUrl);
+  }
+
+  public WebhookDeliveryResponse toResponse(
+      WebhookDelivery delivery, String subscriptionName, String subscriptionUrl) {
     return new WebhookDeliveryResponse(
         delivery.getId(),
         delivery.getSubscriptionId(),
+        subscriptionName,
         subscriptionUrl,
         delivery.getEventId(),
         delivery.getEventType(),

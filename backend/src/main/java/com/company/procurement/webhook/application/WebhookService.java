@@ -58,10 +58,14 @@ public class WebhookService {
     WebhookSubscription subscription =
         new WebhookSubscription(
             organizationId,
+            defaultName(command.name(), command.description(), command.url()),
             command.url(),
             command.description(),
             command.eventTypes(),
             secret,
+            command.signingMethod(),
+            command.timeoutSeconds(),
+            command.maxAttempts(),
             command.active());
     WebhookSubscription saved = subscriptions.save(subscription);
     audit.recordCurrentActor(
@@ -81,7 +85,14 @@ public class WebhookService {
       throw new ConflictException("A webhook with this URL already exists");
     }
     subscription.update(
-        command.url(), command.description(), command.eventTypes(), command.active());
+        defaultName(command.name(), command.description(), command.url()),
+        command.url(),
+        command.description(),
+        command.eventTypes(),
+        command.signingMethod(),
+        command.timeoutSeconds(),
+        command.maxAttempts(),
+        command.active());
     WebhookSubscription saved = subscriptions.save(subscription);
     audit.recordCurrentActor(
         "webhook_subscription",
@@ -209,6 +220,25 @@ public class WebhookService {
                 WebhookSubscription::getId, WebhookSubscription::getUrl));
   }
 
+  @Transactional(readOnly = true)
+  public Map<UUID, String> subscriptionNames() {
+    return list().stream()
+        .collect(
+            java.util.stream.Collectors.toMap(
+                WebhookSubscription::getId, WebhookSubscription::getName));
+  }
+
+  private static String defaultName(String name, String description, String url) {
+    if (name != null && !name.isBlank()) return name.trim();
+    if (description != null && !description.isBlank()) return description.trim();
+    try {
+      String host = java.net.URI.create(url).getHost();
+      return host == null || host.isBlank() ? "Webhook endpoint" : host;
+    } catch (RuntimeException ex) {
+      return "Webhook endpoint";
+    }
+  }
+
   private WebhookSubscription get(UUID id) {
     return subscriptions
         .findByIdAndOrganizationId(id, TenantContext.require())
@@ -224,10 +254,24 @@ public class WebhookService {
   }
 
   public record CreateWebhookCommand(
-      String url, String description, Collection<String> eventTypes, boolean active) {}
+      String name,
+      String url,
+      String description,
+      Collection<String> eventTypes,
+      String signingMethod,
+      int timeoutSeconds,
+      int maxAttempts,
+      boolean active) {}
 
   public record UpdateWebhookCommand(
-      String url, String description, Collection<String> eventTypes, boolean active) {}
+      String name,
+      String url,
+      String description,
+      Collection<String> eventTypes,
+      String signingMethod,
+      int timeoutSeconds,
+      int maxAttempts,
+      boolean active) {}
 
   public record CreatedSubscription(WebhookSubscription subscription, String signingSecret) {}
 

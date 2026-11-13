@@ -213,7 +213,7 @@ class PurchaseOrderAndNotificationIntegrationTest {
     UUID requestId = createApprovedRequest("Notify", "100.00");
     issue(createPurchaseOrder(requestId));
 
-    assertThat(outboxDispatcher.dispatchBatch()).isEqualTo(1);
+    assertThat(outboxDispatcher.dispatchBatch()).isGreaterThan(0);
     assertThat(mailAdapter.sentMessages()).hasSize(1);
     assertThat(mailAdapter.sentMessages().get(0).to()).isEqualTo("vendor@example.com");
     assertThat(mailAdapter.sentMessages().get(0).html())
@@ -753,6 +753,22 @@ class PurchaseOrderAndNotificationIntegrationTest {
         .perform(get("/api/v1/purchase-orders/{id}/actions", poId).with(token(org, "ADMIN")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.actions", not(hasItems("CREATE_INVOICE"))));
+
+    assertThat(
+            jdbcTemplate.queryForList(
+                "select event_type from outbox_event where organization_id = ?", String.class, org))
+        .contains(
+            "RequestSubmitted",
+            "RequestApproved",
+            "RequestConvertedToPurchaseOrder",
+            "PurchaseOrderIssued",
+            "GoodsReceiptRecorded",
+            "VendorInvoiceRecorded",
+            "VendorInvoiceApproved",
+            "VendorPaymentScheduled",
+            "VendorPaymentApproved",
+            "VendorPaymentPaid",
+            "VendorInvoicePaid");
   }
 
   @Test
@@ -954,6 +970,51 @@ class PurchaseOrderAndNotificationIntegrationTest {
   }
 
   @Test
+  void updatesWebhookNameAndDeliverySettings() throws Exception {
+    String url = "http://localhost:9999/hooks/" + UUID.randomUUID();
+    WebhookCreated webhook = createWebhook(url, "update settings");
+
+    mockMvc
+        .perform(
+            put("/api/v1/webhooks/{id}", webhook.id())
+                .with(token(org, "ADMIN"))
+                .header("If-Match", webhook.etag())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "name",
+                            "ERP receiver",
+                            "url",
+                            url,
+                            "description",
+                            "Updated receiver",
+                            "eventTypes",
+                            List.of("RequestSubmitted", "VendorInvoicePaid"),
+                            "signingMethod",
+                            "HMAC_SHA256",
+                            "timeoutSeconds",
+                            20,
+                            "maxAttempts",
+                            7,
+                            "active",
+                            false))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("ERP receiver"))
+        .andExpect(jsonPath("$.eventTypes.length()").value(2))
+        .andExpect(jsonPath("$.timeoutSeconds").value(20))
+        .andExpect(jsonPath("$.maxAttempts").value(7))
+        .andExpect(jsonPath("$.active").value(false));
+
+    mockMvc
+        .perform(get("/api/v1/webhooks").with(token(org, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].name").value("ERP receiver"))
+        .andExpect(jsonPath("$[0].timeoutSeconds").value(20))
+        .andExpect(jsonPath("$[0].maxAttempts").value(7));
+  }
+
+  @Test
   void webhookCrudRequiresAdminAndIsTenantIsolated() throws Exception {
     MvcResult created =
         mockMvc
@@ -1024,7 +1085,7 @@ class PurchaseOrderAndNotificationIntegrationTest {
       UUID requestId = createApprovedRequest("Webhook PO", "100.00");
       issue(createPurchaseOrder(requestId));
 
-      assertThat(outboxDispatcher.dispatchBatch()).isEqualTo(1);
+      assertThat(outboxDispatcher.dispatchBatch()).isGreaterThan(0);
       assertThat(webhookDeliveryDispatcher.dispatchBatch()).isEqualTo(1);
 
       assertThat(received.body.get()).contains("PurchaseOrderIssued").contains("poNumber");
@@ -1052,6 +1113,7 @@ class PurchaseOrderAndNotificationIntegrationTest {
                   .with(token(org, "ADMIN")))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.content[0].eventType").value("PurchaseOrderIssued"))
+          .andExpect(jsonPath("$.content[0].subscriptionName").value("Endpoint deliver"))
           .andExpect(jsonPath("$.content[0].subscriptionUrl").value(hookUrl));
     } finally {
       server.stop(0);
@@ -1148,15 +1210,31 @@ class PurchaseOrderAndNotificationIntegrationTest {
                     .content(
                         json(
                             Map.of(
-                                "url", url,
-                                "description", description,
-                                "eventTypes", List.of("PurchaseOrderIssued")))))
+                                "name",
+                                "Endpoint " + description,
+                                "url",
+                                url,
+                                "description",
+                                description,
+                                "eventTypes",
+                                List.of("PurchaseOrderIssued"),
+                                "signingMethod",
+                                "HMAC_SHA256",
+                                "timeoutSeconds",
+                                12,
+                                "maxAttempts",
+                                3))))
             .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.subscription.name").value("Endpoint " + description))
+            .andExpect(jsonPath("$.subscription.signingMethod").value("HMAC_SHA256"))
+            .andExpect(jsonPath("$.subscription.timeoutSeconds").value(12))
+            .andExpect(jsonPath("$.subscription.maxAttempts").value(3))
             .andReturn();
     String body = created.getResponse().getContentAsString();
     return new WebhookCreated(
         UUID.fromString(JsonPath.read(body, "$.subscription.id")),
-        JsonPath.read(body, "$.signingSecret"));
+        JsonPath.read(body, "$.signingSecret"),
+        created.getResponse().getHeader("ETag"));
   }
 
   private HttpServer startWebhookServer(int fixedStatus, ReceivedRequest received)
@@ -1195,7 +1273,7 @@ class PurchaseOrderAndNotificationIntegrationTest {
             .formatHex(mac.doFinal((timestamp + "." + body).getBytes(StandardCharsets.UTF_8)));
   }
 
-  private record WebhookCreated(UUID id, String secret) {}
+  private record WebhookCreated(UUID id, String secret, String etag) {}
 
   private static final class ReceivedRequest {
     private final AtomicReference<String> body = new AtomicReference<>();

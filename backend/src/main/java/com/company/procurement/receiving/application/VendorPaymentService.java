@@ -6,6 +6,8 @@ import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.numbering.DocumentNumberGenerator;
 import com.company.procurement.shared.numbering.DocumentType;
+import com.company.procurement.shared.outbox.OutboxEventTypes;
+import com.company.procurement.shared.outbox.OutboxService;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import java.math.BigDecimal;
@@ -28,18 +30,21 @@ public class VendorPaymentService {
   private final AuditEventService audit;
   private final Clock clock;
   private final DocumentNumberGenerator numbers;
+  private final OutboxService outbox;
 
   public VendorPaymentService(
       JdbcTemplate jdbc,
       CurrentUser currentUser,
       AuditEventService audit,
       Clock clock,
-      DocumentNumberGenerator numbers) {
+      DocumentNumberGenerator numbers,
+      OutboxService outbox) {
     this.jdbc = jdbc;
     this.currentUser = currentUser;
     this.audit = audit;
     this.clock = clock;
     this.numbers = numbers;
+    this.outbox = outbox;
   }
 
   @Transactional
@@ -150,6 +155,23 @@ public class VendorPaymentService {
         paymentId,
         "vendor_payment_scheduled",
         Map.of("total", total.toPlainString(), "currency", currency));
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_PAYMENT_SCHEDULED,
+        "vendor_payment",
+        paymentId,
+        Map.of(
+            "paymentId",
+            paymentId.toString(),
+            "paymentNumber",
+            paymentNumber,
+            "vendorId",
+            command.vendorId().toString(),
+            "status",
+            "SCHEDULED",
+            "total",
+            total.toPlainString(),
+            "currency",
+            currency));
     return view(organizationId, paymentId);
   }
 
@@ -166,6 +188,11 @@ public class VendorPaymentService {
         organizationId,
         id);
     audit.recordCurrentActor("vendor_payment", id, "vendor_payment_approved", Map.of());
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_PAYMENT_APPROVED,
+        "vendor_payment",
+        id,
+        paymentPayload(payment, "APPROVED"));
     return view(organizationId, id);
   }
 
@@ -210,6 +237,39 @@ public class VendorPaymentService {
         organizationId,
         id);
     audit.recordCurrentActor("vendor_payment", id, "vendor_payment_paid", Map.of());
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_PAYMENT_PAID,
+        "vendor_payment",
+        id,
+        paymentPayload(payment, "PAID"));
+    for (Map<String, Object> allocation : allocations) {
+      UUID invoiceId = (UUID) allocation.get("invoice_id");
+      String invoiceStatus =
+          jdbc.queryForObject(
+              "select status from vendor_invoice where organization_id = ? and id = ?",
+              String.class,
+              organizationId,
+              invoiceId);
+      if ("PAID".equals(invoiceStatus)) {
+        Map<String, Object> invoice =
+            jdbc.queryForMap(
+                "select invoice_number, purchase_order_id, po_number, total_amount, currency from vendor_invoice where organization_id = ? and id = ?",
+                organizationId,
+                invoiceId);
+        outbox.enqueue(
+            OutboxEventTypes.VENDOR_INVOICE_PAID,
+            "vendor_invoice",
+            invoiceId,
+            Map.of(
+                "invoiceId", invoiceId.toString(),
+                "invoiceNumber", invoice.get("invoice_number"),
+                "purchaseOrderId", invoice.get("purchase_order_id").toString(),
+                "poNumber", invoice.get("po_number"),
+                "status", "PAID",
+                "total", invoice.get("total_amount").toString(),
+                "currency", invoice.get("currency")));
+      }
+    }
     return view(organizationId, id);
   }
 
@@ -226,7 +286,22 @@ public class VendorPaymentService {
         organizationId,
         id);
     audit.recordCurrentActor("vendor_payment", id, "vendor_payment_canceled", Map.of());
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_PAYMENT_CANCELLED,
+        "vendor_payment",
+        id,
+        paymentPayload(payment, "CANCELED"));
     return view(organizationId, id);
+  }
+
+  private static Map<String, Object> paymentPayload(PaymentRow payment, String status) {
+    return Map.of(
+        "paymentId", payment.id().toString(),
+        "paymentNumber", payment.paymentNumber(),
+        "vendorId", payment.vendorId().toString(),
+        "status", status,
+        "total", payment.totalAmount().toPlainString(),
+        "currency", payment.currency());
   }
 
   @Transactional(readOnly = true)

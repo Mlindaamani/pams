@@ -17,6 +17,8 @@ import com.company.procurement.shared.authorization.PermissionService;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.outbox.OutboxEventTypes;
+import com.company.procurement.shared.outbox.OutboxService;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import java.sql.Timestamp;
@@ -36,9 +38,7 @@ public class PurchaseOrderApprovalService {
 
   private static final String PENDING = "PENDING";
   private static final String APPROVED = "APPROVED";
-  private static final String REJECTED = "REJECTED";
-  private static final String CHANGES_REQUESTED = "CHANGES_REQUESTED";
-  private static final String CANCELED = "CANCELED";
+
 
   private final JdbcTemplate jdbc;
   private final PurchaseOrderRepository orders;
@@ -49,6 +49,7 @@ public class PurchaseOrderApprovalService {
   private final CurrentUser currentUser;
   private final PermissionService permissions;
   private final AuditEventService audit;
+  private final OutboxService outbox;
   private final Clock clock;
 
   public PurchaseOrderApprovalService(
@@ -61,6 +62,7 @@ public class PurchaseOrderApprovalService {
       CurrentUser currentUser,
       PermissionService permissions,
       AuditEventService audit,
+      OutboxService outbox,
       Clock clock) {
     this.jdbc = jdbc;
     this.orders = orders;
@@ -71,6 +73,7 @@ public class PurchaseOrderApprovalService {
     this.currentUser = currentUser;
     this.permissions = permissions;
     this.audit = audit;
+    this.outbox = outbox;
     this.clock = clock;
   }
 
@@ -149,6 +152,13 @@ public class PurchaseOrderApprovalService {
         orders.save(order);
         audit.recordCurrentActor(
             "purchase_order", purchaseOrderId, "purchase_order_approval_approved", Map.of());
+        outbox.enqueue(
+            OutboxEventTypes.PURCHASE_ORDER_APPROVED,
+            "purchase_order",
+            purchaseOrderId,
+            Map.of(
+                "poId", purchaseOrderId.toString(),
+                "poNumber", order.getPoNumber()));
       } else {
         jdbc.update(
             "update purchase_order_approval set current_sequence = ?, updated_at = now(), updated_by = ?, version = version + 1 where id = ?",

@@ -130,6 +130,14 @@ public class PurchaseOrderService {
         saved.getId(),
         "purchase_order_created",
         Map.of("requestId", requestId.toString(), "poNumber", saved.getPoNumber()));
+    outbox.enqueue(
+        OutboxEventTypes.REQUEST_CONVERTED_TO_PURCHASE_ORDER,
+        "purchase_request",
+        requestId,
+        Map.of(
+            "requestId", requestId.toString(),
+            "poId", saved.getId().toString(),
+            "poNumber", saved.getPoNumber()));
     events.publishEvent(new ReportingDataChangedEvent(organizationId));
     return saved;
   }
@@ -221,6 +229,14 @@ public class PurchaseOrderService {
         saved.getId(),
         "purchase_order_cancelled",
         Map.of("previousStatus", previous.name()));
+    outbox.enqueue(
+        OutboxEventTypes.PURCHASE_ORDER_CANCELLED,
+        "purchase_order",
+        saved.getId(),
+        Map.of(
+            "poId", saved.getId().toString(),
+            "poNumber", saved.getPoNumber(),
+            "previousStatus", previous.name()));
     return saved;
   }
 

@@ -13,11 +13,13 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  IconButton,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { DataTable } from '@/components/DataTable';
 import { toast } from '@/components/Toast';
 import { useAbility } from '@/auth/AbilityProvider';
@@ -220,6 +222,16 @@ export function RequestDetailPage() {
         >
           <Box sx={{ minWidth: { lg: 240 }, maxWidth: { lg: 380 } }}>
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+              <IconButton
+                component={RouterLink}
+                to="/requests"
+                aria-label="Back to requests"
+                size="small"
+                edge="start"
+                sx={{ color: 'primary.main' }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
               <Typography variant="h5" component="h1">
                 {data.title ?? 'Purchase request'}
               </Typography>

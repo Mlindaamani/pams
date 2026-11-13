@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
@@ -121,16 +120,11 @@ export function PlatformFeatureFormPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to="/platform/plans?tab=features"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        Back to features
-      </Button>
-      <PageHeader title={editing ? `Edit ${feature?.name ?? 'feature'}` : 'New feature'} />
+      <PageHeader
+        title={editing ? `Edit ${feature?.name ?? 'feature'}` : 'New feature'}
+        backTo="/platform/plans?tab=features"
+        backLabel="Back to features"
+      />
       <Card>
         <CardContent>
           <Grid container spacing={2}>

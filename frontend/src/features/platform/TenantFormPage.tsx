@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
@@ -88,17 +87,10 @@ export function TenantFormPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to={editing ? `/platform/tenants/${id}` : '/platform/tenants'}
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        {editing ? 'Back to tenant' : 'Back to tenants'}
-      </Button>
       <PageHeader
         title={editing ? `Edit ${detail.data?.tenant?.name ?? 'tenant'}` : 'Add tenant'}
+        backTo={editing ? `/platform/tenants/${id}` : '/platform/tenants'}
+        backLabel={editing ? 'Back to tenant' : 'Back to tenants'}
       />
       <Card>
         <CardContent>

@@ -216,6 +216,11 @@ public class VendorInvoiceService {
         saved.getId(),
         "vendor_invoice_approved",
         Map.of("invoiceNumber", saved.getInvoiceNumber()));
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_INVOICE_APPROVED,
+        "vendor_invoice",
+        saved.getId(),
+        invoicePayload(saved));
     return saved;
   }
 
@@ -230,6 +235,11 @@ public class VendorInvoiceService {
         saved.getId(),
         "vendor_invoice_rejected",
         Map.of("invoiceNumber", saved.getInvoiceNumber(), "reason", note));
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_INVOICE_REJECTED,
+        "vendor_invoice",
+        saved.getId(),
+        invoicePayload(saved));
     return saved;
   }
 
@@ -244,6 +254,11 @@ public class VendorInvoiceService {
         saved.getId(),
         "vendor_invoice_disputed",
         Map.of("invoiceNumber", saved.getInvoiceNumber(), "reason", note));
+    outbox.enqueue(
+        OutboxEventTypes.VENDOR_INVOICE_DISPUTED,
+        "vendor_invoice",
+        saved.getId(),
+        invoicePayload(saved));
     return saved;
   }
 
@@ -259,6 +274,17 @@ public class VendorInvoiceService {
         "vendor_invoice_voided",
         Map.of("invoiceNumber", saved.getInvoiceNumber(), "reason", note));
     return saved;
+  }
+
+  private static Map<String, Object> invoicePayload(VendorInvoice invoice) {
+    return Map.of(
+        "invoiceId", invoice.getId().toString(),
+        "invoiceNumber", invoice.getInvoiceNumber(),
+        "purchaseOrderId", invoice.getPurchaseOrderId().toString(),
+        "poNumber", invoice.getPoNumber(),
+        "status", invoice.getStatus().name(),
+        "total", invoice.getTotalAmount().toPlainString(),
+        "currency", invoice.getCurrency());
   }
 
   private static void assertVersion(VendorInvoice invoice, long expectedVersion) {

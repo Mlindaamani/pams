@@ -20,6 +20,8 @@ import com.company.procurement.shared.error.PreconditionFailedException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.numbering.DocumentNumberGenerator;
 import com.company.procurement.shared.numbering.DocumentType;
+import com.company.procurement.shared.outbox.OutboxEventTypes;
+import com.company.procurement.shared.outbox.OutboxService;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.subscription.application.SubscriptionAccessService;
@@ -48,6 +50,7 @@ public class PurchaseRequestService {
   private final SubscriptionAccessService subscriptionAccess;
   private final Clock clock;
   private final DocumentNumberGenerator numbers;
+  private final OutboxService outbox;
 
   public PurchaseRequestService(
       PurchaseRequestRepository requests,
@@ -61,7 +64,8 @@ public class PurchaseRequestService {
       PermissionService permissions,
       SubscriptionAccessService subscriptionAccess,
       Clock clock,
-      DocumentNumberGenerator numbers) {
+      DocumentNumberGenerator numbers,
+      OutboxService outbox) {
     this.requests = requests;
     this.departments = departments;
     this.catalogItems = catalogItems;
@@ -74,6 +78,7 @@ public class PurchaseRequestService {
     this.subscriptionAccess = subscriptionAccess;
     this.clock = clock;
     this.numbers = numbers;
+    this.outbox = outbox;
   }
 
   @Transactional
@@ -202,6 +207,18 @@ public class PurchaseRequestService {
             "policyId", approval.policyId().toString(),
             "policyVersion", approval.policyVersion(),
             "total", saved.getTotalAmount().toPlainString()));
+    outbox.enqueue(
+        OutboxEventTypes.REQUEST_SUBMITTED,
+        "purchase_request",
+        saved.getId(),
+        Map.of(
+            "requestId", saved.getId().toString(),
+            "requestNumber", saved.getRequestNumber(),
+            "title", saved.getTitle(),
+            "departmentId", saved.getDepartmentId().toString(),
+            "requesterSubject", saved.getRequesterSubject(),
+            "total", saved.getTotalAmount().toPlainString(),
+            "currency", saved.getCurrency()));
     return saved;
   }
 
@@ -218,6 +235,14 @@ public class PurchaseRequestService {
     request.cancel();
     PurchaseRequest saved = requests.save(request);
     audit.recordCurrentActor("purchase_request", saved.getId(), "request_cancelled", Map.of());
+    outbox.enqueue(
+        OutboxEventTypes.REQUEST_CANCELLED,
+        "purchase_request",
+        saved.getId(),
+        Map.of(
+            "requestId", saved.getId().toString(),
+            "requestNumber", saved.getRequestNumber(),
+            "status", saved.getStatus().name()));
     return saved;
   }
 

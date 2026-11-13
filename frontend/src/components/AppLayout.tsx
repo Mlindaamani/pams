@@ -663,7 +663,7 @@ export function AppLayout() {
             borderColor: 'divider',
           }}
         >
-          <Box sx={{ width: '100%', maxWidth: 1500, mx: 0 }}>
+          <Box sx={{ width: '100%', maxWidth: 1500, mx: 'auto' }}>
             <Breadcrumbs aria-label="Breadcrumb">
               <Link
                 component={RouterLink}
@@ -679,7 +679,7 @@ export function AppLayout() {
             </Breadcrumbs>
           </Box>
         </Box>
-        <Box sx={{ width: '100%', maxWidth: 1500, mx: 0 }}>
+        <Box sx={{ width: '100%', maxWidth: 1500, mx: 'auto' }}>
           <PageTransition>
             <Outlet />
           </PageTransition>

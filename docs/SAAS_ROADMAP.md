@@ -236,10 +236,10 @@ flowchart LR
 - [ ] Live payment provider verified for the target country
 - [ ] Tax/VAT handling and compliant invoices
 - [ ] Refund, credit-note and chargeback process
-- [ ] Dunning, grace periods and cancellation communications
-- [ ] Annual billing and upgrade/downgrade policy
+- [x] Dunning, grace periods and cancellation communications
+- [x] Annual billing and upgrade/downgrade policy
 - [ ] Revenue recognition and accounting export
-- [ ] Subscription reconciliation audit
+- [x] Subscription reconciliation audit
 - [ ] Payment failure and recovery playbook
 
 ### 5.4 Tenant Lifecycle
@@ -247,8 +247,8 @@ flowchart LR
 - [ ] Export all tenant data in a usable format
 - [ ] Cancel subscription and retain read-only access policy
 - [ ] Delete/anonymize tenant data on request
-- [ ] Restore accidentally suspended tenants
-- [ ] Usage and limit visibility
+- [x] Restore accidentally suspended tenants
+- [x] Usage and limit visibility
 - [ ] Seat management and overage policy
 
 ### Phase A Exit Criteria
@@ -270,14 +270,14 @@ PAMS is production-ready when:
 
 Start with **concierge onboarding** if self-serve would take months.
 
-- [ ] Public pricing page with clear plan comparison
+- [x] Public pricing page with clear plan comparison
 - [ ] Trial/checkout entry point
 - [ ] Tenant setup wizard: organization, admin, first department
 - [ ] Approval policy starter template
 - [ ] Guided first request or sample data
-- [ ] Activation checklist in-app
-- [ ] Invite team members and assign roles
-- [ ] Billing setup and invoice access
+- [x] Activation checklist in-app
+- [x] Invite team members and assign roles
+- [x] Billing setup and invoice access
 
 ### 6.2 Activation Definition
 
@@ -292,7 +292,7 @@ Track time-to-first-value and where onboarding stalls.
 
 - [ ] Support email/ticketing
 - [ ] Help center and FAQs
-- [ ] Onboarding checklist
+- [x] Onboarding checklist
 - [ ] Known issues page
 - [ ] SLA for paid plans
 - [ ] Customer feedback loop and release notes

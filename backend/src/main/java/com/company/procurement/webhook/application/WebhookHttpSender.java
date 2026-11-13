@@ -33,7 +33,7 @@ public class WebhookHttpSender {
     String signature = signer.sign(subscription.getSecret(), timestamp, delivery.getPayload());
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(subscription.getUrl()))
-            .timeout(Duration.ofMillis(properties.readTimeoutMs()))
+            .timeout(Duration.ofSeconds(subscription.getTimeoutSeconds()))
             .header("Content-Type", "application/json")
             .header("User-Agent", "PAMS-Webhooks/1.0")
             .header("X-PAMS-Event", delivery.getEventType())

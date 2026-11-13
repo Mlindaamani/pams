@@ -319,11 +319,9 @@ export function PurchaseOrderDetailPage() {
     <>
       <PageHeader
         title={data.poNumber ?? 'Purchase order'}
+        backTo="/purchase-orders"
         actions={
           <Stack direction="row" spacing={1}>
-            <Button component={RouterLink} to="/purchase-orders" variant="outlined">
-              Back
-            </Button>
             {allowed.has('EDIT') && (
               <Button
                 onClick={() => {

@@ -22,6 +22,9 @@ import org.hibernate.annotations.Filter;
 @Filter(name = TenantFilter.NAME, condition = "organization_id = :organizationId")
 public class WebhookSubscription extends TenantEntity {
 
+  @Column(name = "name", nullable = false, length = 200)
+  private String name;
+
   @Column(name = "url", nullable = false, length = 1000)
   private String url;
 
@@ -43,30 +46,58 @@ public class WebhookSubscription extends TenantEntity {
   @Column(name = "last_failure_at")
   private Instant lastFailureAt;
 
+  @Column(name = "signing_method", nullable = false, length = 30)
+  private String signingMethod;
+
+  @Column(name = "timeout_seconds", nullable = false)
+  private int timeoutSeconds;
+
+  @Column(name = "max_attempts", nullable = false)
+  private int maxAttempts;
+
   protected WebhookSubscription() {
     // for JPA
   }
 
   public WebhookSubscription(
       java.util.UUID organizationId,
+      String name,
       String url,
       String description,
       Collection<String> eventTypes,
       String secret,
+      String signingMethod,
+      int timeoutSeconds,
+      int maxAttempts,
       boolean active) {
     super(organizationId);
+    this.name = requireText(name, "name");
     this.url = normalizeUrl(url);
     this.description = blankToNull(description);
     this.eventTypes = normalizeEventTypes(eventTypes);
     this.secret = Objects.requireNonNull(secret, "secret");
+    this.signingMethod = normalizeSigningMethod(signingMethod);
+    this.timeoutSeconds = requireTimeout(timeoutSeconds);
+    this.maxAttempts = requireAttempts(maxAttempts);
     this.active = active;
   }
 
   public void update(
-      String url, String description, Collection<String> eventTypes, boolean active) {
+      String name,
+      String url,
+      String description,
+      Collection<String> eventTypes,
+      String signingMethod,
+      int timeoutSeconds,
+      int maxAttempts,
+      boolean active) {
+    this.name = requireText(name, "name");
     this.url = normalizeUrl(url);
     this.description = blankToNull(description);
     this.eventTypes = normalizeEventTypes(eventTypes);
+    this.signingMethod = normalizeSigningMethod(signingMethod);
+    this.timeoutSeconds = requireTimeout(timeoutSeconds);
+    this.maxAttempts = requireAttempts(maxAttempts);
     this.active = active;
   }
 
@@ -96,8 +127,24 @@ public class WebhookSubscription extends TenantEntity {
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
+  public String getName() {
+    return name;
+  }
+
   public String getUrl() {
     return url;
+  }
+
+  public String getSigningMethod() {
+    return signingMethod;
+  }
+
+  public int getTimeoutSeconds() {
+    return timeoutSeconds;
+  }
+
+  public int getMaxAttempts() {
+    return maxAttempts;
   }
 
   public String getDescription() {
@@ -159,6 +206,37 @@ public class WebhookSubscription extends TenantEntity {
           "Unsupported webhook event type(s): " + String.join(", ", unsupported));
     }
     return String.join(",", normalized);
+  }
+
+  private static String requireText(String value, String field) {
+    Objects.requireNonNull(value, field);
+    String trimmed = value.trim();
+    if (trimmed.isEmpty()) {
+      throw new BusinessRuleException(field + " must not be blank");
+    }
+    return trimmed;
+  }
+
+  private static String normalizeSigningMethod(String value) {
+    String method = value == null || value.isBlank() ? "HMAC_SHA256" : value.trim().toUpperCase();
+    if (!"HMAC_SHA256".equals(method)) {
+      throw new BusinessRuleException("Unsupported webhook signing method: " + value);
+    }
+    return method;
+  }
+
+  private static int requireTimeout(int seconds) {
+    if (seconds < 1 || seconds > 60) {
+      throw new BusinessRuleException("Webhook timeout must be between 1 and 60 seconds");
+    }
+    return seconds;
+  }
+
+  private static int requireAttempts(int attempts) {
+    if (attempts < 1 || attempts > 10) {
+      throw new BusinessRuleException("Webhook attempts must be between 1 and 10");
+    }
+    return attempts;
   }
 
   private static String blankToNull(String value) {

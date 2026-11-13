@@ -12,7 +12,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BusinessIcon from '@mui/icons-material/Business';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -86,17 +85,10 @@ export function TenantDetailPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to="/platform/tenants"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        Back to tenants
-      </Button>
       <PageHeader
         title={tenant.name ?? 'Tenant'}
+        backTo="/platform/tenants"
+        backLabel="Back to tenants"
         actions={
           <Can I="manage" a="Tenant">
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>

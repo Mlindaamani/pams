@@ -61,6 +61,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
       "DELETE FROM tenant_provisioning",
       "DELETE FROM tenant_subscription",
       "DELETE FROM stripe_event",
+      "DELETE FROM outbox_event",
       "DELETE FROM organization"
     },
     executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)

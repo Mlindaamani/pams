@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Button, Card, CardContent, Chip, Grid, Stack, Typography } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Can } from '@/auth/AbilityProvider';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateTime } from '@/lib/format';
@@ -29,25 +28,17 @@ export function WorkflowPolicyDetailPage() {
     <>
       <PageHeader
         title={`Workflow policy · ${data.name}`}
+        backTo="/admin/workflow?tab=policies"
         actions={
-          <Stack direction="row" spacing={1}>
+          <Can I="manage" a="Policy">
             <Button
               component={RouterLink}
-              to="/admin/workflow?tab=policies"
-              startIcon={<ArrowBackIcon />}
+              to={`/admin/workflow/policies/${data.id}/new-version`}
+              variant="contained"
             >
-              Back
+              New version
             </Button>
-            <Can I="manage" a="Policy">
-              <Button
-                component={RouterLink}
-                to={`/admin/workflow/policies/${data.id}/new-version`}
-                variant="contained"
-              >
-                New version
-              </Button>
-            </Can>
-          </Stack>
+          </Can>
         }
       />
 

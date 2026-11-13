@@ -50,7 +50,7 @@ public class WebhookDeliveryDispatcher {
             null,
             "Webhook subscription is inactive or missing",
             0,
-            properties.maxAttempts());
+            subscription == null ? properties.maxAttempts() : subscription.getMaxAttempts());
         deliveries.save(delivery);
         continue;
       }
@@ -67,7 +67,7 @@ public class WebhookDeliveryDispatcher {
             attempt.body(),
             attempt.error(),
             attempt.durationMs(),
-            properties.maxAttempts());
+            subscription.getMaxAttempts());
         subscription.markDeliveryFailure(clock.instant());
         log.warn(
             "Webhook delivery {} for {} failed (attempt {})",

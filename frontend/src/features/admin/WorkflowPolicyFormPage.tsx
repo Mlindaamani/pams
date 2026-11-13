@@ -14,7 +14,6 @@ import {
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -161,15 +160,8 @@ export function WorkflowPolicyFormPage() {
     <Box sx={{ width: '100%' }}>
       <PageHeader
         title={id ? 'New workflow policy version' : 'New workflow policy'}
-        actions={
-          <Button
-            component={RouterLink}
-            to="/admin/workflow?tab=policies"
-            startIcon={<ArrowBackIcon />}
-          >
-            Back to workflow
-          </Button>
-        }
+        backTo="/admin/workflow?tab=policies"
+        backLabel="Back to workflow"
       />
       <Stack spacing={2}>
         <Card>

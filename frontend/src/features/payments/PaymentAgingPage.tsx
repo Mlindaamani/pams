@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Box, Card, CardContent, Typography } from '@mui/material';
 import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateTime, money } from '@/lib/format';
@@ -17,16 +15,7 @@ export function PaymentAgingPage() {
 
   return (
     <>
-      <Button
-        component={Link}
-        to="/payments"
-        size="small"
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 1 }}
-      >
-        Back to payments
-      </Button>
-      <PageHeader title="AP aging" />
+      <PageHeader title="AP aging" backTo="/payments" backLabel="Back to payments" />
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Outstanding approved and partially paid invoices by vendor and currency. Generated{' '}
         {dateTime(aging.data?.generatedAt)}.

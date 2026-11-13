@@ -23,6 +23,8 @@ import com.company.procurement.shared.authorization.PermissionService;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.outbox.OutboxEventTypes;
+import com.company.procurement.shared.outbox.OutboxService;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import java.math.BigDecimal;
@@ -53,6 +55,7 @@ public class ApprovalService {
   private final AuditEventService audit;
   private final PermissionService permissions;
   private final ApplicationEventPublisher publisher;
+  private final OutboxService outbox;
   private final Clock clock;
 
   public ApprovalService(
@@ -67,6 +70,7 @@ public class ApprovalService {
       AuditEventService audit,
       PermissionService permissions,
       ApplicationEventPublisher publisher,
+      OutboxService outbox,
       Clock clock) {
     this.policies = policies;
     this.instances = instances;
@@ -79,6 +83,7 @@ public class ApprovalService {
     this.audit = audit;
     this.permissions = permissions;
     this.publisher = publisher;
+    this.outbox = outbox;
     this.clock = clock;
   }
 
@@ -232,6 +237,11 @@ public class ApprovalService {
           currentUser.username(),
           Map.of("instanceId", instance.getId().toString()));
       publisher.publishEvent(new RequestApproved(instance.getPurchaseRequestId()));
+      outbox.enqueue(
+          OutboxEventTypes.REQUEST_APPROVED,
+          "purchase_request",
+          instance.getPurchaseRequestId(),
+          Map.of("requestId", instance.getPurchaseRequestId().toString()));
     }
     return instance;
   }
@@ -262,6 +272,11 @@ public class ApprovalService {
         currentUser.username(),
         Map.of("stepId", stepId.toString(), "comment", comment));
     publisher.publishEvent(new RequestRejected(instance.getPurchaseRequestId(), comment));
+    outbox.enqueue(
+        OutboxEventTypes.REQUEST_REJECTED,
+        "purchase_request",
+        instance.getPurchaseRequestId(),
+        Map.of("requestId", instance.getPurchaseRequestId().toString(), "comment", comment));
     return instance;
   }
 
@@ -284,6 +299,11 @@ public class ApprovalService {
         currentUser.username(),
         Map.of("stepId", stepId.toString(), "comment", comment));
     publisher.publishEvent(new ChangesRequested(instance.getPurchaseRequestId(), comment));
+    outbox.enqueue(
+        OutboxEventTypes.REQUEST_CHANGES_REQUESTED,
+        "purchase_request",
+        instance.getPurchaseRequestId(),
+        Map.of("requestId", instance.getPurchaseRequestId().toString(), "comment", comment));
     return instance;
   }
 
@@ -451,6 +471,11 @@ public class ApprovalService {
         publisher.publishEvent(new StepEscalated(instance.getPurchaseRequestId(), step.getId()));
         if (instance.getStatus() == ApprovalInstanceStatus.APPROVED) {
           publisher.publishEvent(new RequestApproved(instance.getPurchaseRequestId()));
+          outbox.enqueue(
+              OutboxEventTypes.REQUEST_APPROVED,
+              "purchase_request",
+              instance.getPurchaseRequestId(),
+              Map.of("requestId", instance.getPurchaseRequestId().toString()));
         }
       }
     }
