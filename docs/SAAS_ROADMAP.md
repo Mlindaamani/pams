@@ -548,7 +548,7 @@ To make all five metrics reliable, add:
 
 - [ ] Acquisition source and campaign on tenant/prospect records
 - [ ] Sales and marketing spend ledger for CAC
-- [ ] Trial start, activation and conversion timestamps
+- [x] Trial start, activation and conversion timestamps
 - [ ] Cancellation reason and cancellation date
 - [ ] Expansion/downgrade event history
 - [ ] Gross margin inputs: hosting, support, payment fees
