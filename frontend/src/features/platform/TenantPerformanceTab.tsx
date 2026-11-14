@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Card, CardContent, Chip, MenuItem, Stack, Typography } from '@mui/material';
 import { DataTable } from '@/components/DataTable';
 import { Loading } from '@/components/Page';
 import { dateOnly } from '@/lib/format';
 import { getPlatformDashboard } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const PERIODS = [
   { value: '7', label: 'Last 7 days' },
@@ -44,8 +45,7 @@ export function TenantPerformanceTab() {
           {dateOnly(dashboard.data.from)} – {dateOnly(dashboard.data.to)} · aggregate tenant metrics
           only
         </Typography>
-        <TextField
-          select
+        <VirtualizedCombobox
           size="small"
           label="Period"
           value={period}
@@ -57,7 +57,7 @@ export function TenantPerformanceTab() {
               {option.label}
             </MenuItem>
           ))}
-        </TextField>
+        </VirtualizedCombobox>
       </Stack>
       <Card>
         <CardContent>

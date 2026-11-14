@@ -24,6 +24,7 @@ import { WebhookSecretDialog } from './WebhookSecretDialog';
 import { WEBHOOK_EVENT_GROUPS, WEBHOOK_EVENTS } from './webhookEvents';
 
 import type { WebhookFormState } from './types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 function initialState(subscription?: WebhookSubscription): WebhookFormState {
   return {
@@ -241,17 +242,15 @@ function WebhookForm({
               />
             </Stack>
             <Stack spacing={2}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 fullWidth
                 label="Signing method"
                 value={form.signingMethod}
                 onChange={(event) => update('signingMethod', event.target.value)}
                 helperText="HMAC-SHA256 signs every delivery payload."
-                slotProps={{ select: { native: true } }}
               >
                 <option value="HMAC_SHA256">HMAC-SHA256</option>
-              </TextField>
+              </VirtualizedCombobox>
               <TextField
                 fullWidth
                 type="number"

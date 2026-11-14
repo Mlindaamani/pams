@@ -17,6 +17,7 @@ import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
 import { listSubscriptionPlans } from '@/features/subscription/api';
 import { createTenant, getTenantDetail, updateTenant } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function TenantFormPage() {
   const { id } = useParams();
@@ -160,8 +161,7 @@ export function TenantFormPage() {
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <TextField
-                      select
+                    <VirtualizedCombobox
                       label="Subscription plan"
                       fullWidth
                       value={planCode}
@@ -172,7 +172,7 @@ export function TenantFormPage() {
                           {plan.name} — ${Number(plan.monthlyPrice).toLocaleString()}/month
                         </MenuItem>
                       ))}
-                    </TextField>
+                    </VirtualizedCombobox>
                   </Grid>
                 </Grid>
               </>

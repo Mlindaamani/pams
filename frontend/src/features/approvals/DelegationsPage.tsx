@@ -18,6 +18,7 @@ import { toast } from '@/components/Toast';
 import { dateTime } from '@/lib/format';
 import { createDelegation, listMyDelegations, revokeDelegation } from './delegationsApi';
 import { delegationCandidates } from '@/features/admin/usersApi';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 function toLocalInput(date: Date) {
   const offset = date.getTimezoneOffset();
@@ -148,8 +149,7 @@ export function DelegationsPage() {
         <DialogTitle>New delegation</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              select
+            <VirtualizedCombobox
               label="Delegate to"
               value={delegateUserId}
               onChange={(event) => setDelegateUserId(event.target.value)}
@@ -160,7 +160,7 @@ export function DelegationsPage() {
                   {candidate.displayName}
                 </MenuItem>
               ))}
-            </TextField>
+            </VirtualizedCombobox>
             <TextField
               label="Starts at"
               type="datetime-local"

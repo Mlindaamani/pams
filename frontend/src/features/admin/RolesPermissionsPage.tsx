@@ -8,6 +8,7 @@ import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
 import { getAccessConfig, getRolePermissions, setRolePermission } from './accessConfigApi';
 import type { AssignmentFilter } from './types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function RolesPermissionsPage() {
   const queryClient = useQueryClient();
@@ -71,8 +72,7 @@ export function RolesPermissionsPage() {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <TextField
-            select
+          <VirtualizedCombobox
             size="small"
             fullWidth
             label="Assignment"
@@ -82,11 +82,10 @@ export function RolesPermissionsPage() {
             <MenuItem value="all">All permissions</MenuItem>
             <MenuItem value="assigned">Assigned</MenuItem>
             <MenuItem value="available">Available</MenuItem>
-          </TextField>
+          </VirtualizedCombobox>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-          <TextField
-            select
+          <VirtualizedCombobox
             size="small"
             fullWidth
             label="Module"
@@ -99,7 +98,7 @@ export function RolesPermissionsPage() {
                 {value.replaceAll('_', ' ')}
               </MenuItem>
             ))}
-          </TextField>
+          </VirtualizedCombobox>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 1.5 }} sx={{ display: 'flex', alignItems: 'center' }}>
           <Button
@@ -112,8 +111,7 @@ export function RolesPermissionsPage() {
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
-          <TextField
-            select
+          <VirtualizedCombobox
             size="small"
             fullWidth
             label="Role"
@@ -125,7 +123,7 @@ export function RolesPermissionsPage() {
                 {role.displayName}
               </MenuItem>
             ))}
-          </TextField>
+          </VirtualizedCombobox>
         </Grid>
       </Grid>
 

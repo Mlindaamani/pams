@@ -11,7 +11,6 @@ import {
   LinearProgress,
   MenuItem,
   Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -35,6 +34,7 @@ import {
   openBillingPortal,
   type SubscriptionPlan,
 } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function BillingPage() {
   const [interval, setInterval] = useState<'MONTHLY' | 'ANNUAL'>('MONTHLY');
@@ -186,8 +186,7 @@ export function BillingPage() {
 
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h6">Available plans</Typography>
-        <TextField
-          select
+        <VirtualizedCombobox
           size="small"
           label="Billing interval"
           value={interval}
@@ -196,7 +195,7 @@ export function BillingPage() {
         >
           <MenuItem value="MONTHLY">Monthly</MenuItem>
           <MenuItem value="ANNUAL">Annual</MenuItem>
-        </TextField>
+        </VirtualizedCombobox>
       </Stack>
 
       <Grid container spacing={2}>

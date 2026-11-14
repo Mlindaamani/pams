@@ -9,6 +9,7 @@ import { EmptyState, Loading, PageHeader } from '@/components/Page';
 import { listRequests, type RequestFilters } from './api';
 import { money, dateTime } from '@/lib/format';
 import type { PurchaseRequest } from '@/api/types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const statuses = [
   'DRAFT',
@@ -54,8 +55,7 @@ export function RequestListPage() {
         }
       />
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          select
+        <VirtualizedCombobox
           label="Status"
           value={status}
           onChange={(event) => {
@@ -70,7 +70,7 @@ export function RequestListPage() {
               {value}
             </MenuItem>
           ))}
-        </TextField>
+        </VirtualizedCombobox>
         <TextField
           label="Search reference or title"
           value={q}

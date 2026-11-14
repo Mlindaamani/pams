@@ -35,6 +35,7 @@ import { AreaChart, DonutChart } from '@/components/charts/Charts';
 import { downloadBlob, money } from '@/lib/format';
 import type { CommitmentRow, SpendRow } from '@/api/types';
 import { commitmentsReport, cycleTimeReport, spendCsv, spendReport } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const SPEND_GROUPS = ['department', 'vendor', 'category', 'month'];
 const CYCLE_GROUPS = ['policy', 'approver'];
@@ -129,8 +130,7 @@ export function ReportsPage() {
 
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 size="small"
                 fullWidth
                 label="Period"
@@ -141,7 +141,7 @@ export function ReportsPage() {
                 <MenuItem value="30">Last 30 days</MenuItem>
                 <MenuItem value="90">Last 90 days</MenuItem>
                 <MenuItem value="365">Last 365 days</MenuItem>
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
               <TextField
@@ -234,8 +234,7 @@ export function ReportsPage() {
                       : `Top ${spendGroup} groups by issued spend`}
                   </Typography>
                 </Box>
-                <TextField
-                  select
+                <VirtualizedCombobox
                   size="small"
                   label="Group by"
                   value={spendGroup}
@@ -247,7 +246,7 @@ export function ReportsPage() {
                       {value.replaceAll('_', ' ')}
                     </MenuItem>
                   ))}
-                </TextField>
+                </VirtualizedCombobox>
               </Stack>
               <Box sx={{ mt: 2 }}>
                 {spend.isLoading ? (
@@ -357,8 +356,7 @@ export function ReportsPage() {
                     Average, p50 and p90 completion time in minutes
                   </Typography>
                 </Box>
-                <TextField
-                  select
+                <VirtualizedCombobox
                   size="small"
                   label="Group by"
                   value={cycleGroup}
@@ -370,7 +368,7 @@ export function ReportsPage() {
                       {titleCase(value)}
                     </MenuItem>
                   ))}
-                </TextField>
+                </VirtualizedCombobox>
               </Stack>
               {cycle.isLoading ? (
                 <Loading rows={4} />

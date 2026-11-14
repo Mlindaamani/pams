@@ -28,6 +28,7 @@ import { listSubscriptionSummaries } from '@/features/subscription/api';
 import { listTenants } from './api';
 import { TenantPerformanceTab } from './TenantPerformanceTab';
 import { TenantSubscriptionsTab } from './TenantSubscriptionsTab';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function TenantsPage() {
   const [search, setSearch] = useState('');
@@ -99,8 +100,7 @@ export function TenantsPage() {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                  <TextField
-                    select
+                  <VirtualizedCombobox
                     size="small"
                     fullWidth
                     label="Status"
@@ -110,7 +110,7 @@ export function TenantsPage() {
                     <MenuItem value="">All statuses</MenuItem>
                     <MenuItem value="ACTIVE">Active</MenuItem>
                     <MenuItem value="SUSPENDED">Suspended</MenuItem>
-                  </TextField>
+                  </VirtualizedCombobox>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">

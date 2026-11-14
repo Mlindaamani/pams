@@ -23,6 +23,7 @@ import { listDepartments } from '@/features/reference/api';
 import { deleteUser, inviteUser, listUsers, updateUser } from './usersApi';
 
 import type { UserFormState } from './types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const emptyForm: UserFormState = {
   email: '',
@@ -222,8 +223,7 @@ export function UsersPage() {
               onChange={(event) => setForm({ ...form, displayName: event.target.value })}
               required
             />
-            <TextField
-              select
+            <VirtualizedCombobox
               label="Department"
               value={form.departmentId}
               onChange={(event) => setForm({ ...form, departmentId: event.target.value })}
@@ -234,9 +234,8 @@ export function UsersPage() {
                   {department.name}
                 </MenuItem>
               ))}
-            </TextField>
-            <TextField
-              select
+            </VirtualizedCombobox>
+            <VirtualizedCombobox
               label="Manager"
               value={form.managerId}
               onChange={(event) => setForm({ ...form, managerId: event.target.value })}
@@ -249,7 +248,7 @@ export function UsersPage() {
                     {user.displayName}
                   </MenuItem>
                 ))}
-            </TextField>
+            </VirtualizedCombobox>
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Approval limit"
@@ -299,15 +298,14 @@ export function UsersPage() {
               </Stack>
             )}
             {editing && (
-              <TextField
-                select
+              <VirtualizedCombobox
                 label="Active"
                 value={form.active ? 'yes' : 'no'}
                 onChange={(event) => setForm({ ...form, active: event.target.value === 'yes' })}
               >
                 <MenuItem value="yes">Active</MenuItem>
                 <MenuItem value="no">Inactive</MenuItem>
-              </TextField>
+              </VirtualizedCombobox>
             )}
           </Stack>
         </DialogContent>

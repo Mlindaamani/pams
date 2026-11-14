@@ -24,6 +24,7 @@ import {
   updateSubscriptionFeature,
   type FeatureInput,
 } from '@/features/subscription/api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const CATEGORIES = [
   { value: 'CORE', label: 'Core' },
@@ -161,8 +162,7 @@ export function PlatformFeatureFormPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 label="Category"
                 fullWidth
                 value={draft.category}
@@ -175,7 +175,7 @@ export function PlatformFeatureFormPage() {
                     {category.label}
                   </MenuItem>
                 ))}
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField
@@ -190,8 +190,7 @@ export function PlatformFeatureFormPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 label="Status"
                 fullWidth
                 value={draft.active ? 'ACTIVE' : 'INACTIVE'}
@@ -201,7 +200,7 @@ export function PlatformFeatureFormPage() {
               >
                 <MenuItem value="ACTIVE">Active</MenuItem>
                 <MenuItem value="INACTIVE">Inactive</MenuItem>
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
           </Grid>
 

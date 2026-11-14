@@ -29,6 +29,7 @@ import {
   reconcileTenantSubscription,
 } from '@/features/subscription/api';
 import { getTenantDetail } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const usd = (value?: number | null) =>
   new Intl.NumberFormat('en-US', {
@@ -220,8 +221,7 @@ export function PlatformSubscriptionDetailPage() {
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 7 }}>
-                    <TextField
-                      select
+                    <VirtualizedCombobox
                       fullWidth
                       label="Plan"
                       value={planCode}
@@ -232,11 +232,10 @@ export function PlatformSubscriptionDetailPage() {
                           {plan.name} — ${Number(plan.monthlyPrice).toLocaleString()}/mo
                         </MenuItem>
                       ))}
-                    </TextField>
+                    </VirtualizedCombobox>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 5 }}>
-                    <TextField
-                      select
+                    <VirtualizedCombobox
                       fullWidth
                       label="Interval"
                       value={billingInterval}
@@ -246,7 +245,7 @@ export function PlatformSubscriptionDetailPage() {
                     >
                       <MenuItem value="MONTHLY">Monthly</MenuItem>
                       <MenuItem value="ANNUAL">Annual</MenuItem>
-                    </TextField>
+                    </VirtualizedCombobox>
                   </Grid>
                 </Grid>
                 <Button

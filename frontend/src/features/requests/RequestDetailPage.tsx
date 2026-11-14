@@ -49,6 +49,7 @@ import {
   reject as rejectStep,
   requestChanges as requestChangesStep,
 } from '@/features/approvals/api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function RequestDetailPage() {
   const { id } = useParams();
@@ -568,8 +569,7 @@ export function RequestDetailPage() {
         <DialogTitle>Create purchase order</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              select
+            <VirtualizedCombobox
               label="Vendor"
               value={vendorId}
               disabled={Boolean(requestVendorId)}
@@ -585,7 +585,7 @@ export function RequestDetailPage() {
                     {vendor.name}
                   </MenuItem>
                 ))}
-            </TextField>
+            </VirtualizedCombobox>
             <TextField
               label="Payment terms"
               value={paymentTerms}

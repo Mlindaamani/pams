@@ -1965,3 +1965,52 @@ slow. Tempo was also provisioned in both Compose files even though it was not be
 **Consequences.** Frontend changes reload immediately, backend image rebuilds are no longer needed,
 and the development stack uses fewer containers. Backend changes still require a compile step
 (`make backend-compile`) before DevTools restarts the application.
+
+---
+
+## ADR-100 — One virtualized combobox for all select fields
+
+**Context.** Select fields were implemented with raw `TextField select`, a local `SearchableSelect`
+wrapper and direct `Autocomplete` usage. Large lists rendered every option and behaviour differed
+between screens.
+
+**Decision.**
+- Add `VirtualizedCombobox`, built on MUI Autocomplete and `react-window`'s `FixedSizeList`.
+- Support single-select, multi-select, descriptions, disabled options, validation/error text,
+  loading, clearable mode and a fixed-height custom option renderer.
+- Virtualize only above a threshold (default 60) while keeping all selects on the same component.
+- Preserve event-shaped `onChange` for incremental migration and expose `onValueChange` for new code.
+- Accept `MenuItem`/`option` children during migration; the canonical API uses an `options` array.
+- Convert every application select to this component and remove `SearchableSelect`.
+- Keep grouped options out of scope until a screen needs them.
+
+**Consequences.** Select behaviour, keyboard handling, filtering and option styling are consistent
+across the app, and large option sets stay responsive. The component remains the single place to add
+future features such as async loading or grouped options.
+
+---
+
+## ADR-101 — Combobox layout contract
+
+**Context.** After introducing the global combobox, individual migrations produced squashed fields,
+over-wide panels and unreadable options. Fixing each screen independently would recreate the same
+problem.
+
+**Decision.**
+- Follow the Pajamas combobox guidance: the trigger width is determined by the layout, while the
+  panel has a consistent minimum/maximum size and can wrap long option content.
+- The global component always renders a full-width form control inside its root. Parent layouts
+  control the outer width through grid/stack sizing or `sx`; individual callers no longer need
+  combobox-specific width fixes.
+- The dropdown panel matches the trigger width, stays inside the containing card/dialog and wraps
+  labels/descriptions instead of overflowing or truncating.
+- Option rows use a fixed 72px virtualized height with wrapping content; the panel is capped at eight
+  visible rows.
+- Keep Popper edge detection and modal-level z-index.
+- Add a static Vitest rule that fails if raw `TextField select`, `Select`, `Autocomplete` or
+  `SearchableSelect` appears in feature code.
+- Add Playwright layout tests for the catalog dialog, workflow action permissions and delivery-log
+  filters.
+
+**Consequences.** New screens inherit the same width and overflow behaviour without bespoke CSS.
+Regressions are caught by both the usage-source test and representative browser layout tests.

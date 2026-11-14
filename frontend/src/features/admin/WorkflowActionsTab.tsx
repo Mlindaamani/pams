@@ -11,12 +11,10 @@ import {
   IconButton,
   MenuItem,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Loading } from '@/components/Page';
-import { SearchableSelect } from '@/components/SearchableSelect';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
 import {
@@ -26,6 +24,7 @@ import {
   saveWorkflowRules,
 } from './accessConfigApi';
 import type { WorkflowActionMeta, WorkflowRule } from './types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const ENTITIES = [
   {
@@ -331,8 +330,7 @@ export function WorkflowActionsTab() {
                 Choose the record type, then decide what each status allows.
               </Typography>
             </Box>
-            <TextField
-              select
+            <VirtualizedCombobox
               size="small"
               label="Record type"
               value={entityType}
@@ -347,7 +345,7 @@ export function WorkflowActionsTab() {
                   {option.label}
                 </MenuItem>
               ))}
-            </TextField>
+            </VirtualizedCombobox>
           </Stack>
         </CardContent>
       </Card>
@@ -453,11 +451,15 @@ export function WorkflowActionsTab() {
                             </Stack>
                           </Box>
                           <Box sx={{ width: { xs: '100%', md: 300 } }}>
-                            <SearchableSelect
+                            <VirtualizedCombobox
+                              fullWidth
+                              size="small"
                               label="Who can use it"
                               value={rule.requiredPermission}
                               options={permissionOptions}
-                              onChange={(value) => updateRule(index, { requiredPermission: value })}
+                              onValueChange={(value) =>
+                                updateRule(index, { requiredPermission: value ?? '' })
+                              }
                             />
                           </Box>
                           <IconButton
@@ -476,8 +478,7 @@ export function WorkflowActionsTab() {
                 </Stack>
 
                 {available.length > 0 && (
-                  <TextField
-                    select
+                  <VirtualizedCombobox
                     size="small"
                     label="Add action"
                     value=""
@@ -492,7 +493,7 @@ export function WorkflowActionsTab() {
                         {ACTIONS[action]?.label ?? action}
                       </MenuItem>
                     ))}
-                  </TextField>
+                  </VirtualizedCombobox>
                 )}
               </CardContent>
             </Card>
@@ -509,8 +510,7 @@ export function WorkflowActionsTab() {
                 See which buttons a selected role would see with these rules.
               </Typography>
             </Box>
-            <TextField
-              select
+            <VirtualizedCombobox
               size="small"
               label="Role"
               value={previewRole}
@@ -523,7 +523,7 @@ export function WorkflowActionsTab() {
                   {role.displayName}
                 </MenuItem>
               ))}
-            </TextField>
+            </VirtualizedCombobox>
           </Stack>
           {previewRole && (
             <Stack spacing={1.5} sx={{ mt: 2 }}>

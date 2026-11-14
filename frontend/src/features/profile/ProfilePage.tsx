@@ -33,6 +33,7 @@ import {
   uploadMyAvatar,
 } from '@/features/admin/usersApi';
 import { listDepartments } from '@/features/reference/api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function ProfilePage() {
   const auth = useAuth();
@@ -235,8 +236,7 @@ export function ProfilePage() {
                     {!platformOnly && (
                       <>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            select
+                          <VirtualizedCombobox
                             fullWidth
                             size="small"
                             label="Department"
@@ -250,11 +250,10 @@ export function ProfilePage() {
                                 {department.name}
                               </MenuItem>
                             ))}
-                          </TextField>
+                          </VirtualizedCombobox>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            select
+                          <VirtualizedCombobox
                             fullWidth
                             size="small"
                             label="Manager"
@@ -269,7 +268,7 @@ export function ProfilePage() {
                                   {user.displayName}
                                 </MenuItem>
                               ))}
-                          </TextField>
+                          </VirtualizedCombobox>
                         </Grid>
                       </>
                     )}

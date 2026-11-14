@@ -16,6 +16,7 @@ import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateTime } from '@/lib/format';
 import { listDemoRequests, type DemoRequestStatus } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const statuses: DemoRequestStatus[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'CLOSED'];
 
@@ -64,8 +65,7 @@ export function PlatformDemoRequestsPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 size="small"
                 fullWidth
                 label="Status"
@@ -78,7 +78,7 @@ export function PlatformDemoRequestsPage() {
                     {labelStatus(value)}
                   </MenuItem>
                 ))}
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', alignItems: 'center' }}>
               <Typography variant="body2" color="text.secondary">

@@ -1,15 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Box,
-  Card,
-  CardContent,
-  Grid,
-  MenuItem,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Card, CardContent, Grid, MenuItem, Stack, Typography } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -19,6 +10,7 @@ import { AreaChart, DonutChart } from '@/components/charts/Charts';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateOnly } from '@/lib/format';
 import { getPlatformDashboard } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const PERIODS = [
   { value: '7', label: 'Last 7 days' },
@@ -73,8 +65,7 @@ export function PlatformDashboardPage() {
       <PageHeader
         title="Platform dashboard"
         actions={
-          <TextField
-            select
+          <VirtualizedCombobox
             size="small"
             label="Period"
             value={period}
@@ -86,7 +77,7 @@ export function PlatformDashboardPage() {
                 {option.label}
               </MenuItem>
             ))}
-          </TextField>
+          </VirtualizedCombobox>
         }
       />
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -143,8 +134,7 @@ export function PlatformDashboardPage() {
                     Issued purchase orders by month; no FX conversion.
                   </Typography>
                 </Box>
-                <TextField
-                  select
+                <VirtualizedCombobox
                   size="small"
                   label="Currency"
                   value={selectedCurrency}
@@ -156,7 +146,7 @@ export function PlatformDashboardPage() {
                       {row.currency}
                     </MenuItem>
                   ))}
-                </TextField>
+                </VirtualizedCombobox>
               </Stack>
               <AreaChart data={monthlySpend} ariaLabel="Platform monthly spend" />
             </CardContent>

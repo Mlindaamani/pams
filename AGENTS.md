@@ -81,6 +81,7 @@ Enterprise, multi-tenant procurement API with approval workflows.
 
 ## Frontend (React + TS)
 - Feature-based folders (`features/requests`, `features/approvals`, ...). Feature-specific types and interfaces live in `features/<feature>/types`; shared generated API types stay in `@/api`. API client **generated from OpenAPI**; don't hand-write duplicate types.
+- All select/combobox fields use `@/components/VirtualizedCombobox`; do not add raw `<TextField select>`, MUI `<Select>` or feature-local `<Autocomplete>`. Its trigger is full-width inside the parent layout, and its panel matches the trigger width and wraps option content.
 - Auth: OIDC Authorization Code + PKCE, token in memory, role-based route guards.
 - TanStack Query for server state; React Hook Form + Zod for forms; map `ProblemDetail` errors to UI; handle `409/412` with a "data changed, reload" flow.
 - Loading, empty, and error states on every screen; keyboard accessible.

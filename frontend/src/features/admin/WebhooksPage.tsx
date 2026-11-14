@@ -15,7 +15,6 @@ import {
   Stack,
   Tab,
   Tabs,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -47,6 +46,7 @@ import {
 import { WebhookSecretDialog } from './WebhookSecretDialog';
 import { CopyableUrl } from './WebhookCopyableUrl';
 import { WEBHOOK_DELIVERY_EVENTS, webhookEventLabel } from './webhookEvents';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const DELIVERY_STATUSES = [
   { value: 'PENDING', label: 'Pending' },
@@ -251,8 +251,7 @@ export function WebhooksPage() {
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  select
+                <VirtualizedCombobox
                   size="small"
                   label="Endpoint"
                   value={logFilter.endpointId}
@@ -267,9 +266,8 @@ export function WebhooksPage() {
                       {subscription.name ?? subscription.url}
                     </MenuItem>
                   ))}
-                </TextField>
-                <TextField
-                  select
+                </VirtualizedCombobox>
+                <VirtualizedCombobox
                   size="small"
                   label="Status"
                   value={logFilter.status}
@@ -284,9 +282,8 @@ export function WebhooksPage() {
                       {status.label}
                     </MenuItem>
                   ))}
-                </TextField>
-                <TextField
-                  select
+                </VirtualizedCombobox>
+                <VirtualizedCombobox
                   size="small"
                   label="Event"
                   value={logFilter.eventType}
@@ -301,7 +298,7 @@ export function WebhooksPage() {
                       {event.label}
                     </MenuItem>
                   ))}
-                </TextField>
+                </VirtualizedCombobox>
               </Stack>
             </CardContent>
           </Card>

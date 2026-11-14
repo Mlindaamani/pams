@@ -6,6 +6,7 @@ import { DataTable } from '@/components/DataTable';
 import { Loading, PageHeader } from '@/components/Page';
 import { dateOnly, money } from '@/lib/format';
 import { listVendorInvoices } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function InvoicesPage() {
   const navigate = useNavigate();
@@ -34,8 +35,7 @@ export function InvoicesPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <TextField
-          select
+        <VirtualizedCombobox
           size="small"
           label="Status"
           value={status}
@@ -46,7 +46,7 @@ export function InvoicesPage() {
           <MenuItem value="MATCHED">Matched</MenuItem>
           <MenuItem value="MISMATCHED">Mismatched</MenuItem>
           <MenuItem value="APPROVED">Approved</MenuItem>
-        </TextField>
+        </VirtualizedCombobox>
       </Stack>
       <DataTable
         ariaLabel="Vendor invoices"

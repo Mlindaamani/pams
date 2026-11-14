@@ -21,6 +21,7 @@ import { money } from '@/lib/format';
 import { listVendors } from '@/features/vendors/api';
 import { listVendorInvoices } from '@/features/invoices/api';
 import { createPayment } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const METHODS = ['BANK_TRANSFER', 'MOBILE_MONEY', 'CHEQUE', 'CASH', 'OTHER'];
 
@@ -82,8 +83,7 @@ export function PaymentFormPage() {
         <CardContent>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 fullWidth
                 label="Vendor"
                 value={vendorId}
@@ -100,7 +100,7 @@ export function PaymentFormPage() {
                       {vendor.name}
                     </MenuItem>
                   ))}
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
               <TextField
@@ -113,8 +113,7 @@ export function PaymentFormPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 fullWidth
                 label="Method"
                 value={method}
@@ -125,7 +124,7 @@ export function PaymentFormPage() {
                     {option.replaceAll('_', ' ')}
                   </MenuItem>
                 ))}
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField

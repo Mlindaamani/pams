@@ -24,6 +24,7 @@ import {
   uploadBrandingFavicon,
   uploadBrandingLogo,
 } from './brandingApi';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function BrandingPage() {
   const { branding, logoUrl, refresh } = useBranding();
@@ -185,8 +186,7 @@ export function BrandingPage() {
                 </Grid>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField
-                      select
+                    <VirtualizedCombobox
                       label="Corner radius"
                       fullWidth
                       value={cornerRadius}
@@ -198,11 +198,10 @@ export function BrandingPage() {
                           {radius}px
                         </MenuItem>
                       ))}
-                    </TextField>
+                    </VirtualizedCombobox>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField
-                      select
+                    <VirtualizedCombobox
                       label="Font family"
                       fullWidth
                       value={fontFamily}
@@ -212,11 +211,10 @@ export function BrandingPage() {
                       <MenuItem value="ROBOTO">Roboto</MenuItem>
                       <MenuItem value="SYSTEM">System UI</MenuItem>
                       <MenuItem value="SERIF">Serif</MenuItem>
-                    </TextField>
+                    </VirtualizedCombobox>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField
-                      select
+                    <VirtualizedCombobox
                       label="Density"
                       fullWidth
                       value={uiDensity}
@@ -224,7 +222,7 @@ export function BrandingPage() {
                     >
                       <MenuItem value="COMFORTABLE">Comfortable</MenuItem>
                       <MenuItem value="COMPACT">Compact</MenuItem>
-                    </TextField>
+                    </VirtualizedCombobox>
                   </Grid>
                 </Grid>
                 <Typography variant="h6" sx={{ pt: 1 }}>

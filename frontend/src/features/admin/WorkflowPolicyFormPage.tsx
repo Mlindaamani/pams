@@ -42,6 +42,7 @@ import { listUsers } from './usersApi';
 import { createPolicy, getPolicy, updatePolicy } from './api';
 
 import type { ApproverType, ConditionType, StepForm } from './types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const initialSteps: StepForm[] = [
   {
@@ -157,8 +158,7 @@ export function WorkflowPolicyFormPage() {
             </Typography>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField
-                  select
+                <VirtualizedCombobox
                   fullWidth
                   label="Applies to"
                   value={entityType}
@@ -166,7 +166,7 @@ export function WorkflowPolicyFormPage() {
                 >
                   <MenuItem value="PURCHASE_REQUEST">Purchase requests</MenuItem>
                   <MenuItem value="PURCHASE_ORDER">Purchase orders</MenuItem>
-                </TextField>
+                </VirtualizedCombobox>
               </Grid>
               <Grid size={{ xs: 12, md: 5 }}>
                 <TextField
@@ -311,8 +311,7 @@ export function WorkflowPolicyFormPage() {
                           setSteps(next);
                         }}
                       />
-                      <TextField
-                        select
+                      <VirtualizedCombobox
                         label="Actor type"
                         value={step.approverType}
                         sx={{ minWidth: 180 }}
@@ -330,10 +329,9 @@ export function WorkflowPolicyFormPage() {
                         <MenuItem value="ROLE">Role</MenuItem>
                         <MenuItem value="REQUESTER_MANAGER">Requester&apos;s manager</MenuItem>
                         <MenuItem value="USER">Specific user</MenuItem>
-                      </TextField>
+                      </VirtualizedCombobox>
                       {step.approverType === 'ROLE' && (
-                        <TextField
-                          select
+                        <VirtualizedCombobox
                           label="Role"
                           value={step.approverRole}
                           sx={{ minWidth: 180 }}
@@ -350,11 +348,10 @@ export function WorkflowPolicyFormPage() {
                               </MenuItem>
                             ),
                           )}
-                        </TextField>
+                        </VirtualizedCombobox>
                       )}
                       {step.approverType === 'USER' && (
-                        <TextField
-                          select
+                        <VirtualizedCombobox
                           label="User"
                           value={step.approverUserId}
                           sx={{ minWidth: 220 }}
@@ -369,7 +366,7 @@ export function WorkflowPolicyFormPage() {
                               {user.displayName} ({user.email})
                             </MenuItem>
                           ))}
-                        </TextField>
+                        </VirtualizedCombobox>
                       )}
                       <TextField
                         label="SLA hours"
@@ -382,8 +379,7 @@ export function WorkflowPolicyFormPage() {
                           setSteps(next);
                         }}
                       />
-                      <TextField
-                        select
+                      <VirtualizedCombobox
                         label="Condition"
                         value={step.conditionType}
                         sx={{ minWidth: 180 }}
@@ -401,10 +397,9 @@ export function WorkflowPolicyFormPage() {
                         <MenuItem value="ALWAYS">Always</MenuItem>
                         <MenuItem value="BUDGET_EXCEPTION">Budget exception only</MenuItem>
                         <MenuItem value="DEPARTMENT">Specific department</MenuItem>
-                      </TextField>
+                      </VirtualizedCombobox>
                       {step.conditionType === 'DEPARTMENT' && (
-                        <TextField
-                          select
+                        <VirtualizedCombobox
                           label="Department"
                           value={step.conditionDepartmentId}
                           sx={{ minWidth: 190 }}
@@ -419,7 +414,7 @@ export function WorkflowPolicyFormPage() {
                               {department.name}
                             </MenuItem>
                           ))}
-                        </TextField>
+                        </VirtualizedCombobox>
                       )}
                       <IconButton
                         aria-label="Remove approver"

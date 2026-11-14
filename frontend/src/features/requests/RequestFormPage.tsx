@@ -43,6 +43,7 @@ import { listVendors } from '@/features/vendors/api';
 import { createRequest, getRequest, updateRequest, uploadAttachment } from './api';
 import type { PurchaseRequestRequest } from '@/api/types';
 import { toast } from '@/components/Toast';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const lineSchema = z.object({
   description: z.string().min(1, 'Description is required'),
@@ -309,8 +310,7 @@ export function RequestFormPage() {
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              select
+            <VirtualizedCombobox
               label="Department"
               fullWidth
               required
@@ -332,7 +332,7 @@ export function RequestFormPage() {
                   {department.name}
                 </MenuItem>
               ))}
-            </TextField>
+            </VirtualizedCombobox>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
@@ -512,11 +512,15 @@ export function RequestFormPage() {
                         />
                       </Grid>
                       <Grid size={{ xs: 12, md: 4 }}>
-                        <TextField
-                          select
+                        <VirtualizedCombobox
                           label="Vendor (optional)"
                           fullWidth
-                          {...register(`lines.${index}.vendorId`)}
+                          value={watch(`lines.${index}.vendorId`) ?? ''}
+                          onChange={(_event, value) =>
+                            setValue(`lines.${index}.vendorId`, value ?? '', {
+                              shouldValidate: true,
+                            })
+                          }
                         >
                           <MenuItem value="">Vendor to be confirmed</MenuItem>
                           {(vendors.data?.content ?? [])
@@ -526,7 +530,7 @@ export function RequestFormPage() {
                                 {vendor.name}
                               </MenuItem>
                             ))}
-                        </TextField>
+                        </VirtualizedCombobox>
                       </Grid>
                     </Grid>
                   )}

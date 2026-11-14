@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 import {
-  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -37,6 +36,7 @@ import {
 } from '@/features/reference/api';
 
 import type { CatalogFormState } from './types';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const emptyForm: CatalogFormState = {
   sku: '',
@@ -416,8 +416,7 @@ export function CatalogPage() {
               value={form.category}
               onChange={(event) => setForm({ ...form, category: event.target.value })}
             />
-            <TextField
-              select
+            <VirtualizedCombobox
               label="Default vendor"
               value={form.defaultVendorId}
               onChange={(event) => setForm({ ...form, defaultVendorId: event.target.value })}
@@ -430,9 +429,8 @@ export function CatalogPage() {
                     {vendor.name}
                   </MenuItem>
                 ))}
-            </TextField>
-            <TextField
-              select
+            </VirtualizedCombobox>
+            <VirtualizedCombobox
               label="Available to"
               value={form.departmentScope}
               onChange={(event) =>
@@ -445,31 +443,29 @@ export function CatalogPage() {
             >
               <MenuItem value="ALL">All departments</MenuItem>
               <MenuItem value="SELECTED">Selected departments</MenuItem>
-            </TextField>
+            </VirtualizedCombobox>
             {form.departmentScope === 'SELECTED' && (
-              <Autocomplete
+              <VirtualizedCombobox
                 multiple
-                options={departments.data?.content ?? []}
-                getOptionLabel={(department) => department.name ?? ''}
-                value={(departments.data?.content ?? []).filter((department) =>
-                  form.departmentIds.includes(department.id!),
-                )}
-                onChange={(_, value) =>
-                  setForm({ ...form, departmentIds: value.map((department) => department.id!) })
-                }
-                renderInput={(params) => <TextField {...params} label="Departments" required />}
+                label="Departments"
+                required
+                options={(departments.data?.content ?? []).map((department) => ({
+                  value: department.id!,
+                  label: department.name ?? '',
+                }))}
+                value={form.departmentIds}
+                onValueChange={(value) => setForm({ ...form, departmentIds: value })}
               />
             )}
             {editing && (
-              <TextField
-                select
+              <VirtualizedCombobox
                 label="Active"
                 value={form.active ? 'yes' : 'no'}
                 onChange={(event) => setForm({ ...form, active: event.target.value === 'yes' })}
               >
                 <MenuItem value="yes">Active</MenuItem>
                 <MenuItem value="no">Inactive</MenuItem>
-              </TextField>
+              </VirtualizedCombobox>
             )}
           </Stack>
         </DialogContent>

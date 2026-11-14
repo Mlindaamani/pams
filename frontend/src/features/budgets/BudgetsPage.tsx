@@ -19,6 +19,7 @@ import { EmptyState, Loading, PageHeader } from '@/components/Page';
 import { money } from '@/lib/format';
 import { listDepartments } from '@/features/reference/api';
 import { createBudget, deleteBudget, listBudgets, updateBudget } from './api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function BudgetsPage() {
   const { branding } = useBranding();
@@ -203,8 +204,7 @@ export function BudgetsPage() {
         <DialogTitle>New budget</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              select
+            <VirtualizedCombobox
               label="Department"
               value={departmentId}
               onChange={(event) => setDepartmentId(event.target.value)}
@@ -214,7 +214,7 @@ export function BudgetsPage() {
                   {department.name}
                 </MenuItem>
               ))}
-            </TextField>
+            </VirtualizedCombobox>
             <TextField
               label="Fiscal year"
               type="number"

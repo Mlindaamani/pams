@@ -29,6 +29,7 @@ import {
   type PlanInput,
   type PlatformPlan,
 } from '@/features/subscription/api';
+import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 const emptyDraft = (): PlanDraft => ({
   code: '',
@@ -269,8 +270,7 @@ export function PlatformPlanFormPage() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                select
+              <VirtualizedCombobox
                 label="Status"
                 fullWidth
                 value={draft.active ? 'ACTIVE' : 'INACTIVE'}
@@ -280,7 +280,7 @@ export function PlatformPlanFormPage() {
               >
                 <MenuItem value="ACTIVE">Active</MenuItem>
                 <MenuItem value="INACTIVE">Inactive</MenuItem>
-              </TextField>
+              </VirtualizedCombobox>
             </Grid>
             <Grid size={{ xs: 12, sm: 3 }}>
               <TextField
