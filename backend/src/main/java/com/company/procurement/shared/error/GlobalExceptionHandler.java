@@ -203,7 +203,7 @@ public class GlobalExceptionHandler {
   }
 
   private static HttpStatus statusFor(DomainException ex) {
-    if (ex instanceof FeatureNotEnabledException) {
+    if (ex instanceof FeatureNotEnabledException || ex instanceof ForbiddenException) {
       return HttpStatus.FORBIDDEN;
     }
     if (ex instanceof ResourceNotFoundException) {

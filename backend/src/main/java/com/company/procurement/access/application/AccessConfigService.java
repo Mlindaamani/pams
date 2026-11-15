@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AccessConfigService {
 
+  private static final String PLATFORM_ADMIN_ROLE = "PLATFORM_ADMIN";
+  private static final String PLATFORM_PERMISSION_PREFIX = "platform:";
+
   private final JdbcTemplate jdbcTemplate;
   private final PermissionService permissions;
   private final AuditEventService audit;
@@ -32,13 +35,13 @@ public class AccessConfigService {
   public AccessConfig config() {
     List<PermissionModel> catalog =
         jdbcTemplate.query(
-            "select code, description from permission order by code",
+            "select code, description from permission where code not like 'platform:%' order by code",
             (resultSet, row) ->
                 new PermissionModel(
                     resultSet.getString("code"), resultSet.getString("description")));
     List<RoleModel> roles =
         jdbcTemplate.query(
-            "select role_name, display_name, description from role_model order by role_name",
+            "select role_name, display_name, description from role_model where role_name <> 'PLATFORM_ADMIN' order by role_name",
             (resultSet, row) ->
                 new RoleModel(
                     resultSet.getString("role_name"),
@@ -62,7 +65,7 @@ public class AccessConfigService {
   @Transactional(readOnly = true)
   public RolePermissionPage permissionsForRole(
       String roleName, String query, String assignment, String module, int page, int size) {
-    requireKnownRole(roleName);
+    requireTenantRole(roleName);
     int boundedSize = Math.min(Math.max(size, 1), 200);
     int boundedPage = Math.max(page, 0);
     StringBuilder where = new StringBuilder(" where 1 = 1");
@@ -123,17 +126,21 @@ public class AccessConfigService {
 
     List<String> modules =
         jdbcTemplate.queryForList(
-            "select distinct split_part(code, ':', 1) from permission order by 1", String.class);
+            "select distinct split_part(code, ':', 1) from permission where code not like 'platform:%' order by 1",
+            String.class);
     return new RolePermissionPage(
         roleName, modules, rows, boundedPage, boundedSize, totalElements, totalPages);
   }
 
   @Transactional
   public void setPermission(String roleName, String permissionCode, boolean assigned) {
-    requireKnownRole(roleName);
+    requireTenantRole(roleName);
     if ("ADMIN".equals(roleName)) {
       throw new BusinessRuleException(
           "The ADMIN role always has every permission and cannot be edited");
+    }
+    if (permissionCode.startsWith(PLATFORM_PERMISSION_PREFIX)) {
+      throw new BusinessRuleException("Platform permissions cannot be assigned to tenant roles");
     }
     Integer exists =
         jdbcTemplate.queryForObject(
@@ -163,13 +170,16 @@ public class AccessConfigService {
 
   @Transactional
   public RolePermissions updateRole(String roleName, Set<String> permissionCodes) {
-    requireKnownRole(roleName);
+    requireTenantRole(roleName);
     if ("ADMIN".equals(roleName)) {
       throw new BusinessRuleException(
           "The ADMIN role always has every permission and cannot be edited");
     }
     Set<String> requested =
         new LinkedHashSet<>(permissionCodes == null ? Set.of() : permissionCodes);
+    if (requested.stream().anyMatch(code -> code.startsWith(PLATFORM_PERMISSION_PREFIX))) {
+      throw new BusinessRuleException("Platform permissions cannot be assigned to tenant roles");
+    }
     if (!requested.isEmpty()) {
       String placeholders =
           requested.stream().map(code -> "?").collect(java.util.stream.Collectors.joining(","));
@@ -203,7 +213,10 @@ public class AccessConfigService {
     return new RolePermissions(roleName, List.copyOf(requested));
   }
 
-  private void requireKnownRole(String roleName) {
+  private void requireTenantRole(String roleName) {
+    if (PLATFORM_ADMIN_ROLE.equals(roleName)) {
+      throw new ResourceNotFoundException("Role %s not found".formatted(roleName));
+    }
     Integer count =
         jdbcTemplate.queryForObject(
             "select count(*) from role_model where role_name = ?", Integer.class, roleName);

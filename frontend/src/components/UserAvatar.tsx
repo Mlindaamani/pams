@@ -7,13 +7,15 @@ interface Props {
   name?: string;
   size?: number;
   sx?: SxProps<Theme>;
+  skipProfile?: boolean;
 }
 
-export function UserAvatar({ name, size = 32, sx }: Props) {
+export function UserAvatar({ name, size = 32, sx, skipProfile = false }: Props) {
   const [src, setSrc] = useState<string | undefined>();
   const me = useQuery({
     queryKey: ['users', 'me'],
     queryFn: getMe,
+    enabled: !skipProfile,
     retry: false,
     retryOnMount: false,
     staleTime: 30_000,
@@ -22,7 +24,7 @@ export function UserAvatar({ name, size = 32, sx }: Props) {
   const avatar = useQuery({
     queryKey: ['users', 'me', 'avatar'],
     queryFn: myAvatar,
-    enabled: Boolean(me.data?.hasAvatar),
+    enabled: !skipProfile && Boolean(me.data?.hasAvatar),
     retry: false,
     retryOnMount: false,
   });

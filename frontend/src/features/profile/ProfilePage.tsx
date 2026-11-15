@@ -42,7 +42,12 @@ export function ProfilePage() {
   const platformOnly = ability.can('read', 'Platform') && !ability.can('read', 'PurchaseRequest');
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
-  const me = useQuery({ queryKey: ['users', 'me'], queryFn: getMe, retry: false });
+  const me = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: getMe,
+    enabled: !platformOnly,
+    retry: false,
+  });
   const departments = useQuery({
     queryKey: ['departments'],
     queryFn: listDepartments,
@@ -104,6 +109,71 @@ export function ProfilePage() {
       void queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
+
+  if (platformOnly) {
+    const displayName = String(
+      auth.user?.profile.name ??
+        auth.user?.profile.preferred_username ??
+        auth.user?.profile.email ??
+        'SaaS Creator',
+    );
+    const email = String(auth.user?.profile.email ?? '—');
+    return (
+      <>
+        <PageHeader
+          title="SaaS Creator account"
+          backTo="/platform/dashboard"
+          actions={
+            <Button
+              component="a"
+              href={accountSecurityUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="contained"
+              startIcon={<SecurityIcon />}
+              endIcon={<OpenInNewIcon fontSize="small" />}
+            >
+              Open Keycloak account
+            </Button>
+          }
+        />
+        <Card>
+          <CardContent>
+            <Stack spacing={2.5}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <UserAvatar name={displayName} size={72} skipProfile />
+                <Box>
+                  <Typography variant="h6">{displayName}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {email}
+                  </Typography>
+                  <Chip size="small" color="primary" label="SaaS Creator" sx={{ mt: 0.75 }} />
+                </Box>
+              </Stack>
+              <Divider />
+              <Typography variant="body1">
+                Your SaaS Creator account is managed in Keycloak. Use the Keycloak account console
+                to update your name, email, password or multi-factor authentication.
+              </Typography>
+              <Box>
+                <Button
+                  component="a"
+                  href={accountSecurityUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outlined"
+                  startIcon={<SecurityIcon />}
+                  endIcon={<OpenInNewIcon fontSize="small" />}
+                >
+                  Keycloak account
+                </Button>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
 
   if (me.isLoading) return <Loading />;
 

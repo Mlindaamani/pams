@@ -2014,3 +2014,51 @@ problem.
 
 **Consequences.** New screens inherit the same width and overflow behaviour without bespoke CSS.
 Regressions are caught by both the usage-source test and representative browser layout tests.
+
+---
+
+## ADR-102 — SaaS Creator is a global identity
+
+**Context.** The seeded platform administrator carried a tenant `organization_id`, appeared in the
+tenant user list, and the tenant role-management screen exposed and could edit `PLATFORM_ADMIN` plus
+`platform:*` permissions. A tenant administrator could therefore alter platform permissions or grant
+them to tenant roles.
+
+**Decision.**
+- Treat the SaaS Creator (`PLATFORM_ADMIN`) as a global Keycloak identity with no tenant
+  `organization_id` and no tenant `user_profile`.
+- Seed the SaaS Creator as `pams` / `admin@pams.com` with the requested development-only password.
+- Deny tenant profile endpoints for `PLATFORM_ADMIN`; platform account management happens in the
+  Keycloak account console.
+- Hide `PLATFORM_ADMIN` and all `platform:*` permissions from tenant access configuration.
+- Reject tenant attempts to read or edit the platform role or assign platform permissions.
+- Keep platform permissions managed only by the platform seed/operations, not tenant admins.
+- Frontend platform-only accounts use OIDC claims, skip tenant profile queries and link to Keycloak.
+
+**Consequences.** SaaS Creators are not tenant users, tenants cannot see or modify platform
+identities or permissions, and the privilege-escalation path through tenant role configuration is
+closed.
+
+---
+
+---
+
+## ADR-103 — Tenant list shows the system administrator as contact person
+
+**Context.** Platform administrators had to open each tenant to find who to contact. The tenant
+administrator name and email already exist in `tenant_provisioning`, the same source used by the
+tenant detail "System admin" card.
+
+**Decision.**
+- Enrich `GET /api/v1/platform/tenants` with `adminName` and `adminEmail` from
+  `tenant_provisioning`.
+- Load contacts for the current page in one batched query; never call Keycloak while listing
+  tenants.
+- Show a **Contact person** column with the administrator's full name and email, or `—` when no
+  administrator has been invited.
+- Keep the provisioning administrator as the source of truth for platform contact information.
+
+**Consequences.** Platform administrators can identify the tenant contact directly from the list.
+Contact data stays available without a Keycloak dependency or per-row queries.
+
+---

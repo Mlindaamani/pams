@@ -7,6 +7,7 @@ import type {
   PlatformDashboard,
   Tenant,
   TenantDetail,
+  TenantRecord,
 } from './types';
 
 export type {
@@ -15,6 +16,7 @@ export type {
   PlatformDashboard,
   Tenant,
   TenantDetail,
+  TenantRecord,
 } from './types';
 
 export async function listTenants(params: {
@@ -36,7 +38,7 @@ export async function createTenant(body: {
   planCode?: string;
   adminEmail?: string;
   adminName?: string;
-}): Promise<Tenant> {
+}): Promise<TenantRecord> {
   return unwrap(
     api.POST('/api/v1/platform/tenants', {
       headers: { 'Idempotency-Key': idempotencyKey() },
@@ -49,7 +51,7 @@ export async function updateTenant(
   id: string,
   version: number,
   body: { name: string; slug: string; invoiceTolerancePercent: number },
-): Promise<Tenant> {
+): Promise<TenantRecord> {
   return unwrap(
     api.PUT('/api/v1/platform/tenants/{id}', {
       params: { path: { id } },
@@ -59,7 +61,7 @@ export async function updateTenant(
   );
 }
 
-export async function suspendTenant(id: string, version: number): Promise<Tenant> {
+export async function suspendTenant(id: string, version: number): Promise<TenantRecord> {
   return unwrap(
     api.POST('/api/v1/platform/tenants/{id}/suspend', {
       params: { path: { id } },
@@ -68,7 +70,7 @@ export async function suspendTenant(id: string, version: number): Promise<Tenant
   );
 }
 
-export async function activateTenant(id: string, version: number): Promise<Tenant> {
+export async function activateTenant(id: string, version: number): Promise<TenantRecord> {
   return unwrap(
     api.POST('/api/v1/platform/tenants/{id}/activate', {
       params: { path: { id } },

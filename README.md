@@ -39,7 +39,9 @@ Keycloak is at `http://localhost:8081` (realm `pams`). The master admin comes fr
 
 All API endpoints require a Keycloak bearer token. Demo users (password = username): `admin`
 (ADMIN), `officer` (PROCUREMENT_OFFICER), `requester` (REQUESTER), `approver` (APPROVER), `finance`
-(FINANCE), `auditor` (AUDITOR). Get a token with:
+(FINANCE), `auditor` (AUDITOR). The SaaS Creator platform account is `pams` / `admin@pams.com`
+(development-only password `rach,369`); it has no tenant organization and manages the platform area.
+Get a tenant API token with:
 
 ```bash
 curl -s -X POST http://localhost:8081/realms/pams/protocol/openid-connect/token \

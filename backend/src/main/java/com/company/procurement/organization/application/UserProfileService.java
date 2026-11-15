@@ -6,6 +6,7 @@ import com.company.procurement.organization.domain.UserProfileRepository;
 import com.company.procurement.shared.actor.CurrentActorProvider;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
+import com.company.procurement.shared.error.ForbiddenException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.storage.FileStoragePort;
@@ -101,6 +102,7 @@ public class UserProfileService {
 
   @Transactional
   public UserProfile saveCurrent(SelfProfileCommand command) {
+    rejectPlatformAdminTenantProfile();
     UUID organizationId = TenantContext.require();
     requireDepartment(organizationId, command.departmentId());
     UserProfile user =
@@ -123,6 +125,7 @@ public class UserProfileService {
 
   @Transactional
   public UserProfile uploadAvatar(byte[] content, String contentType) {
+    rejectPlatformAdminTenantProfile();
     if (content == null || content.length == 0) {
       throw new BusinessRuleException("Avatar file is required");
     }
@@ -163,6 +166,7 @@ public class UserProfileService {
 
   @Transactional(readOnly = true)
   public Avatar currentAvatar() {
+    rejectPlatformAdminTenantProfile();
     UUID organizationId = TenantContext.require();
     UserProfile user =
         users
@@ -181,6 +185,7 @@ public class UserProfileService {
 
   @Transactional
   public void removeAvatar() {
+    rejectPlatformAdminTenantProfile();
     UUID organizationId = TenantContext.require();
     UserProfile user =
         users
@@ -197,6 +202,7 @@ public class UserProfileService {
 
   @Transactional
   public UserProfile getCurrent() {
+    rejectPlatformAdminTenantProfile();
     UUID organizationId = TenantContext.require();
     UserProfile existing =
         users
@@ -247,6 +253,13 @@ public class UserProfileService {
       UUID departmentId, Boolean active, String text, Pageable pageable) {
     UUID organizationId = TenantContext.require();
     return users.search(organizationId, departmentId, active, text, pageable);
+  }
+
+  private void rejectPlatformAdminTenantProfile() {
+    if (currentUser.hasRole("PLATFORM_ADMIN")) {
+      throw new ForbiddenException(
+          "Platform administrators manage their account in Keycloak, not as tenant users");
+    }
   }
 
   private String currentActorSubject() {

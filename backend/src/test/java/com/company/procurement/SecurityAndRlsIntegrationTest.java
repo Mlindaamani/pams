@@ -97,6 +97,20 @@ class SecurityAndRlsIntegrationTest {
   }
 
   @Test
+  void platformAdminsCannotUseTenantProfileEndpoints() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/users/me").with(token(orgA, "PLATFORM_ADMIN")))
+        .andExpect(status().isForbidden());
+
+    Long profiles =
+        jdbcTemplate.queryForObject(
+            "select count(*) from user_profile where organization_id = ? and keycloak_subject = 'test-user'",
+            Long.class,
+            orgA);
+    org.assertj.core.api.Assertions.assertThat(profiles).isZero();
+  }
+
+  @Test
   void platformAdminsCanReadDemoRequests() throws Exception {
     jdbcTemplate.update(
         "insert into demo_request (name, email, company, message, status, created_at) values (?, ?, ?, ?, 'NEW', now())",

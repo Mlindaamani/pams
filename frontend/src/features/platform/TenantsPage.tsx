@@ -146,6 +146,23 @@ export function TenantsPage() {
                 sortValue: (tenant) => tenant.name ?? '',
               },
               {
+                key: 'contact',
+                label: 'Contact person',
+                render: (tenant) => (
+                  <Box>
+                    <Typography variant="body2" fontWeight={500}>
+                      {tenant.adminName || '—'}
+                    </Typography>
+                    {tenant.adminEmail && (
+                      <Typography variant="caption" color="text.secondary">
+                        {tenant.adminEmail}
+                      </Typography>
+                    )}
+                  </Box>
+                ),
+                sortValue: (tenant) => tenant.adminName ?? '',
+              },
+              {
                 key: 'id',
                 label: 'Tenant ID',
                 render: (tenant) => (

@@ -8,14 +8,17 @@ import com.company.procurement.organization.api.dto.UserOptionResponse;
 import com.company.procurement.organization.api.dto.UserProfileResponse;
 import com.company.procurement.organization.api.mapper.UserProfileMapper;
 import com.company.procurement.organization.application.CreateUserProfileCommand;
+import com.company.procurement.organization.application.OrganizationService;
 import com.company.procurement.organization.application.SelfProfileCommand;
 import com.company.procurement.organization.application.UpdateUserProfileCommand;
 import com.company.procurement.organization.application.UserIdentitySyncService;
 import com.company.procurement.organization.application.UserInvitationService;
 import com.company.procurement.organization.application.UserProfileService;
+import com.company.procurement.organization.domain.Organization;
 import com.company.procurement.organization.domain.UserProfile;
 import com.company.procurement.shared.api.MoneyRequest;
 import com.company.procurement.shared.api.PageResponse;
+import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.shared.web.PageRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -51,16 +54,19 @@ public class UserProfileController {
   private final UserProfileService users;
   private final UserIdentitySyncService identitySync;
   private final UserInvitationService invitations;
+  private final OrganizationService organizations;
   private final UserProfileMapper mapper;
 
   public UserProfileController(
       UserProfileService users,
       UserIdentitySyncService identitySync,
       UserInvitationService invitations,
+      OrganizationService organizations,
       UserProfileMapper mapper) {
     this.users = users;
     this.identitySync = identitySync;
     this.invitations = invitations;
+    this.organizations = organizations;
     this.mapper = mapper;
   }
 
@@ -83,7 +89,7 @@ public class UserProfileController {
             .path("/{id}")
             .buildAndExpand(created.getId())
             .toUri();
-    return ResponseEntity.created(location).body(mapper.toResponse(created));
+    return ResponseEntity.created(location).body(response(created));
   }
 
   @PostMapping("/invitations")
@@ -100,30 +106,34 @@ public class UserProfileController {
                 amount(request.approvalLimit()),
                 currency(request.approvalLimit())));
     return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
-        .body(mapper.toResponse(invited));
+        .body(response(invited));
   }
 
+  @PreAuthorize("!hasRole('PLATFORM_ADMIN')")
   @GetMapping("/me")
   public UserProfileResponse me() {
     identitySync.syncCurrentIdentity();
-    return mapper.toResponse(users.getCurrent());
+    return response(users.getCurrent());
   }
 
+  @PreAuthorize("!hasRole('PLATFORM_ADMIN')")
   @PutMapping("/me")
   public UserProfileResponse saveMe(@Valid @RequestBody SelfProfileRequest request) {
     identitySync.pushDisplayName(request.displayName());
-    return mapper.toResponse(
+    return response(
         users.saveCurrent(
             new SelfProfileCommand(
                 request.displayName(), request.departmentId(), request.managerId())));
   }
 
+  @PreAuthorize("!hasRole('PLATFORM_ADMIN')")
   @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public UserProfileResponse uploadAvatar(@RequestPart("file") MultipartFile file)
       throws java.io.IOException {
-    return mapper.toResponse(users.uploadAvatar(file.getBytes(), file.getContentType()));
+    return response(users.uploadAvatar(file.getBytes(), file.getContentType()));
   }
 
+  @PreAuthorize("!hasRole('PLATFORM_ADMIN')")
   @GetMapping("/me/avatar")
   public ResponseEntity<byte[]> avatar() {
     UserProfileService.Avatar avatar = users.currentAvatar();
@@ -133,6 +143,7 @@ public class UserProfileController {
         .body(avatar.content());
   }
 
+  @PreAuthorize("!hasRole('PLATFORM_ADMIN')")
   @DeleteMapping("/me/avatar")
   public ResponseEntity<Void> removeAvatar() {
     users.removeAvatar();
@@ -151,7 +162,7 @@ public class UserProfileController {
   @PreAuthorize("@permissions.has('user:read')")
   @GetMapping("/{id}")
   public UserProfileResponse get(@PathVariable UUID id) {
-    return mapper.toResponse(users.get(id));
+    return response(users.get(id));
   }
 
   @PreAuthorize("@permissions.has('user:read')")
@@ -164,14 +175,17 @@ public class UserProfileController {
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "createdAt,desc") String sort) {
     Pageable pageable = PageRequests.of(page, size, sort, SORTABLE);
-    return PageResponse.from(users.search(departmentId, active, q, pageable), mapper::toResponse);
+    Organization organization = organizations.get(TenantContext.require());
+    return PageResponse.from(
+        users.search(departmentId, active, q, pageable),
+        user -> mapper.toResponse(user, organization.getName()));
   }
 
   @PreAuthorize("@permissions.has('user:manage')")
   @PutMapping("/{id}")
   public UserProfileResponse update(
       @PathVariable UUID id, @Valid @RequestBody UpdateUserProfileRequest request) {
-    return mapper.toResponse(
+    return response(
         users.update(
             id,
             new UpdateUserProfileCommand(
@@ -188,6 +202,10 @@ public class UserProfileController {
   public ResponseEntity<Void> delete(@PathVariable UUID id) {
     users.delete(id);
     return ResponseEntity.noContent().build();
+  }
+
+  private UserProfileResponse response(UserProfile user) {
+    return mapper.toResponse(user, organizations.get(user.getOrganizationId()).getName());
   }
 
   private static BigDecimal amount(MoneyRequest money) {

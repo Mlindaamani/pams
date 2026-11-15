@@ -1,6 +1,9 @@
 package com.company.procurement;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
@@ -247,7 +250,9 @@ class ReferenceDataApiIntegrationTest {
                 .with(token(orgA, "ADMIN"))
                 .param("departmentId", finance.toString()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(2));
+        .andExpect(jsonPath("$.totalElements").value(2))
+        .andExpect(jsonPath("$.content[0].organizationId").value(orgA.toString()))
+        .andExpect(jsonPath("$.content[0].organizationName").value("Org A"));
   }
 
   @Test
@@ -497,6 +502,9 @@ class ReferenceDataApiIntegrationTest {
             .andExpect(jsonPath("$.status").value("ACTIVE"))
             .andReturn();
     UUID tenantId = idOf(created);
+    jdbcTemplate.update(
+        "insert into tenant_provisioning (organization_id, admin_email, admin_name, status, created_at, updated_at) values (?, 'peter@example.com', 'Peter Wangese', 'ACTIVE', now(), now())",
+        tenantId);
 
     mockMvc
         .perform(get("/api/v1/subscription").with(token(tenantId, "ADMIN")))
@@ -521,7 +529,9 @@ class ReferenceDataApiIntegrationTest {
                 .with(token(orgA, "PLATFORM_ADMIN")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(1))
-        .andExpect(jsonPath("$.content[0].slug").value(tenantSlug));
+        .andExpect(jsonPath("$.content[0].slug").value(tenantSlug))
+        .andExpect(jsonPath("$.content[0].adminName").value("Peter Wangese"))
+        .andExpect(jsonPath("$.content[0].adminEmail").value("peter@example.com"));
 
     mockMvc
         .perform(get("/api/v1/platform/tenants").with(token(orgA, "FINANCE")))
@@ -1179,6 +1189,39 @@ class ReferenceDataApiIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"assigned\":false}"))
         .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void platformRoleAndPermissionsAreHiddenFromTenantAdministration() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/admin/access").with(token(orgA, "ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles[*].roleName", not(hasItem("PLATFORM_ADMIN"))))
+        .andExpect(jsonPath("$.permissions[*].code", not(hasItem(startsWith("platform:")))));
+
+    mockMvc
+        .perform(
+            get("/api/v1/admin/access/roles/PLATFORM_ADMIN/permissions").with(token(orgA, "ADMIN")))
+        .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/access/roles/AUDITOR/permissions/platform:tenant_manage")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"assigned\":true}"))
+        .andExpect(status().isUnprocessableEntity());
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/access/roles/AUDITOR")
+                .with(token(orgA, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json(
+                        Map.of(
+                            "permissions", List.of("webhook:manage", "platform:tenant_manage")))))
+        .andExpect(status().isUnprocessableEntity());
   }
 
   @Test

@@ -1,7 +1,9 @@
 import type { components } from '@/api/schema';
 
-/** Tenant/organization row used by platform administration. */
-export type Tenant = components['schemas']['OrganizationResponse'];
+/** Tenant row used by platform administration, including its administrator contact. */
+export type Tenant = components['schemas']['PlatformTenantResponse'];
+/** Tenant/organization record returned by mutation endpoints. */
+export type TenantRecord = components['schemas']['OrganizationResponse'];
 /** Tenant detail including subscription and provisioning state. */
 export type TenantDetail = components['schemas']['TenantDetailResponse'];
 /** Inbound public demo lead. */

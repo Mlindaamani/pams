@@ -10,6 +10,8 @@ import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.subscription.application.SubscriptionService;
 import java.time.Clock;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -53,8 +55,39 @@ public class PlatformTenantService {
   }
 
   @Transactional(readOnly = true)
-  public Page<Organization> search(String query, OrganizationStatus status, Pageable pageable) {
-    return organizations.searchAll(query, status, pageable);
+  public Page<TenantListEntry> search(String query, OrganizationStatus status, Pageable pageable) {
+    Page<Organization> page = organizations.searchAll(query, status, pageable);
+    Map<UUID, TenantAdminContact> contacts = adminContacts(page.getContent());
+    return page.map(
+        organization -> {
+          TenantAdminContact contact = contacts.get(organization.getId());
+          return new TenantListEntry(
+              organization,
+              contact == null ? null : contact.adminName(),
+              contact == null ? null : contact.adminEmail());
+        });
+  }
+
+  private Map<UUID, TenantAdminContact> adminContacts(List<Organization> organizations) {
+    if (organizations.isEmpty()) {
+      return Map.of();
+    }
+    String placeholders =
+        String.join(",", java.util.Collections.nCopies(organizations.size(), "?"));
+    List<TenantAdminContact> contacts =
+        jdbc.query(
+            "select organization_id, admin_name, admin_email from tenant_provisioning where organization_id in ("
+                + placeholders
+                + ")",
+            (rs, rowNum) ->
+                new TenantAdminContact(
+                    rs.getObject("organization_id", UUID.class),
+                    rs.getString("admin_name"),
+                    rs.getString("admin_email")),
+            organizations.stream().map(Organization::getId).toArray());
+    Map<UUID, TenantAdminContact> byOrganization = new HashMap<>();
+    contacts.forEach(contact -> byOrganization.put(contact.organizationId(), contact));
+    return byOrganization;
   }
 
   @Transactional(readOnly = true)
@@ -272,6 +305,10 @@ public class PlatformTenantService {
     }
     return value;
   }
+
+  public record TenantListEntry(Organization organization, String adminName, String adminEmail) {}
+
+  private record TenantAdminContact(UUID organizationId, String adminName, String adminEmail) {}
 
   public record TenantDetail(
       Organization organization,

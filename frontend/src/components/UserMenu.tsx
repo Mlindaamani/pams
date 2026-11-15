@@ -17,15 +17,19 @@ import SecurityIcon from '@mui/icons-material/Security';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { accountSecurityUrl } from '@/auth/accountSecurity';
+import { useAbility } from '@/auth/AbilityProvider';
 import { UserAvatar } from '@/components/UserAvatar';
 import { getMe } from '@/features/admin/usersApi';
 
 export function UserMenu() {
   const auth = useAuth();
+  const ability = useAbility();
+  const platformOnly = ability.can('read', 'Platform') && !ability.can('read', 'PurchaseRequest');
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const me = useQuery({
     queryKey: ['users', 'me'],
     queryFn: getMe,
+    enabled: !platformOnly,
     retry: false,
     retryOnMount: false,
     staleTime: 30_000,
@@ -51,7 +55,12 @@ export function UserMenu() {
         onClick={(event) => setAnchor(event.currentTarget)}
         sx={{ minWidth: 0, px: { xs: 0.5, sm: 1 } }}
       >
-        <UserAvatar name={displayName} size={28} sx={{ mr: { xs: 0, sm: 1 } }} />
+        <UserAvatar
+          name={displayName}
+          size={28}
+          sx={{ mr: { xs: 0, sm: 1 } }}
+          skipProfile={platformOnly}
+        />
         <Typography
           component="span"
           noWrap
@@ -80,7 +89,7 @@ export function UserMenu() {
       >
         <Box sx={{ px: 2, py: 1.5 }}>
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <UserAvatar name={displayName} size={40} />
+            <UserAvatar name={displayName} size={40} skipProfile={platformOnly} />
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle2" noWrap fontWeight={700}>
                 {displayName}
@@ -92,12 +101,14 @@ export function UserMenu() {
           </Stack>
         </Box>
         <Divider />
-        <MenuItem component={RouterLink} to="/profile" onClick={close} sx={{ py: 1.1 }}>
-          <ListItemIcon>
-            <PersonIcon fontSize="small" />
-          </ListItemIcon>
-          My profile
-        </MenuItem>
+        {!platformOnly && (
+          <MenuItem component={RouterLink} to="/profile" onClick={close} sx={{ py: 1.1 }}>
+            <ListItemIcon>
+              <PersonIcon fontSize="small" />
+            </ListItemIcon>
+            My profile
+          </MenuItem>
+        )}
         <MenuItem
           component="a"
           href={accountSecurityUrl()}
@@ -109,7 +120,7 @@ export function UserMenu() {
           <ListItemIcon>
             <SecurityIcon fontSize="small" />
           </ListItemIcon>
-          Account security
+          {platformOnly ? 'Keycloak account' : 'Account security'}
           <OpenInNewIcon sx={{ fontSize: 15, ml: 'auto', color: 'text.secondary' }} />
         </MenuItem>
         <Divider />

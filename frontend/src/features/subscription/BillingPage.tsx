@@ -11,6 +11,12 @@ import {
   LinearProgress,
   MenuItem,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -224,21 +230,9 @@ export function BillingPage() {
                       /{interval === 'ANNUAL' ? 'year' : 'month'}
                     </Typography>
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, minHeight: 42 }}>
                     {plan.description}
                   </Typography>
-                  <Box sx={{ mt: 2 }}>
-                    <PlanLine label="Users" value={plan.maxUsers} />
-                    <PlanLine label="Departments" value={plan.maxDepartments} />
-                    <PlanLine label="Requests/month" value={plan.maxRequestsMonth} />
-                    <PlanLine label="Storage" value={plan.maxStorageMb} suffix=" MB" />
-                  </Box>
-                  <Divider sx={{ my: 2 }} />
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    Included features
-                  </Typography>
-                  <PlanFeatureList features={plan.features ?? []} />
-                  <Box sx={{ flexGrow: 1 }} />
                   <Button
                     fullWidth
                     sx={{ mt: 2 }}
@@ -252,12 +246,92 @@ export function BillingPage() {
                   >
                     {current ? 'Current plan' : 'Choose plan'}
                   </Button>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Included features
+                  </Typography>
+                  <PlanFeatureList features={plan.features ?? []} />
                 </CardContent>
               </Card>
             </Grid>
           );
         })}
       </Grid>
+
+      <Card sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 0.5 }}>
+            Compare plans
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Limits across every plan.
+          </Typography>
+          <TableContainer sx={{ overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: 760 }} aria-label="Compare subscription plans">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Limits</TableCell>
+                  {(plans.data ?? []).map((plan) => {
+                    const price = interval === 'ANNUAL' ? plan.annualPrice : plan.monthlyPrice;
+                    const current = plan.code === data.plan?.code;
+                    return (
+                      <TableCell key={plan.code} sx={{ minWidth: 180 }}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="body2" fontWeight={700}>
+                            {plan.name}
+                          </Typography>
+                          {current && <Chip size="small" label="Current" color="primary" />}
+                        </Stack>
+                        <Typography variant="caption" color="text.secondary">
+                          ${Number(price).toLocaleString()}/
+                          {interval === 'ANNUAL' ? 'year' : 'month'}
+                        </Typography>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {[
+                  {
+                    label: 'Users',
+                    value: (plan: SubscriptionPlan) => plan.maxUsers,
+                  },
+                  {
+                    label: 'Departments',
+                    value: (plan: SubscriptionPlan) => plan.maxDepartments,
+                  },
+                  {
+                    label: 'Requests/month',
+                    value: (plan: SubscriptionPlan) => plan.maxRequestsMonth,
+                  },
+                  {
+                    label: 'Storage',
+                    value: (plan: SubscriptionPlan) => plan.maxStorageMb,
+                    suffix: ' MB',
+                  },
+                ].map((row) => (
+                  <TableRow key={row.label}>
+                    <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
+                      {row.label}
+                    </TableCell>
+                    {(plans.data ?? []).map((plan) => {
+                      const value = row.value(plan);
+                      return (
+                        <TableCell key={plan.code}>
+                          {value == null
+                            ? 'Unlimited'
+                            : `${value}${value ? (row.suffix ?? '') : ''}`}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -322,27 +396,5 @@ function UsageBar({
         sx={{ height: 7, borderRadius: 1 }}
       />
     </Grid>
-  );
-}
-
-function PlanLine({
-  label,
-  value,
-  suffix = '',
-}: {
-  label: string;
-  value?: number | null;
-  suffix?: string;
-}) {
-  return (
-    <Stack direction="row" justifyContent="space-between">
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2">
-        {value ?? 'Unlimited'}
-        {value ? suffix : ''}
-      </Typography>
-    </Stack>
   );
 }

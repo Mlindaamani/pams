@@ -15,7 +15,7 @@ import {
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
-import { listSubscriptionPlans } from '@/features/subscription/api';
+import { listPlatformSubscriptionPlans } from '@/features/subscription/api';
 import { createTenant, getTenantDetail, updateTenant } from './api';
 import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
@@ -30,8 +30,8 @@ export function TenantFormPage() {
     enabled: editing,
   });
   const plans = useQuery({
-    queryKey: ['subscription-plans'],
-    queryFn: listSubscriptionPlans,
+    queryKey: ['platform-subscription-plans'],
+    queryFn: listPlatformSubscriptionPlans,
     enabled: !editing,
   });
   const [name, setName] = useState('');
@@ -164,6 +164,7 @@ export function TenantFormPage() {
                     <VirtualizedCombobox
                       label="Subscription plan"
                       fullWidth
+                      loading={plans.isLoading}
                       value={planCode}
                       onChange={(event) => setPlanCode(event.target.value)}
                     >
@@ -182,7 +183,10 @@ export function TenantFormPage() {
               <Button
                 variant="contained"
                 disabled={
-                  !name || !slug || (!editing && (!adminName || !adminEmail)) || save.isPending
+                  !name ||
+                  !slug ||
+                  (!editing && (!adminName || !adminEmail || !planCode)) ||
+                  save.isPending
                 }
                 onClick={() => save.mutate()}
               >

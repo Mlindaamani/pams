@@ -14,5 +14,11 @@ public interface UserProfileMapper {
           "java(MoneyDto.of(userProfile.getApprovalLimitAmount(),"
               + " userProfile.getApprovalLimitCurrency()))")
   @Mapping(target = "hasAvatar", expression = "java(userProfile.getAvatarObjectKey() != null)")
-  UserProfileResponse toResponse(UserProfile userProfile);
+  @Mapping(target = "organizationId", source = "userProfile.organizationId")
+  @Mapping(target = "organizationName", source = "organizationName")
+  UserProfileResponse toResponse(UserProfile userProfile, String organizationName);
+
+  default UserProfileResponse toResponse(UserProfile userProfile) {
+    return toResponse(userProfile, null);
+  }
 }

@@ -155,6 +155,12 @@ export function UsersPage() {
               sortValue: (user) => user.email ?? '',
             },
             {
+              key: 'organization',
+              label: 'Organization',
+              render: (user) => user.organizationName ?? '—',
+              sortValue: (user) => user.organizationName ?? '',
+            },
+            {
               key: 'department',
               label: 'Department',
               render: (user) => departmentName.get(user.departmentId ?? '') ?? '—',

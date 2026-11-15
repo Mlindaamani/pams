@@ -63,6 +63,12 @@
 - Platform analytics exposes aggregates only; it must not return request text, vendor bank details or
   user PII.
 
+## Platform identity
+
+- `PLATFORM_ADMIN` is a global SaaS Creator role. It has no tenant `organization_id` and no tenant user profile.
+- Platform permissions are not exposed in tenant access configuration and cannot be assigned to tenant roles.
+- Platform accounts manage credentials through the Keycloak account console.
+
 ## Keycloak admin credentials
 
 - Production must use the dedicated `pams-admin` service account with only user-management

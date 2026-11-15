@@ -87,9 +87,6 @@ export function TenantSubscriptionsTab() {
                     >
                       {tenant.organizationName}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {tenant.organizationId}
-                    </Typography>
                   </Box>
                 ),
                 sortValue: (tenant) => tenant.organizationName ?? '',

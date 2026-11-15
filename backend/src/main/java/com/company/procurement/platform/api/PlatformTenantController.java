@@ -6,6 +6,7 @@ import com.company.procurement.organization.domain.Organization;
 import com.company.procurement.organization.domain.OrganizationStatus;
 import com.company.procurement.platform.api.dto.CreateTenantRequest;
 import com.company.procurement.platform.api.dto.InviteTenantAdminRequest;
+import com.company.procurement.platform.api.dto.PlatformTenantResponse;
 import com.company.procurement.platform.api.dto.UpdateTenantRequest;
 import com.company.procurement.platform.application.CreateTenantCommand;
 import com.company.procurement.platform.application.PlatformTenantService;
@@ -50,14 +51,18 @@ public class PlatformTenantController {
 
   @GetMapping
   @PreAuthorize("@permissions.has('platform:tenant_read')")
-  public PageResponse<OrganizationResponse> list(
+  public PageResponse<PlatformTenantResponse> list(
       @RequestParam(required = false) String q,
       @RequestParam(required = false) OrganizationStatus status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(defaultValue = "createdAt,desc") String sort) {
     Pageable pageable = PageRequests.of(page, size, sort, SORTABLE);
-    return PageResponse.from(tenants.search(q, status, pageable), mapper::toResponse);
+    return PageResponse.from(
+        tenants.search(q, status, pageable),
+        entry ->
+            PlatformTenantResponse.from(
+                mapper.toResponse(entry.organization()), entry.adminName(), entry.adminEmail()));
   }
 
   @GetMapping("/{id}")

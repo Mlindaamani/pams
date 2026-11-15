@@ -10,6 +10,7 @@ import {
   Chip,
   Grid,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -117,18 +118,6 @@ export function TenantDetailPage() {
           </Can>
         }
       />
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          {tenant.slug}
-        </Typography>
-        <Chip
-          size="small"
-          label={tenant.status ?? 'ACTIVE'}
-          color={tenant.status === 'SUSPENDED' ? 'error' : 'success'}
-          variant="outlined"
-        />
-      </Stack>
-
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{ height: '100%' }}>
@@ -138,9 +127,21 @@ export function TenantDetailPage() {
                 <Typography variant="h6">Tenant overview</Typography>
               </Stack>
               <Grid container spacing={2}>
-                <Info label="Tenant ID" value={tenant.id} mono />
+                <Info
+                  label="Tenant ID"
+                  value={
+                    <Tooltip title={tenant.id}>
+                      <span>{shortId(tenant.id)}</span>
+                    </Tooltip>
+                  }
+                  mono
+                />
                 <Info label="Created" value={dateTime(tenant.createdAt)} />
                 <Info label="Invoice tolerance" value={`${tenant.invoiceTolerancePercent ?? 0}%`} />
+                <Info
+                  label="Status"
+                  value={tenant.status === 'SUSPENDED' ? 'Suspended' : 'Active'}
+                />
                 <Info label="Version" value={String(tenant.version ?? '—')} />
               </Grid>
               <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -176,10 +177,11 @@ export function TenantDetailPage() {
                 <Typography variant="h6">System admin</Typography>
               </Stack>
               {provisioning ? (
-                <Stack spacing={1.5}>
-                  <Info label="Name" value={provisioning.adminName || '—'} />
-                  <Info label="Email" value={provisioning.adminEmail || '—'} />
+                <Grid container spacing={1.5}>
+                  <Info size={{ xs: 12 }} label="Name" value={provisioning.adminName || '—'} />
+                  <Info size={{ xs: 12 }} label="Email" value={provisioning.adminEmail || '—'} />
                   <Info
+                    size={{ xs: 12 }}
                     label="Status"
                     value={
                       <Chip
@@ -196,11 +198,17 @@ export function TenantDetailPage() {
                       />
                     }
                   />
-                  <Info label="Updated" value={dateTime(provisioning.updatedAt)} />
+                  <Info
+                    size={{ xs: 12 }}
+                    label="Updated"
+                    value={dateTime(provisioning.updatedAt)}
+                  />
                   {provisioning.lastError && (
-                    <Alert severity="error">{provisioning.lastError}</Alert>
+                    <Grid size={12}>
+                      <Alert severity="error">{provisioning.lastError}</Alert>
+                    </Grid>
                   )}
-                </Stack>
+                </Grid>
               ) : (
                 <Stack spacing={1.5}>
                   <Typography variant="body2" color="text.secondary">
@@ -324,25 +332,36 @@ function Info({
   label,
   value,
   mono = false,
+  size = { xs: 12, sm: 6, md: 3 },
 }: {
   label: string;
   value: React.ReactNode;
   mono?: boolean;
+  size?: React.ComponentProps<typeof Grid>['size'];
 }) {
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid size={size} sx={{ minWidth: 0 }}>
       <Typography variant="caption" color="text.secondary" display="block">
         {label}
       </Typography>
       <Typography
         variant="body2"
         component="div"
-        sx={{ fontFamily: mono ? 'monospace' : undefined, wordBreak: 'break-all' }}
+        sx={{
+          fontFamily: mono ? 'monospace' : undefined,
+          overflowWrap: 'anywhere',
+          wordBreak: mono ? 'break-all' : 'normal',
+        }}
       >
         {value || '—'}
       </Typography>
     </Grid>
   );
+}
+
+function shortId(id?: string): string {
+  if (!id) return '—';
+  return id.length <= 12 ? id : `${id.slice(0, 8)}…${id.slice(-4)}`;
 }
 
 function Usage({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {

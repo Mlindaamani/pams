@@ -2339,6 +2339,9 @@ export interface components {
         UserProfileResponse: {
             /** Format: uuid */
             id?: string;
+            /** Format: uuid */
+            organizationId?: string;
+            organizationName?: string;
             keycloakSubject?: string;
             email?: string;
             displayName?: string;
@@ -3472,8 +3475,8 @@ export interface components {
             maxStorageMb?: number;
             features?: string[];
         };
-        PageResponseOrganizationResponse: {
-            content?: components["schemas"]["OrganizationResponse"][];
+        PageResponsePlatformTenantResponse: {
+            content?: components["schemas"]["PlatformTenantResponse"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -3482,6 +3485,26 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        PlatformTenantResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            slug?: string;
+            invoiceTolerancePercent?: number;
+            /** @enum {string} */
+            status?: "ACTIVE" | "SUSPENDED";
+            /** Format: date-time */
+            suspendedAt?: string;
+            suspendedBy?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: int64 */
+            version?: number;
+            adminName?: string;
+            adminEmail?: string;
         };
         ProvisioningInfo: {
             adminEmail?: string;
@@ -3698,6 +3721,17 @@ export interface components {
             };
             /** Format: date-time */
             lastActivity?: string;
+        };
+        PageResponseOrganizationResponse: {
+            content?: components["schemas"]["OrganizationResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
         };
         Checklist: {
             hasDepartment?: boolean;
@@ -6056,7 +6090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageResponseOrganizationResponse"];
+                    "*/*": components["schemas"]["PageResponsePlatformTenantResponse"];
                 };
             };
         };
