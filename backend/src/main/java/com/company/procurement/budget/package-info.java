@@ -1,5 +1,5 @@
 /**
  * Departmental budgets, reservations and commitments. Public surface: {@code api} and {@code
- * application}.
+ * services}.
  */
 package com.company.procurement.budget;

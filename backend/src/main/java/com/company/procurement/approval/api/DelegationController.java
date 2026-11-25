@@ -3,8 +3,8 @@ package com.company.procurement.approval.api;
 import com.company.procurement.approval.api.dto.DelegationRequest;
 import com.company.procurement.approval.api.dto.DelegationResponse;
 import com.company.procurement.approval.api.mapper.DelegationMapper;
-import com.company.procurement.approval.application.ApprovalService;
-import com.company.procurement.approval.application.CreateDelegationCommand;
+import com.company.procurement.approval.services.ApprovalService;
+import com.company.procurement.approval.services.CreateDelegationCommand;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -25,7 +25,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping("/api/v1/delegations")
 @Tag(name = "Delegations", description = "Time-boxed approval delegation")
-@com.company.procurement.subscription.application.RequiresFeature("approvals")
+@com.company.procurement.subscription.services.RequiresFeature("approvals")
 public class DelegationController {
 
   private final ApprovalService approvals;

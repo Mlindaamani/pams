@@ -1,5 +1,5 @@
 /**
  * Purchase requests aggregate, line items, attachments and the request state machine. Public
- * surface: {@code api} and {@code application}.
+ * surface: {@code api} and {@code services}.
  */
 package com.company.procurement.request;

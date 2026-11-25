@@ -1,8 +1,8 @@
 package com.company.procurement.organization.api;
 
 import com.company.procurement.organization.api.dto.UpdateBrandingRequest;
-import com.company.procurement.organization.application.TenantBrandingService;
-import com.company.procurement.subscription.application.RequiresFeature;
+import com.company.procurement.organization.services.TenantBrandingService;
+import com.company.procurement.subscription.services.RequiresFeature;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;

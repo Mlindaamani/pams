@@ -4,22 +4,22 @@ import com.company.procurement.purchaseorder.api.dto.CreatePurchaseOrderRequest;
 import com.company.procurement.purchaseorder.api.dto.PurchaseOrderResponse;
 import com.company.procurement.purchaseorder.api.dto.UpdatePurchaseOrderRequest;
 import com.company.procurement.purchaseorder.api.mapper.PurchaseOrderMapper;
-import com.company.procurement.purchaseorder.application.CreatePurchaseOrderCommand;
-import com.company.procurement.purchaseorder.application.PurchaseOrderActionService;
-import com.company.procurement.purchaseorder.application.PurchaseOrderApprovalService;
-import com.company.procurement.purchaseorder.application.PurchaseOrderPdfService;
-import com.company.procurement.purchaseorder.application.PurchaseOrderService;
-import com.company.procurement.purchaseorder.application.UpdatePurchaseOrderCommand;
 import com.company.procurement.purchaseorder.domain.PurchaseOrder;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderFilter;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
+import com.company.procurement.purchaseorder.services.CreatePurchaseOrderCommand;
+import com.company.procurement.purchaseorder.services.PurchaseOrderActionService;
+import com.company.procurement.purchaseorder.services.PurchaseOrderApprovalService;
+import com.company.procurement.purchaseorder.services.PurchaseOrderPdfService;
+import com.company.procurement.purchaseorder.services.PurchaseOrderService;
+import com.company.procurement.purchaseorder.services.UpdatePurchaseOrderCommand;
 import com.company.procurement.request.api.dto.PurchaseRequestResponse;
 import com.company.procurement.request.api.mapper.PurchaseRequestMapper;
-import com.company.procurement.request.application.PurchaseRequestService;
+import com.company.procurement.request.services.PurchaseRequestService;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import com.company.procurement.shared.web.PageRequests;
-import com.company.procurement.vendor.application.VendorService;
+import com.company.procurement.vendor.services.VendorService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -47,7 +47,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Purchase orders", description = "Conversion of approved requests, issuance and PDF")
-@com.company.procurement.subscription.application.RequiresFeature("purchase_orders")
+@com.company.procurement.subscription.services.RequiresFeature("purchase_orders")
 public class PurchaseOrderController {
 
   private static final Set<String> SORTABLE =

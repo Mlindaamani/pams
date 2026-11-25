@@ -2,7 +2,7 @@ package com.company.procurement.notification.api;
 
 import com.company.procurement.notification.api.dto.NotificationResponse;
 import com.company.procurement.notification.api.mapper.NotificationMapper;
-import com.company.procurement.notification.application.NotificationService;
+import com.company.procurement.notification.services.NotificationService;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.PageRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;

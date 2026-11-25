@@ -3,12 +3,12 @@ package com.company.procurement.receiving.api;
 import com.company.procurement.receiving.api.dto.RecordVendorInvoiceRequest;
 import com.company.procurement.receiving.api.dto.VendorInvoiceResponse;
 import com.company.procurement.receiving.api.mapper.VendorInvoiceMapper;
-import com.company.procurement.receiving.application.RecordVendorInvoiceCommand;
-import com.company.procurement.receiving.application.VendorInvoicePdfService;
-import com.company.procurement.receiving.application.VendorInvoiceService;
 import com.company.procurement.receiving.domain.VendorInvoice;
 import com.company.procurement.receiving.domain.VendorInvoiceFilter;
 import com.company.procurement.receiving.domain.VendorInvoiceStatus;
+import com.company.procurement.receiving.services.RecordVendorInvoiceCommand;
+import com.company.procurement.receiving.services.VendorInvoicePdfService;
+import com.company.procurement.receiving.services.VendorInvoiceService;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import com.company.procurement.shared.web.PageRequests;
@@ -36,7 +36,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Vendor invoices", description = "Invoice capture and three-way matching")
-@com.company.procurement.subscription.application.RequiresFeature("invoices")
+@com.company.procurement.subscription.services.RequiresFeature("invoices")
 public class VendorInvoiceController {
 
   private static final Set<String> SORTABLE =

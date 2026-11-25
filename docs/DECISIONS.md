@@ -57,12 +57,14 @@ problem.
 
 ## ADR-005 — Repository ports in `domain`, Spring Data adapters in `infrastructure`
 
+**Superseded by ADR-106 for package locations.** The dependency rule below still applies.
+
 **Context.** The architecture places repository interfaces in the domain layer and JPA adapters in
 infrastructure, while Spring Data repositories are infrastructure concerns.
 
 **Decision.** Each module defines a plain Java repository port in `domain`; `infrastructure`
 contains a Spring Data interface plus a thin `@Repository` adapter implementing the port. ArchUnit
-forbids application/API code from depending on `infrastructure`.
+forbids service/API code from depending on `infrastructure`.
 
 **Consequences.** A little boilerplate per aggregate, but module boundaries and testability are
 preserved.
@@ -2101,3 +2103,25 @@ rows do not store role assignments. The tenant Users table therefore could not s
 **Consequences.** Roles shown in the Users table always reflect Keycloak, including users invited
 before this change. The users list performs up to six admin API calls per page and degrades
 gracefully when Keycloak is unavailable.
+
+---
+
+## ADR-106 — Group services and repositories inside each module
+
+**Context.** Service classes lived in `application`, while repository ports and adapters were split
+between `domain` and `infrastructure`. Navigating a feature required jumping across several
+technical packages for the same concern.
+
+**Decision.**
+- Move every module's service layer from `application` to `services`.
+- Move repository ports, Spring Data interfaces and repository adapters into `repositories`.
+- Keep aggregates, enums, rules and domain events in `domain`.
+- Keep non-repository adapters and integrations in `infrastructure`.
+- Add `repositories` package markers to modules without persistence so every module exposes the same
+  top-level package structure.
+- Keep the dependency rules: domain does not depend on services/repositories/infrastructure; API
+  and services do not depend on non-repository infrastructure; controllers never use repositories.
+
+**Consequences.** Services and persistence are easy to find per feature. The service layer name is
+explicit, repository ports and adapters sit together, and ArchUnit continues to protect the
+remaining boundaries. This supersedes the package locations in ADR-005.

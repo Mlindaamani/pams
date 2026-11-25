@@ -1,6 +1,6 @@
 package com.company.procurement.organization.api;
 
-import com.company.procurement.organization.application.OnboardingService;
+import com.company.procurement.organization.services.OnboardingService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

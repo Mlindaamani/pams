@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.company.procurement.shared.mail.InMemoryMailAdapter;
 import com.company.procurement.shared.outbox.OutboxDispatcher;
-import com.company.procurement.webhook.application.WebhookDeliveryDispatcher;
+import com.company.procurement.webhook.services.WebhookDeliveryDispatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.sun.net.httpserver.HttpServer;

@@ -1,7 +1,7 @@
 package com.company.procurement.subscription.api;
 
-import com.company.procurement.subscription.application.SubscriptionFeatureService;
-import com.company.procurement.subscription.application.SubscriptionService;
+import com.company.procurement.subscription.services.SubscriptionFeatureService;
+import com.company.procurement.subscription.services.SubscriptionService;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;

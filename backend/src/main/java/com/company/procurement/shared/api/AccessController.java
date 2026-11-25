@@ -1,6 +1,6 @@
 package com.company.procurement.shared.api;
 
-import com.company.procurement.shared.authorization.PermissionService;
+import com.company.procurement.shared.services.PermissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;

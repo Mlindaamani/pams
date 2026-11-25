@@ -81,7 +81,7 @@ class ReferenceDataApiIntegrationTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Autowired
-  private com.company.procurement.subscription.application.SubscriptionLifecycleService
+  private com.company.procurement.subscription.services.SubscriptionLifecycleService
       subscriptionLifecycle;
 
   private UUID orgA;

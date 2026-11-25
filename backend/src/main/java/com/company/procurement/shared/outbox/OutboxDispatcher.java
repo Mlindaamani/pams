@@ -1,6 +1,7 @@
 package com.company.procurement.shared.outbox;
 
 import com.company.procurement.shared.domain.OutboxEvent;
+import com.company.procurement.shared.repositories.OutboxEventRepository;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

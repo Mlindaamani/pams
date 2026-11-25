@@ -1,6 +1,6 @@
 package com.company.procurement.receiving.infrastructure;
 
-import com.company.procurement.receiving.application.InvoiceReferenceGenerator;
+import com.company.procurement.receiving.services.InvoiceReferenceGenerator;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;

@@ -1,9 +1,9 @@
 package com.company.procurement.receiving.api;
 
-import com.company.procurement.receiving.application.VendorPaymentService;
-import com.company.procurement.receiving.application.VendorPaymentService.AllocationCommand;
-import com.company.procurement.receiving.application.VendorPaymentService.CreatePaymentCommand;
-import com.company.procurement.receiving.application.VendorPaymentService.PaymentView;
+import com.company.procurement.receiving.services.VendorPaymentService;
+import com.company.procurement.receiving.services.VendorPaymentService.AllocationCommand;
+import com.company.procurement.receiving.services.VendorPaymentService.CreatePaymentCommand;
+import com.company.procurement.receiving.services.VendorPaymentService.PaymentView;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -30,7 +30,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping("/api/v1/vendor-payments")
 @Tag(name = "Vendor payments", description = "AP payment scheduling and recording")
-@com.company.procurement.subscription.application.RequiresFeature("invoices")
+@com.company.procurement.subscription.services.RequiresFeature("invoices")
 public class VendorPaymentController {
 
   private final VendorPaymentService payments;

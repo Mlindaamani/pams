@@ -101,7 +101,7 @@ public class SecurityConfig {
 
   @Bean
   public IdempotencyFilter idempotencyFilter(
-      com.company.procurement.shared.idempotency.IdempotencyService idempotencyService,
+      com.company.procurement.shared.services.IdempotencyService idempotencyService,
       com.fasterxml.jackson.databind.ObjectMapper objectMapper,
       com.company.procurement.shared.error.ProblemDetailFactory problemDetailFactory) {
     return new IdempotencyFilter(idempotencyService, objectMapper, problemDetailFactory);

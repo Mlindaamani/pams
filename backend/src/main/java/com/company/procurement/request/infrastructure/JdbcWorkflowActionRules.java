@@ -1,6 +1,6 @@
 package com.company.procurement.request.infrastructure;
 
-import com.company.procurement.request.application.WorkflowActionRules;
+import com.company.procurement.request.services.WorkflowActionRules;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;

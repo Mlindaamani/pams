@@ -1,9 +1,9 @@
 package com.company.procurement.reporting.api;
 
-import com.company.procurement.reporting.application.ReportService;
-import com.company.procurement.reporting.application.dto.CommitmentsReport;
-import com.company.procurement.reporting.application.dto.CycleTimeReport;
-import com.company.procurement.reporting.application.dto.SpendReport;
+import com.company.procurement.reporting.services.ReportService;
+import com.company.procurement.reporting.services.dto.CommitmentsReport;
+import com.company.procurement.reporting.services.dto.CycleTimeReport;
+import com.company.procurement.reporting.services.dto.SpendReport;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/reports")
 @Tag(name = "Reports", description = "Spend, approval cycle time and budget commitments")
 @PreAuthorize("@permissions.has('report:read')")
-@com.company.procurement.subscription.application.RequiresFeature("core_reports")
+@com.company.procurement.subscription.services.RequiresFeature("core_reports")
 public class ReportController {
 
   private final ReportService reports;
@@ -40,7 +40,7 @@ public class ReportController {
   }
 
   @GetMapping("/spend.csv")
-  @com.company.procurement.subscription.application.RequiresFeature("advanced_reports")
+  @com.company.procurement.subscription.services.RequiresFeature("advanced_reports")
   @PreAuthorize("@permissions.has('report:export')")
   public void spendCsv(
       @RequestParam(defaultValue = "department") String groupBy,

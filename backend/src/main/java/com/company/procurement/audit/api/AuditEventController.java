@@ -1,9 +1,9 @@
 package com.company.procurement.audit.api;
 
-import com.company.procurement.audit.application.AuditQueryService;
-import com.company.procurement.audit.application.dto.AuditPageResponse;
+import com.company.procurement.audit.services.AuditQueryService;
+import com.company.procurement.audit.services.dto.AuditPageResponse;
 import com.company.procurement.shared.tenant.TenantContext;
-import com.company.procurement.subscription.application.RequiresFeature;
+import com.company.procurement.subscription.services.RequiresFeature;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

@@ -1,9 +1,9 @@
 package com.company.procurement.access.api;
 
-import com.company.procurement.access.application.AccessConfigService;
-import com.company.procurement.access.application.AccessConfigService.AccessConfig;
-import com.company.procurement.access.application.AccessConfigService.RolePermissionPage;
-import com.company.procurement.access.application.AccessConfigService.RolePermissions;
+import com.company.procurement.access.services.AccessConfigService;
+import com.company.procurement.access.services.AccessConfigService.AccessConfig;
+import com.company.procurement.access.services.AccessConfigService.RolePermissionPage;
+import com.company.procurement.access.services.AccessConfigService.RolePermissions;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

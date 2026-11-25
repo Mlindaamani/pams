@@ -19,7 +19,7 @@ Enterprise, multi-tenant procurement API with approval workflows.
 
 ## Architecture
 - **Modular monolith, package-by-feature**: `organization`, `vendor`, `catalog`, `budget`, `request`, `approval`, `purchaseorder`, `receiving`, `notification`, `reporting`, `audit`, plus `shared`.
-- Inside each feature: `api/` (controllers, DTOs, mappers), `application/` (services, transactions), `domain/` (entities, rules, events), `infrastructure/` (adapters, JPA).
+- Inside each feature: `api/` (controllers, DTOs, mappers), `services/` (use cases, transactions, commands, jobs), `domain/` (entities, rules, events), `repositories/` (repository ports, Spring Data interfaces, adapters), `infrastructure/` (non-repository adapters).
 - Modules talk only via another module's public application service or domain events. Never reach into another module's repositories or entities.
 - Boundaries are verified by ArchUnit / Spring Modulith tests. Keep them green.
 

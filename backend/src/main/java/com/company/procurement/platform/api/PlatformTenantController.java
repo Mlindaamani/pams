@@ -8,9 +8,9 @@ import com.company.procurement.platform.api.dto.CreateTenantRequest;
 import com.company.procurement.platform.api.dto.InviteTenantAdminRequest;
 import com.company.procurement.platform.api.dto.PlatformTenantResponse;
 import com.company.procurement.platform.api.dto.UpdateTenantRequest;
-import com.company.procurement.platform.application.CreateTenantCommand;
-import com.company.procurement.platform.application.PlatformTenantService;
-import com.company.procurement.platform.application.UpdateTenantCommand;
+import com.company.procurement.platform.services.CreateTenantCommand;
+import com.company.procurement.platform.services.PlatformTenantService;
+import com.company.procurement.platform.services.UpdateTenantCommand;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import com.company.procurement.shared.web.PageRequests;
@@ -162,7 +162,7 @@ public class PlatformTenantController {
 
   public record TenantDetailResponse(
       OrganizationResponse tenant,
-      com.company.procurement.subscription.application.SubscriptionService.SubscriptionSummary
+      com.company.procurement.subscription.services.SubscriptionService.SubscriptionSummary
           subscription,
       PlatformTenantService.ProvisioningInfo provisioning,
       PlatformTenantService.TenantUsage usage) {}

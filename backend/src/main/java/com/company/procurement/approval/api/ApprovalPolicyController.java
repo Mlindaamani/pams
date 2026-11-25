@@ -5,11 +5,11 @@ import com.company.procurement.approval.api.dto.CreateApprovalPolicyRequest;
 import com.company.procurement.approval.api.dto.PolicyStepRequest;
 import com.company.procurement.approval.api.dto.UpdateApprovalPolicyRequest;
 import com.company.procurement.approval.api.mapper.ApprovalPolicyMapper;
-import com.company.procurement.approval.application.ApprovalService;
-import com.company.procurement.approval.application.CreatePolicyCommand;
-import com.company.procurement.approval.application.PolicyStepCommand;
-import com.company.procurement.approval.application.UpdatePolicyCommand;
 import com.company.procurement.approval.domain.ApprovalPolicy;
+import com.company.procurement.approval.services.ApprovalService;
+import com.company.procurement.approval.services.CreatePolicyCommand;
+import com.company.procurement.approval.services.PolicyStepCommand;
+import com.company.procurement.approval.services.UpdatePolicyCommand;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.PageRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,7 +37,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequestMapping("/api/v1/approval-policies")
 @Tag(name = "Approval policies", description = "Versioned, amount-tiered approval chains")
 @PreAuthorize("@permissions.has('approval_policy:manage')")
-@com.company.procurement.subscription.application.RequiresFeature("approvals")
+@com.company.procurement.subscription.services.RequiresFeature("approvals")
 public class ApprovalPolicyController {
 
   private static final Set<String> SORTABLE = Set.of("createdAt", "amountMin", "policyVersion");

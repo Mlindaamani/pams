@@ -26,8 +26,9 @@ Spring Boot modular monolith ── PostgreSQL 16 (Flyway, RLS)
 - `audit` — append-only business audit and keyset query
 - `shared` — tenant/security/error/outbox/idempotency/storage/mail/config
 
-Each feature uses `api` (HTTP/DTO/mappers), `application` (use cases/transactions), `domain`
-(aggregates/rules/ports/events), `infrastructure` (JPA/adapters). ArchUnit verifies dependencies.
+Each feature uses `api` (HTTP/DTO/mappers), `services` (use cases/transactions), `domain`
+(aggregates/rules/events), `repositories` (ports/JPA adapters) and `infrastructure` (non-repository
+adapters). ArchUnit verifies dependencies.
 
 ## Key flows
 

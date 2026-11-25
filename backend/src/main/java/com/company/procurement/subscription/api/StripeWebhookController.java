@@ -1,6 +1,6 @@
 package com.company.procurement.subscription.api;
 
-import com.company.procurement.subscription.application.SubscriptionService;
+import com.company.procurement.subscription.services.SubscriptionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

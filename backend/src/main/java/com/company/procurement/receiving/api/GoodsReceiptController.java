@@ -3,8 +3,8 @@ package com.company.procurement.receiving.api;
 import com.company.procurement.receiving.api.dto.GoodsReceiptResponse;
 import com.company.procurement.receiving.api.dto.RecordReceiptRequest;
 import com.company.procurement.receiving.api.mapper.GoodsReceiptMapper;
-import com.company.procurement.receiving.application.ReceiptService;
-import com.company.procurement.receiving.application.RecordReceiptCommand;
+import com.company.procurement.receiving.services.ReceiptService;
+import com.company.procurement.receiving.services.RecordReceiptCommand;
 import com.company.procurement.shared.web.ConditionalRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @RequestMapping("/api/v1/purchase-orders/{purchaseOrderId}/receipts")
 @Tag(name = "Goods receipts", description = "Partial and complete receipts against purchase orders")
-@com.company.procurement.subscription.application.RequiresFeature("receipts")
+@com.company.procurement.subscription.services.RequiresFeature("receipts")
 public class GoodsReceiptController {
 
   private final ReceiptService receipts;

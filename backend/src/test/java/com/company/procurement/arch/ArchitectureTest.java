@@ -51,25 +51,25 @@ class ArchitectureTest {
           .resideInAPackage("..domain..")
           .should()
           .dependOnClassesThat()
-          .resideInAnyPackage("..api..", "..application..", "..infrastructure..");
+          .resideInAnyPackage("..api..", "..services..", "..repositories..", "..infrastructure..");
 
   @ArchTest
-  static final ArchRule application_does_not_depend_on_web_or_adapters =
+  static final ArchRule services_do_not_depend_on_web_or_adapters =
       noClasses()
           .that()
-          .resideInAPackage("..application..")
+          .resideInAPackage("..services..")
           .should()
           .dependOnClassesThat()
           .resideInAnyPackage("..api..", "..infrastructure..");
 
   @ArchTest
-  static final ArchRule api_does_not_depend_on_infrastructure =
+  static final ArchRule api_does_not_depend_on_infrastructure_or_repositories =
       noClasses()
           .that()
           .resideInAPackage("..api..")
           .should()
           .dependOnClassesThat()
-          .resideInAPackage("..infrastructure..");
+          .resideInAnyPackage("..infrastructure..", "..repositories..");
 
   @ArchTest
   static final ArchRule controllers_do_not_use_repositories =
@@ -92,7 +92,7 @@ class ArchitectureTest {
   static final ArchRule services_are_named_services =
       classes()
           .that()
-          .resideInAPackage("..application..")
+          .resideInAPackage("..services..")
           .and()
           .areAnnotatedWith(Service.class)
           .should()
@@ -125,7 +125,7 @@ class ArchitectureTest {
                 .should()
                 .dependOnClassesThat()
                 .resideInAPackage(BASE + module + ".infrastructure..")
-                .because("modules must talk through public application APIs or events")
+                .because("modules must talk through public service APIs or events")
                 .check(classes));
   }
 

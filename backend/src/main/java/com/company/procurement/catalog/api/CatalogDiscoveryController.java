@@ -2,7 +2,7 @@ package com.company.procurement.catalog.api;
 
 import com.company.procurement.catalog.api.dto.CatalogItemResponse;
 import com.company.procurement.catalog.api.mapper.CatalogItemMapper;
-import com.company.procurement.catalog.application.CatalogDiscoveryService;
+import com.company.procurement.catalog.services.CatalogDiscoveryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;

@@ -81,15 +81,15 @@ flowchart LR
 
 ### Core modules
 
-- `subscription/application/SubscriptionService` — plans, subscription state, checkout, portal,
+- `subscription/services/SubscriptionService` — plans, subscription state, checkout, portal,
   webhook handling, MRR, reconciliation and plan changes.
-- `subscription/application/SubscriptionAccessService` — trial/active/past-due access checks and
+- `subscription/services/SubscriptionAccessService` — trial/active/past-due access checks and
   usage limits.
-- `subscription/application/SubscriptionFeatureService` — feature catalogue and plan mappings.
-- `subscription/application/SubscriptionLifecycleService` — trial/dunning/cancellation notices.
-- `subscription/application/SubscriptionMrrSnapshotJob` — daily MRR snapshots.
-- `platform/application/PlatformTenantService` — tenant creation and provisioning.
-- `organization/application/TenantBrandingService` — Enterprise branding and terminology.
+- `subscription/services/SubscriptionFeatureService` — feature catalogue and plan mappings.
+- `subscription/services/SubscriptionLifecycleService` — trial/dunning/cancellation notices.
+- `subscription/services/SubscriptionMrrSnapshotJob` — daily MRR snapshots.
+- `platform/services/PlatformTenantService` — tenant creation and provisioning.
+- `organization/services/TenantBrandingService` — Enterprise branding and terminology.
 - `identity/infrastructure/KeycloakAdminAdapter` — tenant/admin user provisioning.
 
 ---
@@ -534,11 +534,11 @@ Frontend checks cover:
 |---|---|
 | Subscription API | `backend/src/main/java/com/company/procurement/subscription/api/SubscriptionController.java` |
 | Stripe webhook API | `backend/src/main/java/com/company/procurement/subscription/api/StripeWebhookController.java` |
-| Billing logic | `backend/src/main/java/com/company/procurement/subscription/application/SubscriptionService.java` |
-| Access limits and feature checks | `backend/src/main/java/com/company/procurement/subscription/application/SubscriptionAccessService.java` |
-| Feature catalogue | `backend/src/main/java/com/company/procurement/subscription/application/SubscriptionFeatureService.java` |
-| Lifecycle notifications | `backend/src/main/java/com/company/procurement/subscription/application/SubscriptionLifecycleService.java` |
-| MRR snapshot job | `backend/src/main/java/com/company/procurement/subscription/application/SubscriptionMrrSnapshotJob.java` |
+| Billing logic | `backend/src/main/java/com/company/procurement/subscription/services/SubscriptionService.java` |
+| Access limits and feature checks | `backend/src/main/java/com/company/procurement/subscription/services/SubscriptionAccessService.java` |
+| Feature catalogue | `backend/src/main/java/com/company/procurement/subscription/services/SubscriptionFeatureService.java` |
+| Lifecycle notifications | `backend/src/main/java/com/company/procurement/subscription/services/SubscriptionLifecycleService.java` |
+| MRR snapshot job | `backend/src/main/java/com/company/procurement/subscription/services/SubscriptionMrrSnapshotJob.java` |
 | Platform subscription actions | `backend/src/main/java/com/company/procurement/platform/api/PlatformSubscriptionController.java` |
 | Plan admin | `backend/src/main/java/com/company/procurement/platform/api/PlatformPlanController.java` |
 | Feature admin | `backend/src/main/java/com/company/procurement/platform/api/PlatformFeatureController.java` |

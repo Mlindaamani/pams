@@ -172,15 +172,16 @@ com.company.procurement
 ### 5.3 Layers inside each module
 ```
 feature/
-├── api/          # @RestController, request/response DTOs (records), mappers
-├── application/  # @Service use-cases, transaction boundaries, orchestration
-├── domain/       # entities, enums, domain rules, domain events, repository interfaces
-└── infrastructure/ # JPA repositories, external clients (storage, email), adapters
+├── api/            # @RestController, request/response DTOs (records), mappers
+├── services/       # @Service use-cases, transactions, commands, jobs
+├── domain/         # entities, enums, domain rules, domain events
+├── repositories/   # repository ports, Spring Data interfaces, adapters
+└── infrastructure/ # non-repository adapters and integrations
 ```
 
 Rules:
 - **Controllers:** HTTP concerns only. No business logic, no repositories injected.
-- **Services (application layer):** all business rules and `@Transactional` boundaries. One public method = one use case.
+- **Services:** all business rules and `@Transactional` boundaries. One public method = one use case.
 - **Domain:** entities protect their own invariants (no public setters for state-bearing fields; use intention-revealing methods such as `request.submit(...)`).
 - **Cross-module calls:** via the other module's public application service interface or via domain events; never reach into another module's repositories or entities.
 

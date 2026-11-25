@@ -1,8 +1,8 @@
 package com.company.procurement.platform.api;
 
 import com.company.procurement.platform.api.dto.DemoRequestResponse;
-import com.company.procurement.platform.application.PlatformDemoRequestService;
 import com.company.procurement.platform.domain.DemoRequestStatus;
+import com.company.procurement.platform.services.PlatformDemoRequestService;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.PageRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;

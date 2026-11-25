@@ -1,6 +1,6 @@
 package com.company.procurement.platform.api.dto;
 
-import com.company.procurement.platform.application.PlatformDemoRequestService;
+import com.company.procurement.platform.services.PlatformDemoRequestService;
 import java.time.Instant;
 import java.util.UUID;
 

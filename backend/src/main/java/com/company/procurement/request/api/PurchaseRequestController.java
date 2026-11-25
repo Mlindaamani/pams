@@ -1,18 +1,18 @@
 package com.company.procurement.request.api;
 
-import com.company.procurement.audit.application.AuditQueryService;
-import com.company.procurement.audit.application.dto.AuditPageResponse;
+import com.company.procurement.audit.services.AuditQueryService;
+import com.company.procurement.audit.services.dto.AuditPageResponse;
 import com.company.procurement.request.api.dto.PurchaseRequestRequest;
 import com.company.procurement.request.api.dto.PurchaseRequestResponse;
 import com.company.procurement.request.api.mapper.PurchaseRequestMapper;
-import com.company.procurement.request.application.PurchaseRequestActionService;
-import com.company.procurement.request.application.PurchaseRequestActionsResponse;
-import com.company.procurement.request.application.PurchaseRequestCommand;
-import com.company.procurement.request.application.PurchaseRequestLineCommand;
-import com.company.procurement.request.application.PurchaseRequestService;
 import com.company.procurement.request.domain.PurchaseRequest;
 import com.company.procurement.request.domain.PurchaseRequestFilter;
 import com.company.procurement.request.domain.RequestStatus;
+import com.company.procurement.request.services.PurchaseRequestActionService;
+import com.company.procurement.request.services.PurchaseRequestActionsResponse;
+import com.company.procurement.request.services.PurchaseRequestCommand;
+import com.company.procurement.request.services.PurchaseRequestLineCommand;
+import com.company.procurement.request.services.PurchaseRequestService;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import com.company.procurement.shared.web.PageRequests;
@@ -45,7 +45,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @Tag(
     name = "Purchase requests",
     description = "Draft requests, totals, submission and budget reservation")
-@com.company.procurement.subscription.application.RequiresFeature("requests")
+@com.company.procurement.subscription.services.RequiresFeature("requests")
 public class PurchaseRequestController {
 
   private static final Set<String> SORTABLE =

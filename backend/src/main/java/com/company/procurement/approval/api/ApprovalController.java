@@ -6,8 +6,8 @@ import com.company.procurement.approval.api.dto.ApproveRequest;
 import com.company.procurement.approval.api.dto.BulkApproveRequest;
 import com.company.procurement.approval.api.dto.CommentRequest;
 import com.company.procurement.approval.api.mapper.ApprovalMapper;
-import com.company.procurement.approval.application.ApprovalService;
 import com.company.procurement.approval.domain.ApprovalInstance;
+import com.company.procurement.approval.services.ApprovalService;
 import com.company.procurement.shared.api.BulkOperationResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "Approvals", description = "Approval inbox, actions and request approval timeline")
-@com.company.procurement.subscription.application.RequiresFeature("approvals")
+@com.company.procurement.subscription.services.RequiresFeature("approvals")
 public class ApprovalController {
 
   private final ApprovalService approvals;

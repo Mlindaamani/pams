@@ -1,6 +1,6 @@
 package com.company.procurement.identity.infrastructure;
 
-import com.company.procurement.identity.application.KeycloakAdminPort;
+import com.company.procurement.identity.services.KeycloakAdminPort;
 import com.company.procurement.shared.config.KeycloakAdminProperties;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.fasterxml.jackson.databind.JsonNode;

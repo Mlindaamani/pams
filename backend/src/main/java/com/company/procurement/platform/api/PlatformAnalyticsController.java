@@ -1,6 +1,6 @@
 package com.company.procurement.platform.api;
 
-import com.company.procurement.platform.application.PlatformAnalyticsService;
+import com.company.procurement.platform.services.PlatformAnalyticsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Instant;
 import org.springframework.security.access.prepost.PreAuthorize;

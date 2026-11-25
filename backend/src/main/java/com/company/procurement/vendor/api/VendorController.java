@@ -8,11 +8,11 @@ import com.company.procurement.vendor.api.dto.CreateVendorRequest;
 import com.company.procurement.vendor.api.dto.UpdateVendorRequest;
 import com.company.procurement.vendor.api.dto.VendorResponse;
 import com.company.procurement.vendor.api.mapper.VendorMapper;
-import com.company.procurement.vendor.application.CreateVendorCommand;
-import com.company.procurement.vendor.application.UpdateVendorCommand;
-import com.company.procurement.vendor.application.VendorService;
 import com.company.procurement.vendor.domain.Vendor;
 import com.company.procurement.vendor.domain.VendorStatus;
+import com.company.procurement.vendor.services.CreateVendorCommand;
+import com.company.procurement.vendor.services.UpdateVendorCommand;
+import com.company.procurement.vendor.services.VendorService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -36,7 +36,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RestController
 @Tag(name = "Vendors", description = "Vendor master data and status lifecycle")
 @RequestMapping("/api/v1/vendors")
-@com.company.procurement.subscription.application.RequiresFeature("vendors")
+@com.company.procurement.subscription.services.RequiresFeature("vendors")
 public class VendorController {
 
   private static final Set<String> SORTABLE = Set.of("createdAt", "name", "status", "taxId");

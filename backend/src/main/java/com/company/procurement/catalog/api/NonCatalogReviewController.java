@@ -1,6 +1,6 @@
 package com.company.procurement.catalog.api;
 
-import com.company.procurement.catalog.application.NonCatalogReviewService;
+import com.company.procurement.catalog.services.NonCatalogReviewService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

@@ -1,7 +1,7 @@
 package com.company.procurement.system.api;
 
-import com.company.procurement.system.application.SystemStatusService;
 import com.company.procurement.system.dto.SystemStatusResponse;
+import com.company.procurement.system.services.SystemStatusService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;

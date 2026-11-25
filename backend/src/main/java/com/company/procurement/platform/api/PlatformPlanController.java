@@ -1,8 +1,8 @@
 package com.company.procurement.platform.api;
 
 import com.company.procurement.platform.api.dto.SubscriptionPlanRequest;
-import com.company.procurement.platform.application.PlatformAuditService;
-import com.company.procurement.subscription.application.SubscriptionService;
+import com.company.procurement.platform.services.PlatformAuditService;
+import com.company.procurement.subscription.services.SubscriptionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;

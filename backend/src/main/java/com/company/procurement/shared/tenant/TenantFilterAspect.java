@@ -28,7 +28,7 @@ public class TenantFilterAspect {
 
   @Around(
       "@within(org.springframework.stereotype.Service)"
-          + " && execution(* com.company.procurement..application..*(..))")
+          + " && execution(* com.company.procurement..services..*(..))")
   public Object applyTenantFilter(ProceedingJoinPoint joinPoint) throws Throwable {
     TenantContext.get().ifPresent(this::enableFilter);
     return joinPoint.proceed();

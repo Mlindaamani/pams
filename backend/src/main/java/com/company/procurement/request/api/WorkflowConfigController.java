@@ -1,6 +1,6 @@
 package com.company.procurement.request.api;
 
-import com.company.procurement.request.application.WorkflowConfigService;
+import com.company.procurement.request.services.WorkflowConfigService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

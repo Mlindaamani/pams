@@ -2,9 +2,9 @@ package com.company.procurement.request.api;
 
 import com.company.procurement.request.api.dto.AttachmentResponse;
 import com.company.procurement.request.api.mapper.AttachmentMapper;
-import com.company.procurement.request.application.AttachmentUploadCommand;
-import com.company.procurement.request.application.RequestAttachmentService;
 import com.company.procurement.request.domain.RequestAttachment;
+import com.company.procurement.request.services.AttachmentUploadCommand;
+import com.company.procurement.request.services.RequestAttachmentService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.List;
@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/v1/purchase-requests/{requestId}/attachments")
 @Tag(name = "Request attachments", description = "Quotes and specifications stored in MinIO")
-@com.company.procurement.subscription.application.RequiresFeature("requests")
+@com.company.procurement.subscription.services.RequiresFeature("requests")
 public class RequestAttachmentController {
 
   private final RequestAttachmentService attachments;

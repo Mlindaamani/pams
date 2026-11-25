@@ -10,10 +10,10 @@ import com.company.procurement.webhook.api.dto.WebhookDeliveryResponse;
 import com.company.procurement.webhook.api.dto.WebhookSecretResponse;
 import com.company.procurement.webhook.api.dto.WebhookSubscriptionResponse;
 import com.company.procurement.webhook.api.mapper.WebhookMapper;
-import com.company.procurement.webhook.application.WebhookService;
 import com.company.procurement.webhook.domain.WebhookDelivery;
 import com.company.procurement.webhook.domain.WebhookDeliveryStatus;
 import com.company.procurement.webhook.domain.WebhookSubscription;
+import com.company.procurement.webhook.services.WebhookService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -42,7 +42,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequestMapping("/api/v1/webhooks")
 @PreAuthorize("@permissions.has('webhook:manage')")
 @Tag(name = "Webhooks", description = "Tenant webhook subscriptions and signed delivery log")
-@com.company.procurement.subscription.application.RequiresFeature("webhooks")
+@com.company.procurement.subscription.services.RequiresFeature("webhooks")
 public class WebhookController {
 
   private final WebhookService webhooks;
