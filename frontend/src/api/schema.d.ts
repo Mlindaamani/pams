@@ -2358,6 +2358,7 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+            roles?: string[];
         };
         SelfProfileRequest: {
             displayName: string;

@@ -2,6 +2,7 @@ package com.company.procurement.organization.api.dto;
 
 import com.company.procurement.shared.dto.MoneyDto;
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 public record UserProfileResponse(
@@ -18,4 +19,5 @@ public record UserProfileResponse(
     boolean hasAvatar,
     Instant createdAt,
     Instant updatedAt,
-    long version) {}
+    long version,
+    Set<String> roles) {}

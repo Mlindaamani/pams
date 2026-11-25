@@ -14,6 +14,7 @@ import com.company.procurement.organization.application.UpdateUserProfileCommand
 import com.company.procurement.organization.application.UserIdentitySyncService;
 import com.company.procurement.organization.application.UserInvitationService;
 import com.company.procurement.organization.application.UserProfileService;
+import com.company.procurement.organization.application.UserRoleDirectoryService;
 import com.company.procurement.organization.domain.Organization;
 import com.company.procurement.organization.domain.UserProfile;
 import com.company.procurement.shared.api.MoneyRequest;
@@ -24,6 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +57,7 @@ public class UserProfileController {
   private final UserIdentitySyncService identitySync;
   private final UserInvitationService invitations;
   private final OrganizationService organizations;
+  private final UserRoleDirectoryService userRoles;
   private final UserProfileMapper mapper;
 
   public UserProfileController(
@@ -62,11 +65,13 @@ public class UserProfileController {
       UserIdentitySyncService identitySync,
       UserInvitationService invitations,
       OrganizationService organizations,
+      UserRoleDirectoryService userRoles,
       UserProfileMapper mapper) {
     this.users = users;
     this.identitySync = identitySync;
     this.invitations = invitations;
     this.organizations = organizations;
+    this.userRoles = userRoles;
     this.mapper = mapper;
   }
 
@@ -176,9 +181,15 @@ public class UserProfileController {
       @RequestParam(defaultValue = "createdAt,desc") String sort) {
     Pageable pageable = PageRequests.of(page, size, sort, SORTABLE);
     Organization organization = organizations.get(TenantContext.require());
+    var profiles = users.search(departmentId, active, q, pageable);
+    Map<String, Set<String>> roles = userRoles.rolesFor(profiles.getContent());
     return PageResponse.from(
-        users.search(departmentId, active, q, pageable),
-        user -> mapper.toResponse(user, organization.getName()));
+        profiles,
+        user ->
+            mapper.toResponse(
+                user,
+                organization.getName(),
+                roles.getOrDefault(user.getKeycloakSubject(), Set.of())));
   }
 
   @PreAuthorize("@permissions.has('user:manage')")

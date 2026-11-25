@@ -24,6 +24,10 @@ make backend-compile    # compile in the API container and trigger DevTools rest
 | Mailpit | http://localhost:8025 |
 | MinIO console | http://localhost:9001 |
 
+MinIO is pinned to `2025.4.22-debian-12-r2`, the last community release with the embedded admin
+console. Do not switch back to `latest`: releases from 2025.5.24 onward removed the console and
+leave port 9001 closed. The `minio-data` volume is preserved across image changes.
+
 ## Keycloak persistence and clients
 
 Keycloak stores realms, users, roles, sessions and client configuration in PostgreSQL database

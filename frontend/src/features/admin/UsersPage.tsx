@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -159,6 +160,21 @@ export function UsersPage() {
               label: 'Organization',
               render: (user) => user.organizationName ?? '—',
               sortValue: (user) => user.organizationName ?? '',
+            },
+            {
+              key: 'roles',
+              label: 'Roles',
+              render: (user) =>
+                (user.roles ?? []).length === 0 ? (
+                  '—'
+                ) : (
+                  <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+                    {(user.roles ?? []).map((role) => (
+                      <Chip key={role} size="small" variant="outlined" label={role} />
+                    ))}
+                  </Stack>
+                ),
+              sortValue: (user) => (user.roles ?? []).join(','),
             },
             {
               key: 'department',

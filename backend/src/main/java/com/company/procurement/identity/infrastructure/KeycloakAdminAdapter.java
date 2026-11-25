@@ -12,6 +12,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +24,8 @@ import org.springframework.stereotype.Component;
 public class KeycloakAdminAdapter implements KeycloakAdminPort {
 
   private final KeycloakAdminProperties properties;
+  private static final int ROLE_PAGE_SIZE = 200;
+
   private final ObjectMapper objectMapper;
   private final HttpClient http =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
@@ -84,6 +88,43 @@ public class KeycloakAdminAdapter implements KeycloakAdminPort {
           List.of(Map.of("id", roleBody.path("id").asText(), "name", role)));
     }
     return subject;
+  }
+
+  @Override
+  public Map<String, Set<String>> usersByRole(List<String> roleNames) {
+    if (!properties.configured() || roleNames == null || roleNames.isEmpty()) {
+      return Map.of();
+    }
+    String token = token();
+    Map<String, Set<String>> rolesBySubject = new HashMap<>();
+    for (String roleName : roleNames) {
+      int first = 0;
+      while (true) {
+        JsonNode page =
+            get(
+                "/admin/realms/"
+                    + properties.realm()
+                    + "/roles/"
+                    + encode(roleName)
+                    + "/users?first="
+                    + first
+                    + "&max="
+                    + ROLE_PAGE_SIZE,
+                token);
+        int count = page.isArray() ? page.size() : 0;
+        for (JsonNode user : page) {
+          String subject = user.path("id").asText("");
+          if (!subject.isBlank()) {
+            rolesBySubject.computeIfAbsent(subject, ignored -> new LinkedHashSet<>()).add(roleName);
+          }
+        }
+        if (count < ROLE_PAGE_SIZE) {
+          break;
+        }
+        first += ROLE_PAGE_SIZE;
+      }
+    }
+    return rolesBySubject;
   }
 
   @Override

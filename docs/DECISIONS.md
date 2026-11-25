@@ -2062,3 +2062,42 @@ tenant detail "System admin" card.
 Contact data stays available without a Keycloak dependency or per-row queries.
 
 ---
+
+---
+
+## ADR-104 — Pin MinIO before the console removal
+
+**Context.** `bitnamilegacy/minio:latest` moved to the breaking `2025.5.24` release, which removed
+the embedded admin console from the community server. The container remained healthy on port 9000,
+but nothing listened on console port 9001, producing a browser "Failed to Load Page" error.
+
+**Decision.**
+- Pin development and production Compose to `bitnamilegacy/minio:2025.4.22-debian-12-r2`, the last
+  release with the embedded admin console.
+- Allow an explicit override through `MINIO_IMAGE` and document the pin in the runbook.
+- Preserve the existing `minio-data` volume when recreating the container.
+- Do not run MinIO community images with a floating `latest` tag.
+
+**Consequences.** The console is available at `http://localhost:9001` again without losing objects
+or changing the API endpoint. The pinned image no longer receives upstream fixes, so production
+should treat this as a temporary measure and plan migration to a supported object-storage service.
+
+---
+
+## ADR-105 — Tenant user roles are read from Keycloak
+
+**Context.** Tenant user roles are assigned in Keycloak at invitation time; local `user_profile`
+rows do not store role assignments. The tenant Users table therefore could not show a user's role.
+
+**Decision.**
+- Read role memberships from the Keycloak Admin API in bulk through the role-users endpoint for the
+  six tenant roles.
+- Filter memberships to the current page's Keycloak subjects and return them as `roles` on the user
+  list response.
+- Perform the Keycloak read after the local profile query, outside its transaction.
+- If Keycloak is unavailable or not configured, log a warning and return the user list without
+  roles instead of failing the page.
+
+**Consequences.** Roles shown in the Users table always reflect Keycloak, including users invited
+before this change. The users list performs up to six admin API calls per page and degrades
+gracefully when Keycloak is unavailable.

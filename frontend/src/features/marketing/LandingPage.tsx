@@ -1,320 +1,458 @@
 import { Link as RouterLink } from 'react-router-dom';
-import { Box, Button, Card, CardContent, Grid, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Grid,
+  Stack,
+  Typography,
+} from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+import RuleOutlinedIcon from '@mui/icons-material/RuleOutlined';
+import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
+import { MarketingCtaPanel } from './MarketingCtaPanel';
+import { MarketingSectionHeading } from './MarketingSectionHeading';
 import { PublicLayout } from './PublicLayout';
-
-const productShots = [
-  {
-    src: '/screenshots/request-detail.webp',
-    title: 'Approval workflow',
-    description: 'Multi-level approvals, change requests and a complete audit trail.',
-    alt: 'PAMS purchase request detail showing line items, a multi-level approval timeline and the audit trail',
-    rotate: '-2.5deg',
-    offset: 0,
-  },
-  {
-    src: '/screenshots/dashboard-card.webp',
-    title: 'Live spend dashboards',
-    description: 'See requests, committed spend and department allocation at a glance.',
-    alt: 'PAMS dashboard showing recent requests, spend by month and spend by department',
-    rotate: '1.5deg',
-    offset: -10,
-  },
-  {
-    src: '/screenshots/ap-aging-card.webp',
-    title: 'AP aging and payments',
-    description: 'Know what is due now and what is overdue, by vendor and currency.',
-    alt: 'PAMS accounts payable aging report grouped by vendor and currency',
-    rotate: '3deg',
-    offset: 8,
-  },
-];
 
 const benefits = [
   {
-    title: 'Control spend before it happens',
+    icon: AccountBalanceWalletOutlinedIcon,
+    title: 'Budget-aware requests',
     description:
-      'Requests, budgets and approvals work together so commitments are visible before money leaves.',
+      'Check available budget before submission and keep every commitment visible to finance.',
   },
   {
-    title: 'Run procurement from one workflow',
-    description: 'From purchase request to vendor, purchase order, receipt and invoice matching.',
+    icon: FactCheckOutlinedIcon,
+    title: 'Policy-driven approvals',
+    description:
+      'Route requests by amount, role, manager or policy, with clear change-request loops.',
   },
   {
-    title: 'Be audit-ready by default',
+    icon: VerifiedUserOutlinedIcon,
+    title: 'Audit-ready by default',
     description:
-      'Every approval, exception and vendor action is recorded with a complete audit trail.',
+      'Every decision, exception and vendor action is recorded in a complete audit trail.',
   },
 ];
 
 const steps = [
-  { number: '01', title: 'Capture the request', text: 'Standardize how teams ask to buy.' },
+  {
+    number: '01',
+    icon: EditNoteOutlinedIcon,
+    title: 'Capture the request',
+    text: 'Standardize how teams ask to buy, with budgets, quotes and attachments.',
+  },
   {
     number: '02',
+    icon: RuleOutlinedIcon,
     title: 'Approve with confidence',
-    text: 'Budgets, limits and policy-driven approvals.',
+    text: 'Apply limits, roles and multi-level policies without chasing email threads.',
   },
   {
     number: '03',
+    icon: LocalShippingOutlinedIcon,
     title: 'Order and receive',
-    text: 'Issue POs, record receipts and track delivery.',
+    text: 'Issue purchase orders, record receipts and keep delivery status current.',
   },
   {
     number: '04',
+    icon: PaymentsOutlinedIcon,
     title: 'Match and pay',
-    text: 'Three-way match exceptions, resolution and payment scheduling.',
+    text: 'Resolve three-way match exceptions and schedule vendor payments.',
   },
+];
+
+const productShots = [
+  {
+    src: '/screenshots/dashboard-card.webp',
+    title: 'Live spend visibility',
+    description:
+      'Requests, committed spend and department allocation in one operational dashboard.',
+    alt: 'PAMS dashboard showing recent requests, spend by month and spend by department',
+  },
+  {
+    src: '/screenshots/ap-aging-card.webp',
+    title: 'Accounts payable control',
+    description:
+      'See what is due, what is overdue and where cash is committed, by vendor and currency.',
+    alt: 'PAMS accounts payable aging report grouped by vendor and currency',
+  },
+];
+
+const assurances = [
+  'Policy-driven approvals',
+  'Budget control',
+  'Audit-ready records',
+  'Invoice matching',
 ];
 
 export function LandingPage() {
   return (
     <PublicLayout>
-      <Box sx={{ width: '100%', px: { xs: 2, sm: 4, md: 6, lg: 8 }, overflowX: 'clip' }}>
-        <Grid container spacing={6} alignItems="center" sx={{ py: { xs: 8, md: 12 } }}>
-          <Grid size={{ xs: 12, md: 7 }}>
+      <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            top: -260,
+            left: '50%',
+            width: 1000,
+            height: 720,
+            transform: 'translateX(-50%)',
+            background:
+              'radial-gradient(circle, rgba(11,92,173,0.16) 0%, rgba(11,92,173,0.05) 40%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <Container maxWidth="lg" sx={{ position: 'relative' }}>
+          <Stack
+            alignItems="center"
+            textAlign="center"
+            sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 7, md: 9 } }}
+          >
+            <Chip
+              label="Procurement, approvals and payments in one place"
+              sx={{
+                bgcolor: alpha('#0B5CAD', 0.07),
+                borderColor: alpha('#0B5CAD', 0.18),
+                color: 'primary.main',
+                fontWeight: 600,
+              }}
+              variant="outlined"
+            />
             <Typography
-              variant="overline"
-              color="primary"
-              sx={{ fontWeight: 700, letterSpacing: 2 }}
+              component="h1"
+              variant="h2"
+              sx={{
+                mt: 3,
+                maxWidth: 940,
+                fontSize: { xs: 42, sm: 54, md: 68 },
+                fontWeight: 800,
+                letterSpacing: '-0.045em',
+                lineHeight: 1.03,
+              }}
             >
-              Procurement without the spreadsheet chaos
-            </Typography>
-            <Typography variant="h2" sx={{ mt: 1, mb: 3, fontSize: { xs: 40, md: 58 } }}>
               Spend with clarity.
               <br />
               Approve with confidence.
             </Typography>
             <Typography
-              variant="h6"
               color="text.secondary"
-              fontWeight={400}
-              sx={{ mb: 4, maxWidth: 680 }}
+              sx={{ mt: 3, maxWidth: 720, fontSize: { xs: 17, md: 20 }, lineHeight: 1.65 }}
             >
-              PAMS brings purchase requests, approvals, vendors, budgets, purchase orders, receipts,
-              invoices and vendor payments into one auditable system.
+              PAMS connects purchase requests, budgets, approvals, purchase orders, receipts,
+              invoices and payments in one auditable workflow.
             </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1.5}
+              sx={{ mt: 4, width: { xs: '100%', sm: 'auto' } }}
+            >
               <Button
                 component={RouterLink}
                 to="/demo"
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
+                sx={{ px: 3 }}
               >
                 Book a demo
               </Button>
-              <Button component={RouterLink} to="/pricing" variant="outlined" size="large">
-                View pricing
+              <Button
+                component={RouterLink}
+                to="/pricing"
+                variant="outlined"
+                size="large"
+                sx={{ px: 3 }}
+              >
+                Explore pricing
               </Button>
             </Stack>
-            <Stack direction="row" spacing={2} sx={{ mt: 4 }} flexWrap="wrap" useFlexGap>
-              {['Budget control', 'Audit trail', 'Vendor management', 'Invoice matching'].map(
-                (item) => (
-                  <Stack key={item} direction="row" spacing={0.75} alignItems="center">
-                    <CheckCircleRoundedIcon color="success" fontSize="small" />
-                    <Typography variant="body2">{item}</Typography>
-                  </Stack>
-                ),
-              )}
+            <Stack
+              direction="row"
+              spacing={{ xs: 1.5, sm: 2.5 }}
+              flexWrap="wrap"
+              useFlexGap
+              justifyContent="center"
+              sx={{ mt: 4 }}
+            >
+              {assurances.map((item) => (
+                <Stack key={item} direction="row" spacing={0.75} alignItems="center">
+                  <CheckCircleRoundedIcon color="success" sx={{ fontSize: 17 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    {item}
+                  </Typography>
+                </Stack>
+              ))}
             </Stack>
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Card sx={{ borderRadius: 4, boxShadow: '0 24px 80px rgba(11,92,173,0.18)' }}>
-              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                <Typography variant="overline" color="secondary" fontWeight={700}>
-                  Request-to-payment visibility
-                </Typography>
-                <Stack spacing={2.25} sx={{ mt: 2 }}>
-                  {steps.map((step) => (
-                    <Stack key={step.number} direction="row" spacing={2}>
-                      <Typography
+          </Stack>
+
+          <Box sx={{ position: 'relative', maxWidth: 1120, mx: 'auto' }}>
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                inset: '12% 8% -8%',
+                borderRadius: '50%',
+                bgcolor: alpha('#0B5CAD', 0.18),
+                filter: 'blur(80px)',
+                pointerEvents: 'none',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'relative',
+                borderRadius: 3,
+                border: 1,
+                borderColor: alpha('#0B5CAD', 0.16),
+                bgcolor: '#FFFFFF',
+                p: { xs: 0.75, sm: 1 },
+                boxShadow: '0 32px 90px rgba(7,64,121,0.20)',
+                overflow: 'hidden',
+              }}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1.5}
+                sx={{ bgcolor: '#111827', px: { xs: 1.5, sm: 2 }, py: 1.25 }}
+              >
+                <Stack direction="row" spacing={0.75} aria-hidden>
+                  {['#F87171', '#FBBF24', '#34D399'].map((color) => (
+                    <Box
+                      key={color}
+                      sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: color }}
+                    />
+                  ))}
+                </Stack>
+                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                  <Box
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      px: 2,
+                      py: 0.4,
+                      borderRadius: 99,
+                      bgcolor: 'rgba(255,255,255,0.08)',
+                      color: 'rgba(255,255,255,0.65)',
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                    }}
+                  >
+                    app.pams.local/requests
+                  </Box>
+                </Box>
+                <Chip
+                  size="small"
+                  label="Live workspace"
+                  sx={{
+                    bgcolor: 'rgba(52,211,153,0.12)',
+                    color: '#6EE7B7',
+                    borderColor: 'rgba(52,211,153,0.24)',
+                    fontSize: 10,
+                  }}
+                  variant="outlined"
+                />
+              </Stack>
+              <Box
+                component="img"
+                src="/screenshots/request-detail.webp"
+                alt="PAMS purchase request detail showing line items, a multi-level approval timeline and the audit trail"
+                loading="eager"
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  aspectRatio: { xs: '3 / 2', md: '16 / 9' },
+                  objectFit: 'cover',
+                  objectPosition: 'top',
+                }}
+              />
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+
+      <Box sx={{ py: { xs: 9, md: 12 } }}>
+        <Container maxWidth="lg">
+          <MarketingSectionHeading
+            eyebrow="Why PAMS"
+            title="One source of truth for every purchase"
+            description="Replace email threads, spreadsheets and disconnected finance checks with a shared operational record."
+          />
+          <Grid container spacing={2.5} sx={{ mt: 5 }}>
+            {benefits.map((benefit) => {
+              const Icon = benefit.icon;
+              return (
+                <Grid key={benefit.title} size={{ xs: 12, md: 4 }}>
+                  <Card sx={{ height: '100%', borderRadius: 3, boxShadow: 'none' }}>
+                    <CardContent sx={{ p: { xs: 3, md: 3.5 } }}>
+                      <Box
                         sx={{
-                          fontWeight: 800,
+                          width: 48,
+                          height: 48,
+                          borderRadius: 2,
+                          bgcolor: alpha('#0B5CAD', 0.08),
                           color: 'primary.main',
+                          display: 'grid',
+                          placeItems: 'center',
+                          mb: 2.5,
+                        }}
+                      >
+                        <Icon />
+                      </Box>
+                      <Typography variant="h6" sx={{ mb: 1 }}>
+                        {benefit.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                        {benefit.description}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Container>
+      </Box>
+
+      <Box
+        sx={{
+          py: { xs: 9, md: 12 },
+          bgcolor: alpha('#0B5CAD', 0.035),
+          borderTop: 1,
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Container maxWidth="lg">
+          <MarketingSectionHeading
+            eyebrow="Request to payment"
+            title="A workflow your team will actually follow"
+            description="Every stage is connected, from the first request to the final vendor payment."
+          />
+          <Grid container spacing={2.5} sx={{ mt: 5 }}>
+            {steps.map((step) => {
+              const Icon = step.icon;
+              return (
+                <Grid key={step.number} size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Box
+                    sx={{
+                      height: '100%',
+                      p: 3,
+                      bgcolor: 'background.paper',
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 3,
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Box
+                        sx={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: '50%',
+                          border: 1,
+                          borderColor: alpha('#0B5CAD', 0.2),
+                          bgcolor: alpha('#0B5CAD', 0.06),
+                          color: 'primary.main',
+                          display: 'grid',
+                          placeItems: 'center',
                           fontSize: 13,
-                          minWidth: 28,
+                          fontWeight: 800,
                         }}
                       >
                         {step.number}
-                      </Typography>
-                      <Box>
-                        <Typography variant="subtitle2">{step.title}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {step.text}
-                        </Typography>
                       </Box>
+                      <Icon sx={{ color: 'text.secondary', fontSize: 22 }} aria-hidden />
                     </Stack>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
+                    <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 2.5 }}>
+                      {step.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1, lineHeight: 1.7 }}
+                    >
+                      {step.text}
+                    </Typography>
+                  </Box>
+                </Grid>
+              );
+            })}
           </Grid>
-        </Grid>
+        </Container>
+      </Box>
 
-        <Box sx={{ position: 'relative', py: { xs: 6, md: 11 }, overflow: 'hidden' }}>
-          <Box
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              top: 140,
-              right: -120,
-              width: 420,
-              height: 420,
-              borderRadius: '50%',
-              bgcolor: 'rgba(11,92,173,0.10)',
-              filter: 'blur(90px)',
-              pointerEvents: 'none',
-            }}
+      <Box sx={{ py: { xs: 9, md: 12 } }}>
+        <Container maxWidth="lg">
+          <MarketingSectionHeading
+            eyebrow="Inside PAMS"
+            title="See the whole picture, not just the queue"
+            description="A clear view of spend, commitments and payment exposure for procurement, finance and operations."
           />
-          <Box
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              bottom: 80,
-              left: -150,
-              width: 360,
-              height: 360,
-              borderRadius: '50%',
-              bgcolor: 'rgba(0,105,92,0.10)',
-              filter: 'blur(90px)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          <Stack spacing={1.5} sx={{ position: 'relative', mb: { xs: 4, md: 6 }, maxWidth: 920 }}>
-            <Typography variant="overline" color="primary" fontWeight={700} letterSpacing={2}>
-              Inside PAMS
-            </Typography>
-            <Typography
-              variant="h3"
-              sx={{ fontSize: { xs: 32, sm: 40, md: 48 }, lineHeight: 1.15 }}
-            >
-              See the workflow your team will actually use
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Real screenshots from a PAMS workspace. Every approval, purchase order and invoice
-              stays connected from request to payment.
-            </Typography>
-          </Stack>
-
-          <Box
-            sx={{
-              position: 'relative',
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'flex-start',
-              gap: { xs: 4, md: 3 },
-              mt: { xs: 2, md: 4 },
-              px: { xs: 0, md: 2 },
-            }}
-          >
-            {productShots.map((shot, index) => (
-              <Box
-                key={shot.src}
-                sx={{
-                  width: { xs: '100%', md: 'calc(33.333% - 16px)' },
-                  transform: {
-                    xs: `rotate(${shot.rotate})`,
-                    md: `rotate(${shot.rotate}) translateY(${shot.offset}px)`,
-                  },
-                }}
-              >
-                <Box
+          <Grid container spacing={3} sx={{ mt: 5 }}>
+            {productShots.map((shot) => (
+              <Grid key={shot.src} size={{ xs: 12, md: 6 }}>
+                <Card
                   sx={{
-                    willChange: 'transform',
-                    '@keyframes cardFloat': {
-                      '0%, 100%': { transform: 'translateY(0px)' },
-                      '50%': { transform: 'translateY(-14px)' },
+                    height: '100%',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    boxShadow: '0 24px 60px rgba(7,64,121,0.10)',
+                    transition: 'transform 180ms ease, box-shadow 180ms ease',
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 30px 70px rgba(7,64,121,0.16)',
                     },
-                    animation: `cardFloat ${7 + index * 0.9}s ease-in-out infinite`,
-                    animationDelay: `${index * 0.55}s`,
-                    '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+                    '@media (prefers-reduced-motion: reduce)': {
+                      transition: 'none',
+                      '&:hover': { transform: 'none' },
+                    },
                   }}
                 >
                   <Box
+                    component="img"
+                    src={shot.src}
+                    alt={shot.alt}
+                    loading="lazy"
                     sx={{
-                      bgcolor: '#FFFFFF',
-                      p: 0.75,
-                      borderRadius: 3,
-                      boxShadow: '0 30px 80px rgba(7,64,121,0.22)',
+                      display: 'block',
+                      width: '100%',
+                      borderBottom: 1,
+                      borderColor: 'divider',
                     }}
-                  >
-                    <Box
-                      component="img"
-                      src={shot.src}
-                      alt={shot.alt}
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      sx={{ display: 'block', width: '100%', borderRadius: 2 }}
-                    />
-                  </Box>
-                  <Typography variant="subtitle2" sx={{ mt: 2 }}>
-                    {shot.title}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {shot.description}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-
-        <Box sx={{ py: { xs: 4, md: 7 } }}>
-          <Typography variant="h3" sx={{ mb: 1, fontSize: { xs: 32, sm: 40, md: 48 } }}>
-            Built for teams that answer to finance
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 700 }}>
-            Replace scattered approvals and manual AP checks with a shared operational record.
-          </Typography>
-          <Grid container spacing={2}>
-            {benefits.map((benefit) => (
-              <Grid key={benefit.title} size={{ xs: 12, md: 4 }}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <CheckCircleRoundedIcon color="success" sx={{ fontSize: 32, mb: 2 }} />
-                    <Typography variant="h6" sx={{ mb: 1 }}>
-                      {benefit.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {benefit.description}
+                  />
+                  <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+                    <Typography variant="h6">{shot.title}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {shot.description}
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
             ))}
           </Grid>
-        </Box>
+        </Container>
+      </Box>
 
-        <Card
-          sx={{
-            my: 6,
-            p: { xs: 3, md: 5 },
-            background: 'linear-gradient(135deg, #0B5CAD, #074079)',
-            color: '#FFFFFF',
-          }}
-        >
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems={{ md: 'center' }}>
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h4" sx={{ color: '#FFFFFF' }}>
-                See PAMS with your own procurement workflow
-              </Typography>
-              <Typography sx={{ mt: 1, color: 'rgba(255,255,255,0.8)' }}>
-                Tell us how your team buys today. We will show you a focused walkthrough.
-              </Typography>
-            </Box>
-            <Button
-              component={RouterLink}
-              to="/demo"
-              variant="contained"
-              color="secondary"
-              size="large"
-              endIcon={<ArrowForwardIcon />}
-            >
-              Request a demo
-            </Button>
-          </Stack>
-        </Card>
+      <Box sx={{ pb: { xs: 7, md: 10 } }}>
+        <Container maxWidth="lg">
+          <MarketingCtaPanel
+            title="Ready to modernize procurement?"
+            description="See how PAMS fits your approval structure, spend controls and payment process."
+            actionLabel="Request a demo"
+            actionTo="/demo"
+          />
+        </Container>
       </Box>
     </PublicLayout>
   );

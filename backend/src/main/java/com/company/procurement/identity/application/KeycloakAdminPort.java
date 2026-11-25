@@ -1,5 +1,7 @@
 package com.company.procurement.identity.application;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,6 +15,8 @@ public interface KeycloakAdminPort {
       String temporaryPassword);
 
   KeycloakUserProfile userProfile(String subject);
+
+  Map<String, Set<String>> usersByRole(List<String> roleNames);
 
   void updateDisplayName(String subject, String displayName);
 
