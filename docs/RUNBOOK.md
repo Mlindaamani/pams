@@ -28,6 +28,24 @@ MinIO is pinned to `2025.4.22-debian-12-r2`, the last community release with the
 console. Do not switch back to `latest`: releases from 2025.5.24 onward removed the console and
 leave port 9001 closed. The `minio-data` volume is preserved across image changes.
 
+## Keycloak login theme
+
+The login theme lives in `keycloak-theme/` and is built with Keycloakify v11 + MUI. It is packaged
+into the PAMS Keycloak image and registers as the `pams` Login theme, so Keycloak itself renders MUI
+components without a logo.
+
+```bash
+make keycloak-theme
+docker compose up -d keycloak
+```
+
+The Docker build compiles the theme inside the image. Host builds are optional
+(`make keycloak-theme-jar`) and require Node 22, Maven and a JDK.
+
+Production deploys use the `PAMS_KEYCLOAK_IMAGE` image published by the release workflow. Rebuild and
+recreate Keycloak after changing login/theme files; account and email themes still come from
+`ops/keycloak/themes/pams/`.
+
 ## Keycloak persistence and clients
 
 Keycloak stores realms, users, roles, sessions and client configuration in PostgreSQL database
@@ -157,6 +175,7 @@ environment-gated GitHub workflow, or run the host scripts directly:
 ```bash
 PAMS_BACKEND_IMAGE=ghcr.io/org/pams-backend \
 PAMS_WEB_IMAGE=ghcr.io/org/pams-web \
+PAMS_KEYCLOAK_IMAGE=ghcr.io/org/pams-keycloak \
 PAMS_IMAGE_TAG=<git-sha> \
   ./ops/production/deploy.sh --env-file .env.production --environment production --tag <git-sha>
 
@@ -172,7 +191,7 @@ Local/air-gapped build remains available with
 `docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d`.
 Required environment: `POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_PASSWORD`, `KEYCLOAK_ISSUER_URI`,
 `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MAIL_*`, `PAMS_PUBLIC_API_URL`, `PAMS_PUBLIC_OIDC_AUTHORITY`,
-`PAMS_APP_URL`, `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE`, `PAMS_IMAGE_TAG`.
+`PAMS_APP_URL`, `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE`, `PAMS_KEYCLOAK_IMAGE`, `PAMS_IMAGE_TAG`.
 
 The API image runs as a non-root user with a layered jar, graceful shutdown and a readiness
 healthcheck. Tag images with the git SHA/semantic version; never deploy `latest`.

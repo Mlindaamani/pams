@@ -1,0 +1,629 @@
+import { Suspense, lazy } from "react";
+import type { ClassKey } from "keycloakify/login";
+import type { KcContext } from "./KcContext";
+import { useI18n } from "./i18n";
+import DefaultPage from "keycloakify/login/DefaultPage";
+import Template from "./Template";
+import "./main.css";
+
+import DeleteAccountConfirm from "./pages/DeleteAccountConfirm.tsx";
+import { createTheme, ThemeProvider } from "@mui/material";
+const UserProfileFormFields = lazy(() => import("./UserProfileFormFields"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const LoginUsername = lazy(() => import("./pages/LoginUsername"));
+const LoginPassword = lazy(() => import("./pages/LoginPassword"));
+const LoginResetPassword = lazy(() => import("./pages/LoginResetPassword"));
+const LoginPasskeysConditionalAuthenticate = lazy(
+    () => import("./pages/LoginPasskeysConditionalAuthenticate")
+);
+const Terms = lazy(() => import("./pages/Terms"));
+const Error = lazy(() => import("./pages/Error"));
+const Code = lazy(() => import("./pages/Code"));
+const SelectAuthenticator = lazy(() => import("./pages/SelectAuthenticator"));
+
+const LoginVerifyEmail = lazy(() => import("./pages/LoginVerifyEmail"));
+const LoginUpdateProfile = lazy(() => import("./pages/LoginUpdateProfile"));
+const LoginUpdatePassword = lazy(() => import("./pages/LoginUpdatePassword"));
+const LoginResetOtp = lazy(() => import("./pages/LoginResetOtp"));
+const LoginPageExpired = lazy(() => import("./pages/LoginPageExpired"));
+const LoginOtp = lazy(() => import("./pages/LoginOtp"));
+const LoginIdpLinkEmail = lazy(() => import("./pages/LoginIdpLinkEmail"));
+const LoginIdpLinkConfirm = lazy(() => import("./pages/LoginIdpLinkConfirm"));
+const SamlPostForm = lazy(() => import("./pages/SamlPostForm"));
+const LogoutConfirm = lazy(() => import("./pages/LogoutConfirm"));
+const LoginX509Info = lazy(() => import("./pages/LoginX509Info"));
+const Info = lazy(() => import("./pages/Info"));
+const UpdateEmail = lazy(() => import("./pages/UpdateEmail"));
+const WebauthnError = lazy(() => import("./pages/WebauthnError"));
+const DeleteCredential = lazy(() => import("./pages/DeleteCredential"));
+const FrontchannelLogout = lazy(() => import("./pages/FrontchannelLogout"));
+const IdpReviewUserProfile = lazy(() => import("./pages/IdpReviewUserProfile"));
+const LoginIdpLinkConfirmOverride = lazy(
+    () => import("./pages/LoginIdpLinkConfirmOverride")
+);
+const LoginRecoveryAuthnCodeConfig = lazy(
+    () => import("./pages/LoginRecoveryAuthnCodeConfig")
+);
+const LoginRecoveryAuthnCodeInput = lazy(
+    () => import("./pages/LoginRecoveryAuthnCodeInput")
+);
+const LoginOauth2DeviceVerifyUserCode = lazy(
+    () => import("./pages/LoginOauth2DeviceVerifyUserCode")
+);
+const WebauthnAuthenticate = lazy(() => import("./pages/WebauthnAuthenticate"));
+const WebauthnRegister = lazy(() => import("./pages/WebauthnRegister"));
+const LoginConfigTotp = lazy(() => import("./pages/LoginConfigTotp"));
+const LoginOauthGrant = lazy(() => import("./pages/LoginOauthGrant"));
+
+const doMakeUserConfirmPassword = true;
+
+function getCssVar(name: string, fallback: string) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name) || fallback;
+}
+
+const theme = createTheme({
+    palette: {
+        mode: "light",
+        primary: {
+            main: getCssVar("--kc-primary", "#0b5cad").trim()
+        },
+        secondary: {
+            main: getCssVar("--kc-secondary", "#00695c").trim()
+        },
+        background: {
+            default: getCssVar("--kc-body-background", "#f5f7fa").trim(),
+            paper: getCssVar("--kc-box-background", "#ffffff").trim()
+        },
+        text: {
+            primary: getCssVar("--kc-page-content-color", "#1f2937").trim(),
+            secondary: getCssVar("--kc-inactive", "#6b7280").trim()
+        },
+        divider: "#e0e4ea"
+    },
+    shape: { borderRadius: 10 },
+    typography: {
+        fontFamily: "Inter, Roboto, Helvetica, Arial, sans-serif",
+        h1: { fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em" },
+        button: { textTransform: "none", fontWeight: 600, fontSize: 15 }
+    },
+    components: {
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    minHeight: 44,
+                    borderRadius: 8,
+                    boxShadow: "none",
+                    "&:hover": { boxShadow: "none" }
+                }
+            }
+        },
+        MuiTypography: {
+            styleOverrides: {
+                root: {
+                    "&.kc-caption-info": {
+                        lineHeight: 1.4,
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        marginTop: 12, // theme.spacing(1.5)
+                        color: getCssVar("--kc-text-info", "#8e918f").trim()
+                    }
+                }
+            }
+        },
+        MuiLinearProgress: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: "transparent"
+                },
+                bar: {
+                    backgroundColor: getCssVar("--kc-primary", "#8e918f").trim()
+                }
+            }
+        },
+        MuiInputLabel: {
+            styleOverrides: {
+                root: {
+                    color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                    "&.Mui-focused": {
+                        color: getCssVar("--kc-primary", "#2e88e1").trim()
+                    },
+                    "&.Mui-disabled": {
+                        color: getCssVar("--kc-disabled-color-1", "#3f3f3f").trim()
+                    }
+                }
+            }
+        },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    // Textfarbe
+                    borderRadius: 8,
+                    "& .MuiInputBase-input": {
+                        color: getCssVar("--kc-page-content-color", "#1f2937").trim()
+                    },
+                    "&.Mui-focused .MuiInputBase-input": {
+                        color: getCssVar("--kc-page-content-color", "#1f2937").trim()
+                    },
+                    // Placeholder
+                    "& input::placeholder": {
+                        color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                        opacity: 1
+                    },
+                    // Border
+                    "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: getCssVar("--kc-inactive", "#8e918f").trim()
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#b8c2cf"
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: getCssVar("--kc-primary", "#2e88e1").trim()
+                    },
+
+                    // === Disabled ===
+                    "&.Mui-disabled .MuiInputBase-input": {
+                        color: getCssVar("--kc-disabled", "#6b6b6b").trim(),
+                        WebkitTextFillColor: getCssVar("--kc-disabled", "#6b6b6b").trim(),
+                        cursor: "not-allowed"
+                    },
+                    "&.Mui-disabled .MuiOutlinedInput-notchedOutline": {
+                        borderColor: getCssVar("--kc-disabled", "#6b7280").trim()
+                    },
+
+                    // EndAdornment-Icon - Password only
+                    "&.MuiOutlinedInput-root": {
+                        "& .MuiInputAdornment-root.MuiInputAdornment-positionEnd .MuiIconButton-root .MuiSvgIcon-root":
+                            {
+                                color: "var(--kc-inactive)"
+                            }
+                    }
+                }
+            }
+        },
+        MuiAlert: {
+            styleOverrides: {
+                root: { marginBottom: 16, borderRadius: 8 }
+            }
+        },
+        MuiCheckbox: {
+            styleOverrides: {
+                root: {
+                    // unchecked color
+                    color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                    // make the svg inherit color from the root
+                    "& .MuiSvgIcon-root": {
+                        color: "inherit"
+                    },
+                    // checked -> primary
+                    "&.Mui-checked": {
+                        color: getCssVar("--kc-primary", "#2e88e1").trim()
+                    },
+                    // ensure svg also inherits when checked (defensive)
+                    "&.Mui-checked .MuiSvgIcon-root": {
+                        color: "inherit"
+                    }
+                }
+            }
+        },
+
+        /* Radio */
+        MuiRadio: {
+            styleOverrides: {
+                root: {
+                    // unchecked color
+                    color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                    "& .MuiSvgIcon-root": {
+                        color: "inherit"
+                    },
+                    // checked -> primary
+                    "&.Mui-checked": {
+                        color: getCssVar("--kc-primary", "#2e88e1").trim()
+                    },
+                    "&.Mui-checked .MuiSvgIcon-root": {
+                        color: "inherit"
+                    }
+                }
+            }
+        },
+
+        // === ListItemButton (Language Picker Container) ===
+        MuiListItemButton: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: getCssVar("--kc-box-background", "#181818"),
+                    color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                    "&:hover, &.Mui-focusVisible, &:focus": {
+                        color: getCssVar("--kc-page-content-color", "#8e918f").trim(),
+                        borderColor: getCssVar("--kc-inactive", "#8e918f")
+                    }
+                }
+            }
+        },
+
+        // === ArrowDropDown Icon ===
+        MuiListItemIcon: {
+            styleOverrides: {
+                root: {
+                    color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                    ".MuiListItemButton-root:hover &": {
+                        color: getCssVar("--kc-page-content-color", "#8e918f").trim()
+                    }
+                }
+            }
+        },
+
+        // === Menu Paper ===
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    "&.MuiMenu-paper": {
+                        backgroundColor: getCssVar("--kc-box-background", "#181818"),
+                        border: `1px solid ${getCssVar("--kc-inactive", "#8e918f").trim()}`,
+                        boxShadow: "none"
+                    }
+                }
+            }
+        },
+
+        // === Menu Items ===
+        MuiMenuItem: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: getCssVar("--kc-box-background", "#181818"),
+                    color: getCssVar("--kc-inactive", "#8e918f").trim(),
+                    "&:hover": {
+                        color: getCssVar("--kc-page-content-color", "#8e918f").trim(),
+                        backgroundColor: getCssVar("--kc-box-background", "#181818")
+                    },
+                    "&.Mui-selected": {
+                        color: getCssVar("--kc-primary", "#2e88e1").trim(),
+                        backgroundColor: getCssVar("--kc-box-background", "#181818")
+                    }
+                }
+            }
+        },
+        MuiList: {
+            styleOverrides: {
+                root: {
+                    "&.kcRecoveryCodesList": {
+                        backgroundColor: getCssVar(
+                            "--kc-list-background",
+                            "#202020"
+                        ).trim(),
+                        borderRadius: "4px",
+                        padding: "1rem"
+                    }
+                }
+            }
+        }
+    }
+});
+
+export default function KcPage(props: { kcContext: KcContext }) {
+    const { kcContext } = props;
+
+    const { i18n } = useI18n({ kcContext });
+
+    return (
+        <ThemeProvider theme={theme}>
+            <Suspense>
+                {(() => {
+                    switch (kcContext.pageId) {
+                        case "login.ftl":
+                            return (
+                                <Login
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "register.ftl":
+                            return (
+                                <Register
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                    UserProfileFormFields={UserProfileFormFields}
+                                    doMakeUserConfirmPassword={doMakeUserConfirmPassword}
+                                />
+                            );
+                        case "login-username.ftl":
+                            return (
+                                <LoginUsername
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-password.ftl":
+                            return (
+                                <LoginPassword
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-reset-password.ftl":
+                            return (
+                                <LoginResetPassword
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-passkeys-conditional-authenticate.ftl":
+                            return (
+                                <LoginPasskeysConditionalAuthenticate
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-oauth2-device-verify-user-code.ftl":
+                            return (
+                                <LoginOauth2DeviceVerifyUserCode
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-recovery-authn-code-input.ftl":
+                            return (
+                                <LoginRecoveryAuthnCodeInput
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "terms.ftl":
+                            return (
+                                <Terms
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "webauthn-authenticate.ftl":
+                            return (
+                                <WebauthnAuthenticate
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "webauthn-register.ftl":
+                            return (
+                                <WebauthnRegister
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "error.ftl":
+                            return (
+                                <Error
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "code.ftl":
+                            return (
+                                <Code
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "delete-account-confirm.ftl":
+                            return (
+                                <DeleteAccountConfirm
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "select-authenticator.ftl":
+                            return (
+                                <SelectAuthenticator
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-verify-email.ftl":
+                            return (
+                                <LoginVerifyEmail
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-update-profile.ftl":
+                            return (
+                                <LoginUpdateProfile
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                    UserProfileFormFields={UserProfileFormFields}
+                                    doMakeUserConfirmPassword={doMakeUserConfirmPassword}
+                                />
+                            );
+                        case "login-update-password.ftl":
+                            return (
+                                <LoginUpdatePassword
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-reset-otp.ftl":
+                            return (
+                                <LoginResetOtp
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-page-expired.ftl":
+                            return (
+                                <LoginPageExpired
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-otp.ftl":
+                            return (
+                                <LoginOtp
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-oauth-grant.ftl":
+                            return (
+                                <LoginOauthGrant
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-idp-link-email.ftl":
+                            return (
+                                <LoginIdpLinkEmail
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-idp-link-confirm.ftl":
+                            return (
+                                <LoginIdpLinkConfirm
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-config-totp.ftl":
+                            return (
+                                <LoginConfigTotp
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "saml-post-form.ftl":
+                            return (
+                                <SamlPostForm
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "logout-confirm.ftl":
+                            return (
+                                <LogoutConfirm
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-x509-info.ftl":
+                            return (
+                                <LoginX509Info
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "info.ftl":
+                            return (
+                                <Info
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "update-email.ftl":
+                            return (
+                                <UpdateEmail
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                    UserProfileFormFields={UserProfileFormFields}
+                                    doMakeUserConfirmPassword={doMakeUserConfirmPassword}
+                                />
+                            );
+                        case "webauthn-error.ftl":
+                            return (
+                                <WebauthnError
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "delete-credential.ftl":
+                            return (
+                                <DeleteCredential
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "frontchannel-logout.ftl":
+                            return (
+                                <FrontchannelLogout
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "idp-review-user-profile.ftl":
+                            return (
+                                <IdpReviewUserProfile
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                    UserProfileFormFields={UserProfileFormFields}
+                                    doMakeUserConfirmPassword={doMakeUserConfirmPassword}
+                                />
+                            );
+                        case "login-idp-link-confirm-override.ftl":
+                            return (
+                                <LoginIdpLinkConfirmOverride
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+                        case "login-recovery-authn-code-config.ftl":
+                            return (
+                                <LoginRecoveryAuthnCodeConfig
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+
+                        default:
+                            return (
+                                <DefaultPage
+                                    kcContext={kcContext}
+                                    i18n={i18n}
+                                    classes={classes}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                    UserProfileFormFields={UserProfileFormFields}
+                                    doMakeUserConfirmPassword={doMakeUserConfirmPassword}
+                                />
+                            );
+                    }
+                })()}
+            </Suspense>
+        </ThemeProvider>
+    );
+}
+
+const classes = {} satisfies { [key in ClassKey]?: string };

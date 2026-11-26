@@ -54,8 +54,10 @@ curl -s -X POST http://localhost:8081/realms/pams/protocol/openid-connect/token 
 
 The web app is at `http://localhost:3000`. In development Compose runs Vite with the frontend source
 bind-mounted for HMR, and the API runs from the mounted backend source with Spring Boot DevTools.
-After backend edits run `make backend-compile`; DevTools restarts the API. Production images are
-still built through `docker compose -f docker-compose.prod.yml build`.
+After backend edits run `make backend-compile`; DevTools restarts the API. The Keycloak login theme is
+built as a Docker image from `keycloak-theme/`; after theme edits run
+`make keycloak-theme && docker compose up -d keycloak`. Production images are still built
+through `docker compose -f docker-compose.prod.yml build`.
 
 The SPA signs in with the public `pams-frontend` client; `pams-cli` is only for local API tools and
 smoke tests. Keycloak users and clients persist in the dedicated `keycloak` PostgreSQL database.

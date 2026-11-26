@@ -95,6 +95,37 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
+  keycloak-theme:
+    name: Keycloak theme (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: keycloak-theme
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: keycloak-theme/package-lock.json
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install
+        run: npm ci
+
+      - name: Build theme JAR
+        run: |
+          mvn -version
+          npm run build-keycloak-theme
+          test -f dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar
+
   ops:
     name: Ops scripts
     runs-on: ubuntu-latest

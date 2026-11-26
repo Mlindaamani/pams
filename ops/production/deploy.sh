@@ -55,7 +55,7 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
   echo "Compose file not found: $COMPOSE_FILE" >&2
   exit 1
 fi
-for variable in PAMS_BACKEND_IMAGE PAMS_WEB_IMAGE; do
+for variable in PAMS_BACKEND_IMAGE PAMS_WEB_IMAGE PAMS_KEYCLOAK_IMAGE; do
   if ! grep -Eq "^${variable}=.+" "$ENV_FILE"; then
     echo "${variable} must be set in $ENV_FILE" >&2
     exit 1
@@ -71,7 +71,7 @@ CURRENT="$(cat "$CURRENT_FILE" 2>/dev/null || true)"
 deploy_tag() {
   local tag="$1"
   if [[ "$SKIP_PULL" != true ]]; then
-    PAMS_IMAGE_TAG="$tag" "${compose[@]}" pull api web || return 1
+    PAMS_IMAGE_TAG="$tag" "${compose[@]}" pull api web keycloak || return 1
   fi
   PAMS_IMAGE_TAG="$tag" "${compose[@]}" up -d --wait --wait-timeout "$TIMEOUT" || return 1
   PAMS_IMAGE_TAG="$tag" "${compose[@]}" exec -T api \

@@ -111,15 +111,16 @@ Do not begin paid acquisition until export, deletion and restore procedures are 
 
 ## Deployments and load tests
 
-- `.github/workflows/release.yml` builds, scans and publishes immutable SHA/version images to GHCR.
+- `.github/workflows/release.yml` builds, scans and publishes immutable API, web and Keycloak theme
+  images to GHCR.
 - `.github/workflows/deploy.yml` deploys to a GitHub Environment (`staging` or `production`) over SSH.
   Configure required reviewers on the production environment and these environment secrets:
   `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`,
   `DEPLOY_KNOWN_HOSTS`.
 - `ops/production/deploy.sh` pulls the immutable tag, waits for health and rolls back if readiness
   fails. `ops/production/rollback.sh` restores the previous recorded tag.
-- Configure `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE` and an immutable `PAMS_IMAGE_TAG` in the host's
-  secret-managed `.env.production`.
+- Configure `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE`, `PAMS_KEYCLOAK_IMAGE` and an immutable
+  `PAMS_IMAGE_TAG` in the host's secret-managed `.env.production`.
 - Run `ops/backup/verify.sh` after each backup and record load-test results in `docs/RUNBOOK.md`.
 - CI/CD workflow code is present; staging/production accounts, SSH targets and required reviewers
   are still operational configuration.

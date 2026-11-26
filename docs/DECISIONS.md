@@ -2273,12 +2273,33 @@ gate and a rollback path without rebuilding on the host.
   version tags to GHCR.
 - Deployment uses GitHub Environments (`staging`, `production`) with production required reviewers.
   A `workflow_dispatch` workflow checks out the release ref on the host and invokes host scripts.
-- `ops/production/deploy.sh` pulls only API/web images, waits for readiness, records current and
+- Keycloak uses a PAMS image built from `keycloak-theme/` (Keycloakify + MUI Login theme) and the
+  same release workflow publishes it as `PAMS_KEYCLOAK_IMAGE`.
+- `ops/production/deploy.sh` pulls API/web/Keycloak images, waits for readiness, records current and
   previous tags, and auto-rolls back to the previous tag if readiness fails.
 - `ops/production/rollback.sh` restores the previous recorded tag.
-- Images are selected with `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE` and `PAMS_IMAGE_TAG`; `latest` is
-  rejected.
+- Images are selected with `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE`, `PAMS_KEYCLOAK_IMAGE` and
+  `PAMS_IMAGE_TAG`; `latest` is rejected.
 
 **Consequences.** Deployments are reproducible and reversible at the image level. The host must be
 logged in to the registry and keep `.env.production` in a secret store. Database migrations remain
 forward-only; a bad migration still requires a verified backup restore.
+
+---
+
+## ADR-115 — Keycloak login theme uses Keycloakify and MUI
+
+**Context.** Keycloak’s PatternFly login page cannot use the React MUI components or design tokens
+used by the PAMS SPA. A CSS-only theme could approximate the look but duplicated form behaviour.
+
+**Decision.**
+- Build the login theme in `keycloak-theme/` with Keycloakify v11 and the MUI starter.
+- Register it as the `pams` Login theme; remove the old CSS login theme.
+- Render a light PAMS MUI card with the shared primary blue, rounded controls and no logo.
+- Package the theme JAR into a PAMS Keycloak image (`PAMS_KEYCLOAK_IMAGE`) built by Compose and the
+  release workflow; account/email themes remain in `ops/keycloak/themes/pams/`.
+- Rebuild/recreate Keycloak after theme changes.
+
+**Consequences.** The Keycloak form is now real MUI and visually aligned with the SPA. Theme changes
+require a Keycloak image rebuild rather than a CSS-only reload. The account console remains on the
+existing Keycloak account theme.

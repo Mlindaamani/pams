@@ -20,6 +20,8 @@ jobs:
             context: ./backend
           - component: web
             context: ./frontend
+          - component: keycloak
+            context: ./keycloak-theme
     steps:
       - uses: actions/checkout@v4
 

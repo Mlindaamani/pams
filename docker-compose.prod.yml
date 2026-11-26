@@ -38,7 +38,9 @@ services:
           memory: 256m
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8.2
+    build:
+      context: ./keycloak-theme
+    image: ${PAMS_KEYCLOAK_IMAGE:-pams-keycloak}:${PAMS_IMAGE_TAG:-latest}
     command: ["start", "--import-realm", "--hostname-strict=false", "--http-enabled=true"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
@@ -51,6 +53,7 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ${KEYCLOAK_REALM_IMPORT:-./ops/keycloak/realm-export.json}:/opt/keycloak/data/import/realm-export.json:ro
+      - ./ops/keycloak/themes:/opt/keycloak/themes:ro
     depends_on:
       postgres:
         condition: service_healthy

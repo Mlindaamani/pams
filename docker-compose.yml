@@ -27,7 +27,9 @@ services:
 
 # Keycloak service for authentication and authorization
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8.2
+    build:
+      context: ./keycloak-theme
+    image: pams-keycloak:${PAMS_KEYCLOAK_TAG:-dev}
     container_name: pams-keycloak
     command: ["start-dev", "--import-realm"]
     environment:
