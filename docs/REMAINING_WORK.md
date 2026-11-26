@@ -30,7 +30,9 @@ strategy and sequencing document; this file tracks concrete launch gaps.
 | CI scanning, immutable images, deploy/rollback automation | Implemented in repository; environments not configured |
 | Alert thresholds and incident-response runbook | Implemented in repository; paging/status accounts not configured |
 | RLS inventory guard and tenant table exceptions | Implemented and tested |
-| Peak/headroom load-test script | Implemented; production-like run and recorded result missing |
+| Keycloak login lockout | Enabled (10 failures / 12-hour window) |
+| Audit-export documentation | Reconciled with the implemented feature |
+| Peak/headroom load-test script | Implemented; local smoke recorded, production-like run missing |
 | Phase A production launch gates | **Incomplete** |
 | Phase B onboarding/self-serve activation | **Incomplete** |
 | Sales, support and SaaS-analytics instrumentation | **Mostly incomplete** |
@@ -57,10 +59,12 @@ These items must be closed before the first paying tenant carries business-criti
   - Define rotation and emergency-revocation procedures.
 - [ ] **TLS, HSTS, secure cookies and WAF/edge controls.** *(Operator)*
   - Deploy the nginx template or equivalent behind a managed load balancer/WAF.
-  - Add login, invitation and upload limits at the edge. Application write/export limits already exist.
+  - Add edge/WAF login throttling. Keycloak brute-force protection and application write/export
+    limits are already enabled.
 - [ ] **Keycloak production hardening.** *(Operator)*
   - Set the real hostname/TLS/proxy headers, disable demo imports, retain the dedicated Keycloak DB,
-    and schedule Keycloak DB backups with the application database.
+    and schedule Keycloak DB backups with the application database. Brute-force protection is already
+    enabled.
 - [ ] **Configure GitHub Environments and deployment targets.** *(Operator)*
   - Create `staging` and `production`, require production reviewers, and set `DEPLOY_HOST`,
     `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`.
@@ -171,7 +175,7 @@ The revenue dashboard exists, but these inputs are still missing for reliable CA
 - [ ] Record the first staging deploy, rollback drill and production-like load-test result.
 - [ ] Add the final staging/production URLs and support contacts to `docs/RUNBOOK.md` and
   `docs/INCIDENT_RESPONSE.md`.
-- [ ] Update `docs/SAAS_ROADMAP.md` phase checkboxes as operational items are completed.
+- [ ] Update `docs/SAAS_ROADMAP.md` phase checkboxes as the remaining operational items are completed.
 
 ---
 

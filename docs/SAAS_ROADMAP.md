@@ -216,7 +216,7 @@ See `docs/REMAINING_WORK.md` for a concrete launch-gap checklist with owners and
 - [ ] Uptime monitoring, synthetic checks and on-call alerting
 - [ ] Error tracking with release/version tagging
 - [ ] Centralized logs with retention and PII redaction
-- [ ] Status page and incident response runbook
+- [ ] Status page and incident response runbook (runbook exists; status page/contacts pending)
 - [ ] Load test at expected peak plus headroom
 - [x] CI/CD with staging promotion and rollback procedure
 
@@ -232,7 +232,7 @@ See `docs/REMAINING_WORK.md` for a concrete launch-gap checklist with owners and
 - [ ] Backup encryption and restore access audit
 - [x] Dependency and container scanning in CI
 - [x] Rate limits for login, invitations, uploads and exports
-- [ ] Incident response plan and breach notification process
+- [ ] Incident response plan and breach notification process (internal plan exists; legal/contacts pending)
 
 ### 5.3 Billing Readiness
 
