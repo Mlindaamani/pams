@@ -17,4 +17,6 @@ public interface RequestAttachmentRepository {
   long countByOrganizationIdAndRequestId(UUID organizationId, UUID requestId);
 
   void delete(RequestAttachment attachment);
+
+  long sumSizeBytes(UUID organizationId);
 }

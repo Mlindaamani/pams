@@ -1,14 +1,14 @@
 package com.company.procurement.audit.repositories;
 
 import com.company.procurement.audit.domain.AuditEvent;
-import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import java.util.List;
 
+/** Persistence port for audit events. */
 public interface AuditEventRepository {
 
   AuditEvent save(AuditEvent event);
 
-  Page<AuditEvent> search(
-      UUID organizationId, String aggregateType, UUID aggregateId, Pageable pageable);
+  List<AuditEvent> search(AuditEventQuery query, int limit);
+
+  List<AuditEvent> export(AuditEventQuery query);
 }

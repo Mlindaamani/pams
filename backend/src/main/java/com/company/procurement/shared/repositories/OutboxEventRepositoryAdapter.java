@@ -40,6 +40,16 @@ public class OutboxEventRepositoryAdapter implements OutboxEventRepository {
   }
 
   @Override
+  public long countPending() {
+    return jpa.countByProcessedAtIsNullAndDeadLetteredAtIsNull();
+  }
+
+  @Override
+  public long countDeadLettered() {
+    return jpa.countByDeadLetteredAtIsNotNull();
+  }
+
+  @Override
   public List<UUID> lockPendingIds(int limit) {
     return jdbcTemplate.queryForList(LOCK_DUE, UUID.class, limit);
   }

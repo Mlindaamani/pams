@@ -1,11 +1,12 @@
 package com.company.procurement.platform.services;
 
+import com.company.procurement.platform.domain.PlatformAuditEvent;
+import com.company.procurement.platform.repositories.PlatformAuditEventRepository;
 import com.company.procurement.shared.security.CurrentUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,14 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PlatformAuditService {
 
-  private final JdbcTemplate jdbcTemplate;
+  private final PlatformAuditEventRepository events;
   private final ObjectMapper objectMapper;
   private final CurrentUser currentUser;
   private final Clock clock;
 
   public PlatformAuditService(
-      JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, CurrentUser currentUser, Clock clock) {
-    this.jdbcTemplate = jdbcTemplate;
+      PlatformAuditEventRepository events,
+      ObjectMapper objectMapper,
+      CurrentUser currentUser,
+      Clock clock) {
+    this.events = events;
     this.objectMapper = objectMapper;
     this.currentUser = currentUser;
     this.clock = clock;
@@ -29,18 +33,14 @@ public class PlatformAuditService {
   @Transactional
   public void record(String action, UUID tenantId, Map<String, Object> payload) {
     try {
-      jdbcTemplate.update(
-          """
-          insert into platform_audit_event
-              (actor_subject, actor_name, action, tenant_id, payload, occurred_at)
-          values (?, ?, ?, ?, ?::jsonb, ?)
-          """,
-          currentUser.subject(),
-          currentUser.username(),
-          action,
-          tenantId,
-          objectMapper.writeValueAsString(payload == null ? Map.of() : payload),
-          java.sql.Timestamp.from(clock.instant()));
+      events.save(
+          new PlatformAuditEvent(
+              currentUser.subject(),
+              currentUser.username(),
+              action,
+              tenantId,
+              objectMapper.writeValueAsString(payload == null ? Map.of() : payload),
+              clock.instant()));
     } catch (Exception ex) {
       throw new IllegalStateException("Could not record platform audit event", ex);
     }

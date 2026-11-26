@@ -1,6 +1,7 @@
 package com.company.procurement.purchaseorder.repositories;
 
 import com.company.procurement.purchaseorder.domain.PurchaseOrder;
+import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +26,10 @@ public interface JpaPurchaseOrderRepository
   @Query("select o from PurchaseOrder o where o.id = :id and o.organizationId = :organizationId")
   Optional<PurchaseOrder> findDetail(
       @Param("id") UUID id, @Param("organizationId") UUID organizationId);
+
+  long countByOrganizationIdAndStatusNot(UUID organizationId, PurchaseOrderStatus status);
+
+  long countByOrganizationIdAndVendorId(UUID organizationId, UUID vendorId);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select o from PurchaseOrder o where o.id = :id and o.organizationId = :organizationId")

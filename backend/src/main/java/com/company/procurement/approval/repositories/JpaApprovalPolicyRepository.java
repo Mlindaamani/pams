@@ -30,4 +30,6 @@ public interface JpaApprovalPolicyRepository
       @Param("organizationId") UUID organizationId,
       @Param("entityType") String entityType,
       @Param("amount") BigDecimal amount);
+
+  long countByOrganizationIdAndActiveTrue(UUID organizationId);
 }

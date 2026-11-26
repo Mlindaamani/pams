@@ -1,6 +1,7 @@
 package com.company.procurement.approval.repositories;
 
 import com.company.procurement.approval.domain.ApprovalStep;
+import com.company.procurement.approval.domain.ApprovalStepStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -29,5 +30,15 @@ public class ApprovalStepRepositoryAdapter implements ApprovalStepRepository {
   @Override
   public List<ApprovalStep> findCurrentPendingSteps(UUID organizationId) {
     return jpa.findCurrentPendingSteps(organizationId);
+  }
+
+  @Override
+  public long countPending(UUID organizationId) {
+    return jpa.countByOrganizationIdAndStatus(organizationId, ApprovalStepStatus.PENDING);
+  }
+
+  @Override
+  public long countCurrentPending(UUID organizationId) {
+    return jpa.countCurrentPending(organizationId);
   }
 }

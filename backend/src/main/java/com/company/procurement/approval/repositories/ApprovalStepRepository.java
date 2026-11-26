@@ -13,4 +13,8 @@ public interface ApprovalStepRepository {
   List<ApprovalStep> findDueSteps(UUID organizationId, Instant now);
 
   List<ApprovalStep> findCurrentPendingSteps(UUID organizationId);
+
+  long countPending(UUID organizationId);
+
+  long countCurrentPending(UUID organizationId);
 }

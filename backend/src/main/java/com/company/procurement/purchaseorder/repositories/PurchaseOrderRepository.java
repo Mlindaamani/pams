@@ -23,4 +23,8 @@ public interface PurchaseOrderRepository {
       UUID organizationId, UUID purchaseRequestId);
 
   Page<PurchaseOrder> search(UUID organizationId, PurchaseOrderFilter filter, Pageable pageable);
+
+  long countNonDraft(UUID organizationId);
+
+  long countByVendor(UUID organizationId, UUID vendorId);
 }

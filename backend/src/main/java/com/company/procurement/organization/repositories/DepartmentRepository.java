@@ -18,4 +18,6 @@ public interface DepartmentRepository {
       UUID organizationId, String name, UUID id);
 
   Page<Department> search(UUID organizationId, String name, Pageable pageable);
+
+  long countActive(UUID organizationId);
 }

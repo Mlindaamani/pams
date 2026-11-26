@@ -12,4 +12,8 @@ public interface OutboxEventRepository {
   Optional<OutboxEvent> findById(UUID id);
 
   List<UUID> lockPendingIds(int limit);
+
+  long countPending();
+
+  long countDeadLettered();
 }

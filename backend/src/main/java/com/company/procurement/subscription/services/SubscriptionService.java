@@ -3,7 +3,18 @@ package com.company.procurement.subscription.services;
 import com.company.procurement.shared.config.StripeProperties;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
+import com.company.procurement.shared.tenant.OrganizationNamePort;
 import com.company.procurement.shared.tenant.TenantContext;
+import com.company.procurement.shared.tenant.TenantProvisioningPort;
+import com.company.procurement.shared.usage.TenantUsagePort;
+import com.company.procurement.subscription.domain.SubscriptionMrrSnapshot;
+import com.company.procurement.subscription.domain.SubscriptionPlan;
+import com.company.procurement.subscription.domain.TenantSubscription;
+import com.company.procurement.subscription.repositories.StripeEventRepository;
+import com.company.procurement.subscription.repositories.SubscriptionMrrSnapshotRepository;
+import com.company.procurement.subscription.repositories.SubscriptionPlanFeatureRepository;
+import com.company.procurement.subscription.repositories.SubscriptionPlanRepository;
+import com.company.procurement.subscription.repositories.TenantSubscriptionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
@@ -28,7 +39,6 @@ import java.util.Set;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,55 +48,100 @@ public class SubscriptionService {
 
   private static final String STRIPE_API = "https://api.stripe.com/v1";
 
-  private final JdbcTemplate jdbc;
+  private final SubscriptionPlanRepository plans;
+  private final SubscriptionFeatureService featureService;
+  private final SubscriptionPlanFeatureRepository planFeatures;
+  private final TenantSubscriptionRepository subscriptions;
+  private final SubscriptionMrrSnapshotRepository snapshots;
+  private final StripeEventRepository stripeEvents;
+  private final OrganizationNamePort organizationNames;
+  private final TenantProvisioningPort provisionings;
+  private final TenantUsagePort usage;
   private final ObjectMapper objectMapper;
   private final StripeProperties stripe;
-  private final SubscriptionFeatureService featureService;
   private final Clock clock;
   private final HttpClient http =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
   public SubscriptionService(
-      JdbcTemplate jdbc,
+      SubscriptionPlanRepository plans,
+      SubscriptionFeatureService featureService,
+      SubscriptionPlanFeatureRepository planFeatures,
+      TenantSubscriptionRepository subscriptions,
+      SubscriptionMrrSnapshotRepository snapshots,
+      StripeEventRepository stripeEvents,
+      OrganizationNamePort organizationNames,
+      TenantProvisioningPort provisionings,
+      TenantUsagePort usage,
       ObjectMapper objectMapper,
       StripeProperties stripe,
-      SubscriptionFeatureService featureService,
       Clock clock) {
-    this.jdbc = jdbc;
+    this.plans = plans;
+    this.featureService = featureService;
+    this.planFeatures = planFeatures;
+    this.subscriptions = subscriptions;
+    this.snapshots = snapshots;
+    this.stripeEvents = stripeEvents;
+    this.organizationNames = organizationNames;
+    this.provisionings = provisionings;
+    this.usage = usage;
     this.objectMapper = objectMapper;
     this.stripe = stripe;
-    this.featureService = featureService;
     this.clock = clock;
   }
 
   @Transactional(readOnly = true)
   public List<PlanView> plans() {
-    return loadPlans("select * from subscription_plan where active = true order by sort_order");
+    return views(plans.findActiveOrdered());
   }
 
   @Transactional(readOnly = true)
   public List<PlanView> allPlans() {
-    return loadPlans("select * from subscription_plan order by sort_order, code");
+    return views(plans.findAllOrdered());
   }
 
   @Transactional
   public PlanView createPlan(PlanCommand command) {
     String code = normalizePlanCode(command.code());
-    if (!jdbc.queryForList("select 1 from subscription_plan where code = ?", code).isEmpty()) {
+    if (plans.existsById(code)) {
       throw new BusinessRuleException("Subscription plan %s already exists".formatted(code));
     }
     validatePlan(command);
     List<SubscriptionFeatureService.FeatureView> features =
         featureService.resolveForAssignment(command.featureCodes(), Set.of());
-    jdbc.update(
-        """
-            insert into subscription_plan
-                (code, name, description, monthly_price, annual_price, currency, trial_days,
-                 max_users, max_departments, max_requests_month, max_storage_mb, active,
-                 sort_order, stripe_price_monthly, stripe_price_annual, created_at, updated_at)
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now())
-            """,
-        code,
+    SubscriptionPlan plan =
+        plans.save(
+            new SubscriptionPlan(
+                code,
+                command.name().trim(),
+                command.description().trim(),
+                command.monthlyPrice(),
+                command.annualPrice(),
+                command.currency().trim().toUpperCase(),
+                command.trialDays(),
+                command.maxUsers(),
+                command.maxDepartments(),
+                command.maxRequestsMonth(),
+                command.maxStorageMb(),
+                command.active(),
+                command.sortOrder(),
+                blankToNull(command.stripePriceMonthly()),
+                blankToNull(command.stripePriceAnnual())));
+    replacePlanFeatures(plan.getCode(), features);
+    return planByCode(plan.getCode());
+  }
+
+  @Transactional
+  public PlanView updatePlan(String code, PlanCommand command) {
+    SubscriptionPlan plan = requirePlan(code);
+    validatePlan(command);
+    Set<String> currentlyAssigned =
+        planFeatures.findFeaturesForPlans(List.of(plan.getCode())).stream()
+            .map(SubscriptionPlanFeatureRepository.PlanFeatureRow::code)
+            .collect(java.util.stream.Collectors.toSet());
+    List<SubscriptionFeatureService.FeatureView> features =
+        featureService.resolveForAssignment(command.featureCodes(), currentlyAssigned);
+    plan.update(
         command.name().trim(),
         command.description().trim(),
         command.monthlyPrice(),
@@ -101,53 +156,16 @@ public class SubscriptionService {
         command.sortOrder(),
         blankToNull(command.stripePriceMonthly()),
         blankToNull(command.stripePriceAnnual()));
-    replacePlanFeatures(code, features);
-    return planByCode(code);
-  }
-
-  @Transactional
-  public PlanView updatePlan(String code, PlanCommand command) {
-    PlanView existing = planByCode(code);
-    validatePlan(command);
-    Set<String> currentlyAssigned =
-        existing.features().stream()
-            .map(SubscriptionFeatureService.FeatureView::code)
-            .collect(java.util.stream.Collectors.toSet());
-    List<SubscriptionFeatureService.FeatureView> features =
-        featureService.resolveForAssignment(command.featureCodes(), currentlyAssigned);
-    jdbc.update(
-        """
-            update subscription_plan
-               set name = ?, description = ?, monthly_price = ?, annual_price = ?, currency = ?,
-                   trial_days = ?, max_users = ?, max_departments = ?, max_requests_month = ?,
-                   max_storage_mb = ?, active = ?, sort_order = ?,
-                   stripe_price_monthly = ?, stripe_price_annual = ?, updated_at = now()
-             where code = ?
-            """,
-        command.name().trim(),
-        command.description().trim(),
-        command.monthlyPrice(),
-        command.annualPrice(),
-        command.currency().trim().toUpperCase(),
-        command.trialDays(),
-        command.maxUsers(),
-        command.maxDepartments(),
-        command.maxRequestsMonth(),
-        command.maxStorageMb(),
-        command.active(),
-        command.sortOrder(),
-        blankToNull(command.stripePriceMonthly()),
-        blankToNull(command.stripePriceAnnual()),
-        code);
-    replacePlanFeatures(code, features);
-    return planByCode(code);
+    plans.save(plan);
+    replacePlanFeatures(plan.getCode(), features);
+    return planByCode(plan.getCode());
   }
 
   @Transactional
   public void deactivatePlan(String code) {
-    planByCode(code);
-    jdbc.update(
-        "update subscription_plan set active = false, updated_at = now() where code = ?", code);
+    SubscriptionPlan plan = requirePlan(code);
+    plan.deactivate();
+    plans.save(plan);
   }
 
   private static void validatePlan(PlanCommand command) {
@@ -183,22 +201,26 @@ public class SubscriptionService {
     return normalized;
   }
 
-  private List<PlanView> loadPlans(String sql, Object... args) {
-    List<String> codes = jdbc.query(sql, (rs, row) -> rs.getString("code"), args);
+  private List<PlanView> views(List<SubscriptionPlan> entities) {
+    if (entities.isEmpty()) return List.of();
     Map<String, List<SubscriptionFeatureService.FeatureView>> features =
-        featureService.featuresForPlans(codes);
-    return jdbc.query(
-        sql, (rs, row) -> plan(rs, features.getOrDefault(rs.getString("code"), List.of())), args);
+        featureService.featuresForPlans(entities.stream().map(SubscriptionPlan::getCode).toList());
+    return entities.stream()
+        .map(plan -> planView(plan, features.getOrDefault(plan.getCode(), List.of())))
+        .toList();
   }
 
   private void replacePlanFeatures(
       String planCode, List<SubscriptionFeatureService.FeatureView> features) {
-    jdbc.update("delete from subscription_plan_feature where plan_code = ?", planCode);
-    for (SubscriptionFeatureService.FeatureView feature : features) {
-      jdbc.update(
-          "insert into subscription_plan_feature (plan_code, feature_code) values (?, ?)",
-          planCode,
-          feature.code());
+    planFeatures.deleteByPlanCode(planCode);
+    if (!features.isEmpty()) {
+      planFeatures.saveAll(
+          features.stream()
+              .map(
+                  feature ->
+                      new com.company.procurement.subscription.domain.SubscriptionPlanFeature(
+                          planCode, feature.code()))
+              .toList());
     }
   }
 
@@ -213,132 +235,85 @@ public class SubscriptionService {
 
   @Transactional(readOnly = true)
   public List<String> currentFeatureCodes() {
-    UUID organizationId = TenantContext.require();
-    return jdbc.queryForList(
-        """
-        select pf.feature_code
-          from tenant_subscription ts
-          join subscription_plan_feature pf on pf.plan_code = ts.plan_code
-          join subscription_feature f on f.code = pf.feature_code
-         where ts.organization_id = ?
-         order by f.sort_order, f.code
-        """,
-        String.class,
-        organizationId);
+    return subscriptions.featureCodes(TenantContext.require());
   }
 
   @Transactional(readOnly = true)
   public SubscriptionView forTenant(UUID organizationId, boolean includeUsage) {
-    Map<String, Object> row =
-        jdbc
-            .queryForList(
-                "select * from tenant_subscription where organization_id = ?", organizationId)
-            .stream()
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException("No subscription is configured for this tenant"));
-    PlanView plan = planByCode((String) row.get("plan_code"));
-    Usage usage = includeUsage ? usage(organizationId) : null;
+    TenantSubscription subscription = requireSubscription(organizationId);
+    PlanView plan = planByCode(subscription.getPlanCode());
+    Usage tenantUsage = includeUsage ? usage(organizationId) : null;
     return new SubscriptionView(
         organizationId,
         plan,
-        (String) row.get("status"),
-        (String) row.get("billing_interval"),
-        (String) row.get("billing_source"),
-        instant(row.get("trial_ends_at")),
-        instant(row.get("current_period_start")),
-        instant(row.get("current_period_end")),
-        (Boolean) row.get("cancel_at_period_end"),
-        (Integer) row.get("seats"),
-        usage,
+        subscription.getStatus(),
+        subscription.getBillingInterval(),
+        subscription.getBillingSource(),
+        subscription.getTrialEndsAt(),
+        subscription.getCurrentPeriodStart(),
+        subscription.getCurrentPeriodEnd(),
+        subscription.isCancelAtPeriodEnd(),
+        subscription.getSeats(),
+        tenantUsage,
         stripeConfigured(plan));
   }
 
   @Transactional(readOnly = true)
   public List<SubscriptionSummary> summaries() {
-    return jdbc.query(
-        """
-            select ts.organization_id, o.name, ts.plan_code, p.name as plan_name, ts.status,
-                   ts.billing_interval, ts.billing_source, ts.trial_ends_at, ts.current_period_end,
-                   ts.cancel_at_period_end, ts.activated_at,
-                   ts.monthly_price_snapshot, ts.annual_price_snapshot, ts.currency_snapshot,
-                   tp.status as provisioning_status, tp.last_error as provisioning_error
-              from tenant_subscription ts
-              join organization o on o.id = ts.organization_id
-              join subscription_plan p on p.code = ts.plan_code
-              left join tenant_provisioning tp on tp.organization_id = ts.organization_id
-             order by o.name
-            """,
-        (rs, row) -> {
-          BigDecimal monthlyPrice = rs.getBigDecimal("monthly_price_snapshot");
-          BigDecimal annualPrice = rs.getBigDecimal("annual_price_snapshot");
-          String interval = rs.getString("billing_interval");
-          String status = rs.getString("status");
-          return new SubscriptionSummary(
-              rs.getObject("organization_id", UUID.class),
-              rs.getString("name"),
-              rs.getString("plan_code"),
-              rs.getString("plan_name"),
-              status,
-              interval,
-              rs.getString("billing_source"),
-              rs.getTimestamp("trial_ends_at") == null
-                  ? null
-                  : rs.getTimestamp("trial_ends_at").toInstant(),
-              rs.getTimestamp("current_period_end") == null
-                  ? null
-                  : rs.getTimestamp("current_period_end").toInstant(),
-              rs.getBoolean("cancel_at_period_end"),
-              rs.getTimestamp("activated_at") == null
-                  ? null
-                  : rs.getTimestamp("activated_at").toInstant(),
-              mrrFor(status, interval, monthlyPrice, annualPrice),
-              monthlyPrice,
-              annualPrice,
-              rs.getString("currency_snapshot"),
-              rs.getString("provisioning_status"),
-              rs.getString("provisioning_error"));
-        });
+    List<TenantSubscription> all = subscriptions.findAll();
+    if (all.isEmpty()) return List.of();
+    List<UUID> organizationIds = all.stream().map(TenantSubscription::getOrganizationId).toList();
+    Map<UUID, String> organizationNamesById = organizationNames.names(organizationIds);
+    Map<UUID, TenantProvisioningPort.ProvisioningState> provisioningStates =
+        provisionings.states(organizationIds);
+    Map<String, SubscriptionPlan> plansByCode =
+        plans.findAllOrdered().stream()
+            .collect(java.util.stream.Collectors.toMap(SubscriptionPlan::getCode, plan -> plan));
+    return all.stream()
+        .map(
+            subscription -> {
+              SubscriptionPlan plan = plansByCode.get(subscription.getPlanCode());
+              TenantProvisioningPort.ProvisioningState provisioning =
+                  provisioningStates.get(subscription.getOrganizationId());
+              String organizationName =
+                  organizationNamesById.getOrDefault(
+                      subscription.getOrganizationId(),
+                      subscription.getOrganizationId().toString());
+              BigDecimal monthly = subscription.getMonthlyPriceSnapshot();
+              BigDecimal annual = subscription.getAnnualPriceSnapshot();
+              return new SubscriptionSummary(
+                  subscription.getOrganizationId(),
+                  organizationName,
+                  subscription.getPlanCode(),
+                  plan == null ? subscription.getPlanCode() : plan.getName(),
+                  subscription.getStatus(),
+                  subscription.getBillingInterval(),
+                  subscription.getBillingSource(),
+                  subscription.getTrialEndsAt(),
+                  subscription.getCurrentPeriodEnd(),
+                  subscription.isCancelAtPeriodEnd(),
+                  subscription.getActivatedAt(),
+                  mrrFor(
+                      subscription.getStatus(), subscription.getBillingInterval(), monthly, annual),
+                  monthly,
+                  annual,
+                  subscription.getCurrencySnapshot(),
+                  provisioning == null ? null : provisioning.status(),
+                  provisioning == null ? null : provisioning.lastError());
+            })
+        .sorted(Comparator.comparing(SubscriptionSummary::organizationName))
+        .toList();
   }
 
   @Transactional
   public void startTrial(
       UUID organizationId, String planCode, String adminEmail, String adminName) {
-    PlanView plan = planByCode(planCode == null ? "GROWTH" : planCode);
-    Instant now = clock.instant();
-    jdbc.update(
-        """
-            insert into tenant_subscription
-                (organization_id, plan_code, status, billing_interval, trial_ends_at,
-                 billing_source, monthly_price_snapshot, annual_price_snapshot, currency_snapshot,
-                 stripe_price_id, created_at, created_by, updated_at, updated_by)
-            values (?, ?, 'TRIALING', 'MONTHLY', ?, 'TRIAL', ?, ?, ?, ?, ?, 'platform-admin', ?, 'platform-admin')
-            on conflict (organization_id) do nothing
-            """,
-        organizationId,
-        plan.code(),
-        java.sql.Timestamp.from(now.plus(Duration.ofDays(plan.trialDays()))),
-        plan.monthlyPrice(),
-        plan.annualPrice(),
-        plan.currency(),
-        plan.stripePriceMonthly(),
-        java.sql.Timestamp.from(now),
-        java.sql.Timestamp.from(now));
-    if (adminEmail != null && !adminEmail.isBlank()) {
-      jdbc.update(
-          """
-              insert into tenant_provisioning
-                  (organization_id, admin_email, admin_name, status, created_at, updated_at)
-              values (?, ?, ?, 'PENDING', ?, ?)
-              on conflict (organization_id) do nothing
-              """,
-          organizationId,
-          adminEmail,
-          adminName == null ? "" : adminName,
-          java.sql.Timestamp.from(now),
-          java.sql.Timestamp.from(now));
+    if (subscriptions.findByOrganizationId(organizationId).isPresent()) {
+      return;
     }
+    SubscriptionPlan plan = requirePlan(planCode == null ? "GROWTH" : planCode);
+    subscriptions.save(new TenantSubscription(organizationId, plan, clock.instant()));
+    provisionings.ensurePending(organizationId, adminEmail, adminName);
   }
 
   @Transactional
@@ -349,35 +324,39 @@ public class SubscriptionService {
   @Transactional
   public CheckoutResult checkout(UUID organizationId, String planCode, String interval) {
     requireStripe();
-    PlanView plan = planByCode(planCode);
+    SubscriptionPlan plan = requirePlan(planCode);
     String normalizedInterval = normalizeInterval(interval);
     String priceId =
-        normalizedInterval.equals("ANNUAL") ? plan.stripePriceAnnual() : plan.stripePriceMonthly();
+        normalizedInterval.equals("ANNUAL")
+            ? plan.getStripePriceAnnual()
+            : plan.getStripePriceMonthly();
     if (priceId == null || priceId.isBlank()) {
       throw new BusinessRuleException("Stripe price is not configured for this plan");
     }
-    Map<String, Object> subscription = subscriptionRow(organizationId);
-    String stripeSubscriptionId = (String) subscription.get("stripe_subscription_id");
+    TenantSubscription subscription = requireSubscription(organizationId);
+    String stripeSubscriptionId = subscription.getStripeSubscriptionId();
     boolean activeStripeSubscription =
         stripeSubscriptionId != null
             && !stripeSubscriptionId.isBlank()
-            && !"CANCELED".equals(subscription.get("status"));
+            && !"CANCELED".equals(subscription.getStatus());
     if (activeStripeSubscription) {
-      updateStripeSubscription(
-          organizationId, stripeSubscriptionId, plan, normalizedInterval, priceId);
-      updatePlanTerms(organizationId, plan, normalizedInterval, priceId);
-      jdbc.update(
-          "update tenant_subscription set billing_source = 'STRIPE', last_stripe_sync_at = now(), updated_at = now() where organization_id = ?",
-          organizationId);
+      updateStripeSubscription(subscription, plan, normalizedInterval, priceId);
+      subscription.applyTerms(
+          plan.getCode(),
+          normalizedInterval,
+          plan.getMonthlyPrice(),
+          plan.getAnnualPrice(),
+          plan.getCurrency(),
+          priceId);
+      subscription.markStripeBilling(clock.instant());
+      subscriptions.save(subscription);
       return new CheckoutResult(null, true);
     }
-    String customerId = (String) subscription.get("stripe_customer_id");
+    String customerId = subscription.getStripeCustomerId();
     if (customerId == null || customerId.isBlank()) {
       customerId = createCustomer(organizationId);
-      jdbc.update(
-          "update tenant_subscription set stripe_customer_id = ?, updated_at = now() where organization_id = ?",
-          customerId,
-          organizationId);
+      subscription.setStripeCustomerId(customerId);
+      subscriptions.save(subscription);
     }
     Map<String, String> form = new java.util.LinkedHashMap<>();
     form.put("mode", "subscription");
@@ -388,7 +367,7 @@ public class SubscriptionService {
     form.put("line_items[0][price]", priceId);
     form.put("line_items[0][quantity]", "1");
     form.put("subscription_data[metadata][organizationId]", organizationId.toString());
-    form.put("subscription_data[metadata][planCode]", plan.code());
+    form.put("subscription_data[metadata][planCode]", plan.getCode());
     form.put("subscription_data[metadata][billingInterval]", normalizedInterval);
     JsonNode session = post("/checkout/sessions", form);
     return new CheckoutResult(session.path("url").asText(), false);
@@ -396,30 +375,30 @@ public class SubscriptionService {
 
   @Transactional(readOnly = true)
   public ChangePreview previewChange(UUID organizationId, String planCode, String billingInterval) {
-    PlanView plan = planByCode(planCode);
+    SubscriptionPlan plan = requirePlan(planCode);
     String interval = normalizeInterval(billingInterval);
-    Map<String, Object> row = subscriptionRow(organizationId);
-    if (!isStripeBacked(row)) {
-      BigDecimal next = interval.equals("ANNUAL") ? plan.annualPrice() : plan.monthlyPrice();
+    TenantSubscription subscription = requireSubscription(organizationId);
+    if (!isStripeBacked(subscription)) {
+      BigDecimal next = interval.equals("ANNUAL") ? plan.getAnnualPrice() : plan.getMonthlyPrice();
       return new ChangePreview(
-          plan.code(),
-          plan.name(),
+          plan.getCode(),
+          plan.getName(),
           interval,
-          (String) row.get("billing_source"),
+          subscription.getBillingSource(),
           false,
           BigDecimal.ZERO,
-          plan.currency(),
+          plan.getCurrency(),
           null,
           next,
           List.of());
     }
     requireStripe();
     String priceId =
-        interval.equals("ANNUAL") ? plan.stripePriceAnnual() : plan.stripePriceMonthly();
+        interval.equals("ANNUAL") ? plan.getStripePriceAnnual() : plan.getStripePriceMonthly();
     if (priceId == null || priceId.isBlank()) {
       throw new BusinessRuleException("Stripe price is not configured for this plan");
     }
-    String stripeSubscriptionId = (String) row.get("stripe_subscription_id");
+    String stripeSubscriptionId = subscription.getStripeSubscriptionId();
     JsonNode stripeSubscription = get("/subscriptions/" + stripeSubscriptionId);
     JsonNode items = stripeSubscription.path("items").path("data");
     if (!items.isArray() || items.isEmpty()) {
@@ -439,15 +418,15 @@ public class SubscriptionService {
               cents(line.path("amount").asLong(0)),
               line.path("proration").asBoolean(false)));
     }
-    BigDecimal next = interval.equals("ANNUAL") ? plan.annualPrice() : plan.monthlyPrice();
+    BigDecimal next = interval.equals("ANNUAL") ? plan.getAnnualPrice() : plan.getMonthlyPrice();
     return new ChangePreview(
-        plan.code(),
-        plan.name(),
+        plan.getCode(),
+        plan.getName(),
         interval,
         "STRIPE",
         true,
         cents(invoice.path("amount_due").asLong(0)),
-        invoice.path("currency").asText(plan.currency()).toUpperCase(),
+        invoice.path("currency").asText(plan.getCurrency()).toUpperCase(),
         epoch(invoice.path("next_payment_attempt")),
         next,
         lines);
@@ -457,14 +436,8 @@ public class SubscriptionService {
   public String portal() {
     requireStripe();
     UUID organizationId = TenantContext.require();
-    Map<String, Object> subscription =
-        jdbc
-            .queryForList(
-                "select * from tenant_subscription where organization_id = ?", organizationId)
-            .stream()
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("No subscription is configured"));
-    String customerId = (String) subscription.get("stripe_customer_id");
+    TenantSubscription subscription = requireSubscription(organizationId);
+    String customerId = subscription.getStripeCustomerId();
     if (customerId == null || customerId.isBlank()) {
       throw new BusinessRuleException("Start a subscription before opening the billing portal");
     }
@@ -482,14 +455,9 @@ public class SubscriptionService {
       JsonNode event = objectMapper.readTree(payload);
       String eventId = event.path("id").asText();
       String eventType = event.path("type").asText();
-      int inserted =
-          jdbc.update(
-              "insert into stripe_event (event_id, event_type, processed_at, payload) values (?, ?, ?, ?::jsonb) on conflict do nothing",
-              eventId,
-              eventType,
-              java.sql.Timestamp.from(clock.instant()),
-              payload);
-      if (inserted == 0) return;
+      if (!stripeEvents.recordIfAbsent(eventId, eventType, clock.instant(), payload)) {
+        return;
+      }
       JsonNode object = event.path("data").path("object");
       switch (eventType) {
         case "checkout.session.completed" -> applyCheckout(object);
@@ -520,17 +488,16 @@ public class SubscriptionService {
   private void applyCheckout(JsonNode object) {
     String organizationId = object.path("client_reference_id").asText();
     if (organizationId.isBlank()) return;
-    jdbc.update(
-        """
-            update tenant_subscription
-               set stripe_customer_id = coalesce(nullif(?, ''), stripe_customer_id),
-                   stripe_subscription_id = coalesce(nullif(?, ''), stripe_subscription_id),
-                   last_stripe_sync_at = now(), updated_at = now()
-             where organization_id = ?::uuid
-            """,
-        object.path("customer").asText(),
-        object.path("subscription").asText(),
-        organizationId);
+    subscriptions
+        .findByOrganizationId(UUID.fromString(organizationId))
+        .ifPresent(
+            subscription -> {
+              subscription.linkStripeCheckout(
+                  object.path("customer").asText(),
+                  object.path("subscription").asText(),
+                  clock.instant());
+              subscriptions.save(subscription);
+            });
   }
 
   private void applySubscription(JsonNode object, String fallbackOrganizationId) {
@@ -548,111 +515,89 @@ public class SubscriptionService {
     if (items.isArray() && !items.isEmpty()) {
       stripePriceId = items.get(0).path("price").path("id").asText("");
     }
+    String resolvedPriceId = stripePriceId;
     if (!organizationId.isBlank()) {
-      PlanView plan = planByCode(planCode);
-      jdbc.update(
-          """
-              update tenant_subscription
-                 set plan_code = ?, status = ?, billing_interval = ?, stripe_subscription_id = ?,
-                     stripe_customer_id = coalesce(nullif(?, ''), stripe_customer_id),
-                     billing_source = 'STRIPE',
-                     monthly_price_snapshot = ?, annual_price_snapshot = ?, currency_snapshot = ?,
-                     stripe_price_id = coalesce(nullif(?, ''), stripe_price_id),
-                     current_period_start = ?, current_period_end = ?, cancel_at_period_end = ?,
-                     activated_at = case when ? = 'ACTIVE' then coalesce(activated_at, now())
-                                         else activated_at end,
-                     last_stripe_sync_at = now(), updated_at = now()
-               where organization_id = ?::uuid
-              """,
-          planCode,
-          status,
-          interval,
-          stripeSubscriptionId,
-          object.path("customer").asText(),
-          plan.monthlyPrice(),
-          plan.annualPrice(),
-          plan.currency(),
-          stripePriceId,
-          periodStart == null ? null : java.sql.Timestamp.from(periodStart),
-          periodEnd == null ? null : java.sql.Timestamp.from(periodEnd),
-          cancel,
-          status,
-          organizationId);
+      SubscriptionPlan plan = requirePlan(planCode);
+      subscriptions
+          .findByOrganizationId(UUID.fromString(organizationId))
+          .ifPresent(
+              subscription -> {
+                subscription.applyStripeSubscription(
+                    plan.getCode(),
+                    status,
+                    interval,
+                    stripeSubscriptionId,
+                    object.path("customer").asText(),
+                    plan.getMonthlyPrice(),
+                    plan.getAnnualPrice(),
+                    plan.getCurrency(),
+                    resolvedPriceId,
+                    periodStart,
+                    periodEnd,
+                    cancel,
+                    clock.instant());
+                subscriptions.save(subscription);
+              });
     } else {
-      jdbc.update(
-          """
-              update tenant_subscription
-                 set status = ?, current_period_start = ?, current_period_end = ?,
-                     cancel_at_period_end = ?, billing_source = 'STRIPE',
-                     stripe_price_id = coalesce(nullif(?, ''), stripe_price_id),
-                     last_stripe_sync_at = now(), updated_at = now()
-               where stripe_subscription_id = ?
-              """,
-          status,
-          periodStart == null ? null : java.sql.Timestamp.from(periodStart),
-          periodEnd == null ? null : java.sql.Timestamp.from(periodEnd),
-          cancel,
-          stripePriceId,
-          stripeSubscriptionId);
+      subscriptions
+          .findByStripeSubscriptionId(stripeSubscriptionId)
+          .ifPresent(
+              subscription -> {
+                subscription.applyStripeStatus(
+                    status, periodStart, periodEnd, cancel, resolvedPriceId, clock.instant());
+                subscriptions.save(subscription);
+              });
     }
   }
 
   private void cancelByStripeId(String stripeSubscriptionId) {
-    jdbc.update(
-        "update tenant_subscription set status = 'CANCELED', last_stripe_sync_at = now(), updated_at = now() where stripe_subscription_id = ?",
-        stripeSubscriptionId);
+    subscriptions
+        .findByStripeSubscriptionId(stripeSubscriptionId)
+        .ifPresent(
+            subscription -> {
+              subscription.cancelByStripe(clock.instant());
+              subscriptions.save(subscription);
+            });
   }
 
   private void markPastDue(String customerId) {
-    jdbc.update(
-        "update tenant_subscription set status = 'PAST_DUE', last_stripe_sync_at = now(), updated_at = now() where stripe_customer_id = ?",
-        customerId);
+    for (TenantSubscription subscription : subscriptions.findByStripeCustomerId(customerId)) {
+      subscription.markPastDue(clock.instant());
+      subscriptions.save(subscription);
+    }
   }
 
   private void markPaid(String customerId) {
-    jdbc.update(
-        """
-        update tenant_subscription
-           set status = case when status in ('PAST_DUE', 'UNPAID') then 'ACTIVE' else status end,
-               payment_failed_notified_at = null,
-               last_stripe_sync_at = now(), updated_at = now()
-         where stripe_customer_id = ?
-        """,
-        customerId);
+    for (TenantSubscription subscription : subscriptions.findByStripeCustomerId(customerId)) {
+      subscription.markPaid(clock.instant());
+      subscriptions.save(subscription);
+    }
   }
 
-  private boolean isStripeBacked(Map<String, Object> row) {
-    String source = (String) row.get("billing_source");
-    String subscriptionId = (String) row.get("stripe_subscription_id");
-    return "STRIPE".equals(source) && subscriptionId != null && !subscriptionId.isBlank();
+  private boolean isStripeBacked(TenantSubscription subscription) {
+    return "STRIPE".equals(subscription.getBillingSource())
+        && subscription.getStripeSubscriptionId() != null
+        && !subscription.getStripeSubscriptionId().isBlank();
   }
 
   private void updatePlanTerms(
-      UUID organizationId, PlanView plan, String interval, String stripePriceId) {
-    jdbc.update(
-        """
-        update tenant_subscription
-           set plan_code = ?, billing_interval = ?, monthly_price_snapshot = ?,
-               annual_price_snapshot = ?, currency_snapshot = ?, stripe_price_id = ?,
-               updated_at = now()
-         where organization_id = ?
-        """,
-        plan.code(),
+      TenantSubscription subscription,
+      SubscriptionPlan plan,
+      String interval,
+      String stripePriceId) {
+    subscription.applyTerms(
+        plan.getCode(),
         interval,
-        plan.monthlyPrice(),
-        plan.annualPrice(),
-        plan.currency(),
-        stripePriceId,
-        organizationId);
+        plan.getMonthlyPrice(),
+        plan.getAnnualPrice(),
+        plan.getCurrency(),
+        stripePriceId);
+    subscriptions.save(subscription);
   }
 
   private void updateStripeSubscription(
-      UUID organizationId,
-      String stripeSubscriptionId,
-      PlanView plan,
-      String interval,
-      String priceId) {
-    JsonNode existing = get("/subscriptions/" + stripeSubscriptionId);
+      TenantSubscription subscription, SubscriptionPlan plan, String interval, String priceId) {
+    JsonNode existing = get("/subscriptions/" + subscription.getStripeSubscriptionId());
     JsonNode items = existing.path("items").path("data");
     if (!items.isArray() || items.isEmpty()) {
       throw new BusinessRuleException("Stripe subscription has no billable item");
@@ -661,10 +606,10 @@ public class SubscriptionService {
     form.put("items[0][id]", items.get(0).path("id").asText());
     form.put("items[0][price]", priceId);
     form.put("proration_behavior", "create_prorations");
-    form.put("metadata[organizationId]", organizationId.toString());
-    form.put("metadata[planCode]", plan.code());
+    form.put("metadata[organizationId]", subscription.getOrganizationId().toString());
+    form.put("metadata[planCode]", plan.getCode());
     form.put("metadata[billingInterval]", interval);
-    post("/subscriptions/" + stripeSubscriptionId, form);
+    post("/subscriptions/" + subscription.getStripeSubscriptionId(), form);
   }
 
   private JsonNode get(String path) {
@@ -719,9 +664,7 @@ public class SubscriptionService {
   }
 
   private String createCustomer(UUID organizationId) {
-    List<Map<String, Object>> rows =
-        jdbc.queryForList("select name from organization where id = ?", organizationId);
-    String name = rows.isEmpty() ? "Tenant" : (String) rows.get(0).get("name");
+    String name = organizationNames.name(organizationId).orElse("Tenant");
     Map<String, String> form = new java.util.LinkedHashMap<>();
     form.put("name", name);
     form.put("metadata[organizationId]", organizationId.toString());
@@ -873,22 +816,18 @@ public class SubscriptionService {
     }
 
     List<SnapshotPoint> trend =
-        jdbc.query(
-            """
-            select snapshot_date, mrr, arr, paying_tenants, trialing_tenants,
-                   past_due_tenants, canceled_tenants
-              from subscription_mrr_snapshot
-             order by snapshot_date
-            """,
-            (rs, row) ->
-                new SnapshotPoint(
-                    rs.getObject("snapshot_date", LocalDate.class),
-                    rs.getBigDecimal("mrr"),
-                    rs.getBigDecimal("arr"),
-                    rs.getInt("paying_tenants"),
-                    rs.getInt("trialing_tenants"),
-                    rs.getInt("past_due_tenants"),
-                    rs.getInt("canceled_tenants")));
+        snapshots.findAllOrdered().stream()
+            .map(
+                snapshot ->
+                    new SnapshotPoint(
+                        snapshot.getSnapshotDate(),
+                        snapshot.getMrr(),
+                        snapshot.getArr(),
+                        snapshot.getPayingTenants(),
+                        snapshot.getTrialingTenants(),
+                        snapshot.getPastDueTenants(),
+                        snapshot.getCanceledTenants()))
+            .toList();
 
     SnapshotPoint baseline =
         trend.stream()
@@ -941,23 +880,21 @@ public class SubscriptionService {
 
   @Transactional
   public SubscriptionView changePlan(UUID organizationId, String planCode, String billingInterval) {
-    PlanView plan = planByCode(planCode);
+    SubscriptionPlan plan = requirePlan(planCode);
     String interval = normalizeInterval(billingInterval);
-    Map<String, Object> row = subscriptionRow(organizationId);
+    TenantSubscription subscription = requireSubscription(organizationId);
     String priceId =
-        interval.equals("ANNUAL") ? plan.stripePriceAnnual() : plan.stripePriceMonthly();
-    if (isStripeBacked(row)) {
+        interval.equals("ANNUAL") ? plan.getStripePriceAnnual() : plan.getStripePriceMonthly();
+    if (isStripeBacked(subscription)) {
       if (priceId == null || priceId.isBlank()) {
         throw new BusinessRuleException("Stripe price is not configured for this plan");
       }
-      updateStripeSubscription(
-          organizationId, (String) row.get("stripe_subscription_id"), plan, interval, priceId);
+      updateStripeSubscription(subscription, plan, interval, priceId);
     }
-    updatePlanTerms(organizationId, plan, interval, priceId);
-    if (isStripeBacked(row)) {
-      jdbc.update(
-          "update tenant_subscription set last_stripe_sync_at = now(), updated_at = now() where organization_id = ?",
-          organizationId);
+    updatePlanTerms(subscription, plan, interval, priceId);
+    if (isStripeBacked(subscription)) {
+      subscription.markStripeBilling(clock.instant());
+      subscriptions.save(subscription);
     }
     return forTenant(organizationId, false);
   }
@@ -967,57 +904,40 @@ public class SubscriptionService {
     if (days < 1 || days > 365) {
       throw new BusinessRuleException("Trial extension must be between 1 and 365 days");
     }
-    Map<String, Object> row = subscriptionRow(organizationId);
-    if (!"TRIALING".equals(row.get("status"))) {
+    TenantSubscription subscription = requireSubscription(organizationId);
+    if (!"TRIALING".equals(subscription.getStatus())) {
       throw new BusinessRuleException("Only a trialing subscription can be extended");
     }
-    if (isStripeBacked(row)) {
+    if (isStripeBacked(subscription)) {
       throw new BusinessRuleException(
           "This trial is managed by Stripe; extend it from the Stripe dashboard");
     }
-    jdbc.update(
-        """
-            update tenant_subscription
-               set trial_ends_at = greatest(coalesce(trial_ends_at, now()), now())
-                                   + (? * interval '1 day'),
-                   updated_at = now()
-             where organization_id = ?
-            """,
-        days,
-        organizationId);
+    subscription.extendTrial(days, clock.instant());
+    subscriptions.save(subscription);
     return forTenant(organizationId, false);
   }
 
   @Transactional
   public SubscriptionView activate(UUID organizationId) {
-    Map<String, Object> row = subscriptionRow(organizationId);
-    if (isStripeBacked(row)) {
+    TenantSubscription subscription = requireSubscription(organizationId);
+    if (isStripeBacked(subscription)) {
       throw new BusinessRuleException(
           "This subscription is billed by Stripe; activation must come from Stripe");
     }
-    String interval = normalizeInterval((String) row.get("billing_interval"));
+    String interval = normalizeInterval(subscription.getBillingInterval());
     Instant now = clock.instant();
     Instant periodEnd =
         now.plus(interval.equals("ANNUAL") ? Duration.ofDays(365) : Duration.ofDays(30));
-    jdbc.update(
-        """
-            update tenant_subscription
-               set status = 'ACTIVE', billing_source = 'MANUAL', trial_ends_at = null,
-                   cancel_at_period_end = false, activated_at = coalesce(activated_at, now()),
-                   current_period_start = ?, current_period_end = ?, updated_at = now()
-             where organization_id = ?
-            """,
-        java.sql.Timestamp.from(now),
-        java.sql.Timestamp.from(periodEnd),
-        organizationId);
+    subscription.activateManual(now, periodEnd);
+    subscriptions.save(subscription);
     return forTenant(organizationId, false);
   }
 
   @Transactional
   public SubscriptionView cancel(UUID organizationId, boolean atPeriodEnd) {
-    Map<String, Object> row = subscriptionRow(organizationId);
-    if (isStripeBacked(row)) {
-      String stripeSubscriptionId = (String) row.get("stripe_subscription_id");
+    TenantSubscription subscription = requireSubscription(organizationId);
+    if (isStripeBacked(subscription)) {
+      String stripeSubscriptionId = subscription.getStripeSubscriptionId();
       if (atPeriodEnd) {
         Map<String, String> form = new java.util.LinkedHashMap<>();
         form.put("cancel_at_period_end", "true");
@@ -1027,35 +947,31 @@ public class SubscriptionService {
       }
     }
     if (atPeriodEnd) {
-      jdbc.update(
-          "update tenant_subscription set cancel_at_period_end = true, last_stripe_sync_at = case when billing_source = 'STRIPE' then now() else last_stripe_sync_at end, updated_at = now() where organization_id = ?",
-          organizationId);
+      subscription.cancelAtPeriodEnd();
+      if (isStripeBacked(subscription)) {
+        subscription.markStripeBilling(clock.instant());
+      }
     } else {
-      jdbc.update(
-          """
-              update tenant_subscription
-                 set status = 'CANCELED', cancel_at_period_end = false, updated_at = now()
-               where organization_id = ?
-              """,
-          organizationId);
+      subscription.cancelNow();
     }
+    subscriptions.save(subscription);
     return forTenant(organizationId, false);
   }
 
   @Transactional
   public SubscriptionView reactivate(UUID organizationId) {
-    Map<String, Object> row = subscriptionRow(organizationId);
-    if (isStripeBacked(row)) {
-      if ("CANCELED".equals(row.get("status"))) {
+    TenantSubscription subscription = requireSubscription(organizationId);
+    if (isStripeBacked(subscription)) {
+      if ("CANCELED".equals(subscription.getStatus())) {
         throw new BusinessRuleException(
             "This Stripe subscription has ended and cannot be reactivated");
       }
       Map<String, String> form = new java.util.LinkedHashMap<>();
       form.put("cancel_at_period_end", "false");
-      post("/subscriptions/" + row.get("stripe_subscription_id"), form);
-      jdbc.update(
-          "update tenant_subscription set cancel_at_period_end = false, last_stripe_sync_at = now(), updated_at = now() where organization_id = ?",
-          organizationId);
+      post("/subscriptions/" + subscription.getStripeSubscriptionId(), form);
+      subscription.clearCancelAtPeriodEnd();
+      subscription.markStripeBilling(clock.instant());
+      subscriptions.save(subscription);
       return forTenant(organizationId, false);
     }
     return activate(organizationId);
@@ -1067,8 +983,9 @@ public class SubscriptionService {
         summaries().stream().filter(row -> "STRIPE".equals(row.billingSource())).toList();
     List<ReconciliationIssue> issues = new ArrayList<>();
     for (SubscriptionSummary summary : stripeRows) {
-      Map<String, Object> local = subscriptionRow(summary.organizationId());
-      String stripeSubscriptionId = (String) local.get("stripe_subscription_id");
+      TenantSubscription local =
+          subscriptions.findByOrganizationId(summary.organizationId()).orElse(null);
+      String stripeSubscriptionId = local == null ? null : local.getStripeSubscriptionId();
       if (stripeSubscriptionId == null || stripeSubscriptionId.isBlank()) {
         issues.add(
             new ReconciliationIssue(
@@ -1101,7 +1018,7 @@ public class SubscriptionService {
         if (!expectedStatus.equals(summary.status())) {
           differences.add("status " + summary.status() + " -> " + expectedStatus);
         }
-        String localPriceId = (String) local.get("stripe_price_id");
+        String localPriceId = local.getStripePriceId();
         if (!expectedPriceId.isBlank()
             && !expectedPriceId.equals(localPriceId == null ? "" : localPriceId)) {
           differences.add("stripePriceId " + localPriceId + " -> " + expectedPriceId);
@@ -1138,79 +1055,75 @@ public class SubscriptionService {
   @Transactional
   public SubscriptionView reconcile(UUID organizationId) {
     requireStripe();
-    Map<String, Object> row = subscriptionRow(organizationId);
-    if (!isStripeBacked(row)) {
+    TenantSubscription subscription = requireSubscription(organizationId);
+    if (!isStripeBacked(subscription)) {
       throw new BusinessRuleException("Only Stripe-backed subscriptions can be reconciled");
     }
-    JsonNode stripeSubscription = get("/subscriptions/" + row.get("stripe_subscription_id"));
+    JsonNode stripeSubscription = get("/subscriptions/" + subscription.getStripeSubscriptionId());
     applySubscription(stripeSubscription, organizationId.toString());
     return forTenant(organizationId, false);
   }
 
   private void localDateSnapshot(LocalDate date) {
     BillingSummary summary = currentBillingSummary();
-    jdbc.update(
-        """
-            insert into subscription_mrr_snapshot
-                (snapshot_date, mrr, arr, paying_tenants, trialing_tenants,
-                 past_due_tenants, canceled_tenants, created_at, created_by)
-            values (?, ?, ?, ?, ?, ?, ?, now(), 'system')
-            on conflict (snapshot_date) do update
-               set mrr = excluded.mrr,
-                   arr = excluded.arr,
-                   paying_tenants = excluded.paying_tenants,
-                   trialing_tenants = excluded.trialing_tenants,
-                   past_due_tenants = excluded.past_due_tenants,
-                   canceled_tenants = excluded.canceled_tenants
-            """,
-        date,
+    SubscriptionMrrSnapshot snapshot =
+        snapshots
+            .findByDate(date)
+            .orElseGet(
+                () ->
+                    new SubscriptionMrrSnapshot(
+                        date,
+                        summary.mrr(),
+                        summary.arr(),
+                        (int) summary.payingTenants(),
+                        (int) summary.trialingTenants(),
+                        (int) summary.pastDueTenants(),
+                        (int) summary.canceledTenants(),
+                        clock.instant()));
+    snapshot.update(
         summary.mrr(),
         summary.arr(),
-        summary.payingTenants(),
-        summary.trialingTenants(),
-        summary.pastDueTenants(),
-        summary.canceledTenants());
+        (int) summary.payingTenants(),
+        (int) summary.trialingTenants(),
+        (int) summary.pastDueTenants(),
+        (int) summary.canceledTenants());
+    snapshots.save(snapshot);
   }
 
   private BillingSummary currentBillingSummary() {
-    Map<String, Object> row =
-        jdbc.queryForMap(
-            """
-            select coalesce(sum(case when ts.status = 'ACTIVE' then
-                       case when ts.billing_interval = 'ANNUAL'
-                            then ts.annual_price_snapshot / 12
-                            else ts.monthly_price_snapshot end
-                     else 0 end), 0) as mrr,
-                   count(*) filter (where ts.status = 'ACTIVE') as paying,
-                   count(*) filter (where ts.status = 'TRIALING') as trialing,
-                   count(*) filter (where ts.status in ('PAST_DUE','UNPAID')) as past_due,
-                   count(*) filter (where ts.status = 'CANCELED') as canceled
-              from tenant_subscription ts
-            """);
-    BigDecimal mrr = decimal(row.get("mrr"));
+    List<TenantSubscription> all = subscriptions.findAll();
+    BigDecimal mrr = BigDecimal.ZERO;
+    long paying = 0;
+    long trialing = 0;
+    long pastDue = 0;
+    long canceled = 0;
+    for (TenantSubscription subscription : all) {
+      if ("ACTIVE".equals(subscription.getStatus())) {
+        mrr =
+            mrr.add(
+                planMrr(
+                    subscription.getBillingInterval(),
+                    subscription.getMonthlyPriceSnapshot(),
+                    subscription.getAnnualPriceSnapshot()));
+        paying++;
+      } else if ("TRIALING".equals(subscription.getStatus())) {
+        trialing++;
+      } else if ("PAST_DUE".equals(subscription.getStatus())
+          || "UNPAID".equals(subscription.getStatus())) {
+        pastDue++;
+      } else if ("CANCELED".equals(subscription.getStatus())) {
+        canceled++;
+      }
+    }
     return new BillingSummary(
-        mrr,
-        mrr.multiply(BigDecimal.valueOf(12)),
-        longValue(row.get("paying")),
-        longValue(row.get("trialing")),
-        longValue(row.get("past_due")),
-        longValue(row.get("canceled")));
+        mrr, mrr.multiply(BigDecimal.valueOf(12)), paying, trialing, pastDue, canceled);
   }
 
-  private Map<String, Object> subscriptionRow(UUID organizationId) {
-    return jdbc
-        .queryForList("select * from tenant_subscription where organization_id = ?", organizationId)
-        .stream()
-        .findFirst()
+  private TenantSubscription requireSubscription(UUID organizationId) {
+    return subscriptions
+        .findByOrganizationId(organizationId)
         .orElseThrow(
             () -> new ResourceNotFoundException("No subscription is configured for this tenant"));
-  }
-
-  private void updateSubscriptionRow(String sql, Object... args) {
-    int updated = jdbc.update(sql, args);
-    if (updated == 0) {
-      throw new ResourceNotFoundException("No subscription is configured for this tenant");
-    }
   }
 
   private static String normalizeInterval(String interval) {
@@ -1243,58 +1156,49 @@ public class SubscriptionService {
   }
 
   private PlanView planByCode(String code) {
-    return loadPlans("select * from subscription_plan where code = ?", code).stream()
-        .findFirst()
+    SubscriptionPlan plan = requirePlan(code);
+    return planView(
+        plan,
+        featureService
+            .featuresForPlans(List.of(plan.getCode()))
+            .getOrDefault(plan.getCode(), List.of()));
+  }
+
+  private SubscriptionPlan requirePlan(String code) {
+    return plans
+        .findById(code)
         .orElseThrow(
             () -> new ResourceNotFoundException("Subscription plan %s not found".formatted(code)));
   }
 
-  private PlanView plan(
-      java.sql.ResultSet rs, List<SubscriptionFeatureService.FeatureView> features)
-      throws java.sql.SQLException {
+  private static PlanView planView(
+      SubscriptionPlan plan, List<SubscriptionFeatureService.FeatureView> features) {
     return new PlanView(
-        rs.getString("code"),
-        rs.getString("name"),
-        rs.getString("description"),
-        rs.getBigDecimal("monthly_price"),
-        rs.getBigDecimal("annual_price"),
-        rs.getString("currency"),
-        rs.getInt("trial_days"),
-        (Integer) rs.getObject("max_users"),
-        (Integer) rs.getObject("max_departments"),
-        (Integer) rs.getObject("max_requests_month"),
-        (Integer) rs.getObject("max_storage_mb"),
+        plan.getCode(),
+        plan.getName(),
+        plan.getDescription(),
+        plan.getMonthlyPrice(),
+        plan.getAnnualPrice(),
+        plan.getCurrency(),
+        plan.getTrialDays(),
+        plan.getMaxUsers(),
+        plan.getMaxDepartments(),
+        plan.getMaxRequestsMonth(),
+        plan.getMaxStorageMb(),
         features,
-        rs.getString("stripe_price_monthly"),
-        rs.getString("stripe_price_annual"),
-        rs.getBoolean("active"),
-        rs.getInt("sort_order"));
+        plan.getStripePriceMonthly(),
+        plan.getStripePriceAnnual(),
+        plan.isActive(),
+        plan.getSortOrder());
   }
 
   private Usage usage(UUID organizationId) {
-    long users =
-        count(
-            "select count(*) from user_profile where organization_id = ? and deleted_at is null and active = true",
-            organizationId);
-    long departments =
-        count(
-            "select count(*) from department where organization_id = ? and deleted_at is null",
-            organizationId);
-    long requests =
-        count(
-            "select count(*) from purchase_request where organization_id = ? and date_trunc('month', created_at) = date_trunc('month', now())",
-            organizationId);
-    Long storage =
-        jdbc.queryForObject(
-            "select coalesce(sum(size_bytes), 0) from request_attachment where organization_id = ?",
-            Long.class,
-            organizationId);
-    return new Usage(users, departments, requests, (storage == null ? 0 : storage) / (1024 * 1024));
-  }
-
-  private long count(String sql, Object... args) {
-    Long value = jdbc.queryForObject(sql, Long.class, args);
-    return value == null ? 0 : value;
+    TenantUsagePort.UsageSnapshot snapshot = usage.usage(organizationId);
+    return new Usage(
+        snapshot.users(),
+        snapshot.departments(),
+        snapshot.requestsThisMonth(),
+        snapshot.storageBytes() / (1024 * 1024));
   }
 
   private boolean stripeConfigured(PlanView plan) {
@@ -1307,10 +1211,6 @@ public class SubscriptionService {
     if (!stripe.configured()) {
       throw new BusinessRuleException("Stripe is not configured");
     }
-  }
-
-  private static Instant instant(Object value) {
-    return value instanceof java.sql.Timestamp timestamp ? timestamp.toInstant() : null;
   }
 
   private static Instant epoch(JsonNode node) {

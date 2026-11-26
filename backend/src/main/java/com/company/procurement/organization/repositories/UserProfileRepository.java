@@ -22,4 +22,8 @@ public interface UserProfileRepository {
 
   Page<UserProfile> search(
       UUID organizationId, UUID departmentId, Boolean active, String text, Pageable pageable);
+
+  long countActive(UUID organizationId);
+
+  Optional<UserProfile> findFirstActiveByOrganizationId(UUID organizationId);
 }

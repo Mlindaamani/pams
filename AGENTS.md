@@ -43,6 +43,7 @@ Enterprise, multi-tenant procurement API with approval workflows.
 - All associations `LAZY`. Fetch with `@EntityGraph`, `JOIN FETCH`, or projections. **No N+1**: assert query counts in tests for list endpoints.
 - `@Transactional(readOnly = true)` for queries. No remote calls inside transactions. Watch for self-invocation proxy bypass.
 - `@Version` on `PurchaseRequest`, `ApprovalStep`, `Budget`, `PurchaseOrder`.
+- Services must not use `JdbcTemplate`, `EntityManager` or inline SQL. Persistence queries live in `repositories`; use derived queries, Specifications or `@Query` there.
 - Every table: `id`, `organization_id`, `created_at/by`, `updated_at/by`; use `timestamptz` (UTC); index every FK and common filter column; partial unique indexes for soft-deleted rows.
 - Budget reservation must be concurrency-safe (atomic conditional UPDATE or `SELECT ... FOR UPDATE`) and covered by a concurrency test.
 

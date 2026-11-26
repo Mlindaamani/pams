@@ -23,4 +23,6 @@ public interface NotificationRepository {
       UUID organizationId, UUID eventId, String recipientSubject);
 
   int markAllRead(UUID organizationId, String recipientSubject, java.time.Instant now);
+
+  long countUnread(UUID organizationId);
 }

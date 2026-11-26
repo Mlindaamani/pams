@@ -55,4 +55,9 @@ public class DepartmentRepositoryAdapter implements DepartmentRepository {
       return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
     };
   }
+
+  @Override
+  public long countActive(UUID organizationId) {
+    return jpa.countByOrganizationId(organizationId);
+  }
 }

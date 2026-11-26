@@ -52,4 +52,9 @@ public class ApprovalPolicyRepositoryAdapter implements ApprovalPolicyRepository
       return cb.and(predicates.toArray(Predicate[]::new));
     };
   }
+
+  @Override
+  public long countActive(UUID organizationId) {
+    return jpa.countByOrganizationIdAndActiveTrue(organizationId);
+  }
 }

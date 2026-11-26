@@ -1,13 +1,20 @@
 package com.company.procurement.platform.services;
 
+import com.company.procurement.approval.repositories.ApprovalStepRepository;
 import com.company.procurement.organization.domain.Organization;
 import com.company.procurement.organization.domain.OrganizationStatus;
+import com.company.procurement.organization.repositories.DepartmentRepository;
 import com.company.procurement.organization.repositories.OrganizationRepository;
+import com.company.procurement.organization.repositories.UserProfileRepository;
+import com.company.procurement.platform.domain.TenantProvisioning;
+import com.company.procurement.platform.repositories.TenantProvisioningRepository;
+import com.company.procurement.request.repositories.PurchaseRequestRepository;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.PreconditionFailedException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.security.CurrentUser;
+import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.subscription.services.SubscriptionService;
 import java.time.Clock;
 import java.util.HashMap;
@@ -18,7 +25,6 @@ import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,8 +36,12 @@ public class PlatformTenantService {
   private final PlatformAuditService audit;
   private final TenantStatusService statuses;
   private final SubscriptionService subscriptions;
+  private final TenantProvisioningRepository provisionings;
+  private final UserProfileRepository userProfiles;
+  private final DepartmentRepository departments;
+  private final PurchaseRequestRepository requests;
+  private final ApprovalStepRepository approvalSteps;
   private final ApplicationEventPublisher events;
-  private final JdbcTemplate jdbc;
   private final CurrentUser currentUser;
   private final Clock clock;
 
@@ -40,16 +50,24 @@ public class PlatformTenantService {
       PlatformAuditService audit,
       TenantStatusService statuses,
       SubscriptionService subscriptions,
+      TenantProvisioningRepository provisionings,
+      UserProfileRepository userProfiles,
+      DepartmentRepository departments,
+      PurchaseRequestRepository requests,
+      ApprovalStepRepository approvalSteps,
       ApplicationEventPublisher events,
-      JdbcTemplate jdbc,
       CurrentUser currentUser,
       Clock clock) {
     this.organizations = organizations;
     this.audit = audit;
     this.statuses = statuses;
     this.subscriptions = subscriptions;
+    this.provisionings = provisionings;
+    this.userProfiles = userProfiles;
+    this.departments = departments;
+    this.requests = requests;
+    this.approvalSteps = approvalSteps;
     this.events = events;
-    this.jdbc = jdbc;
     this.currentUser = currentUser;
     this.clock = clock;
   }
@@ -72,21 +90,15 @@ public class PlatformTenantService {
     if (organizations.isEmpty()) {
       return Map.of();
     }
-    String placeholders =
-        String.join(",", java.util.Collections.nCopies(organizations.size(), "?"));
-    List<TenantAdminContact> contacts =
-        jdbc.query(
-            "select organization_id, admin_name, admin_email from tenant_provisioning where organization_id in ("
-                + placeholders
-                + ")",
-            (rs, rowNum) ->
-                new TenantAdminContact(
-                    rs.getObject("organization_id", UUID.class),
-                    rs.getString("admin_name"),
-                    rs.getString("admin_email")),
-            organizations.stream().map(Organization::getId).toArray());
+    List<TenantProvisioning> contacts =
+        provisionings.findByOrganizationIdIn(
+            organizations.stream().map(Organization::getId).toList());
     Map<UUID, TenantAdminContact> byOrganization = new HashMap<>();
-    contacts.forEach(contact -> byOrganization.put(contact.organizationId(), contact));
+    contacts.forEach(
+        contact ->
+            byOrganization.put(
+                contact.getOrganizationId(),
+                new TenantAdminContact(contact.getAdminName(), contact.getAdminEmail())));
     return byOrganization;
   }
 
@@ -99,71 +111,36 @@ public class PlatformTenantService {
 
   @Transactional(readOnly = true)
   public TenantDetail detail(UUID id) {
-    Organization organization = get(id);
-    setTenant(id);
-    long users =
-        count(
-            "select count(*) from user_profile where organization_id = ? and deleted_at is null and active = true",
-            id);
-    long departments =
-        count(
-            "select count(*) from department where organization_id = ? and deleted_at is null", id);
-    long requests = count("select count(*) from purchase_request where organization_id = ?", id);
-    long pending =
-        count(
-            """
-            select count(*)
-              from approval_step s
-              join approval_instance ai on ai.id = s.instance_id
-             where s.organization_id = ?
-               and ai.current_sequence = s.sequence
-               and s.status = 'PENDING'
-            """,
-            id);
-    ProvisioningInfo provisioning =
-        jdbc
-            .query(
-                """
-                select admin_email, admin_name, status, last_error, updated_at
-                  from tenant_provisioning
-                 where organization_id = ?
-                """,
-                (rs, row) ->
-                    new ProvisioningInfo(
-                        rs.getString("admin_email"),
-                        rs.getString("admin_name"),
-                        rs.getString("status"),
-                        rs.getString("last_error"),
-                        rs.getTimestamp("updated_at") == null
-                            ? null
-                            : rs.getTimestamp("updated_at").toInstant()),
-                id)
-            .stream()
-            .findFirst()
-            .orElse(null);
-    var subscription =
-        subscriptions.summaries().stream()
-            .filter(summary -> summary.organizationId().equals(id))
-            .findFirst()
-            .orElse(null);
-    setTenant(null);
-    return new TenantDetail(
-        organization,
-        subscription,
-        provisioning,
-        new TenantUsage(users, departments, requests, pending));
-  }
-
-  private void setTenant(UUID organizationId) {
-    jdbc.queryForObject(
-        "select set_config('app.current_org', ?, false)",
-        String.class,
-        organizationId == null ? "" : organizationId.toString());
-  }
-
-  private long count(String sql, Object... args) {
-    Long value = jdbc.queryForObject(sql, Long.class, args);
-    return value == null ? 0 : value;
+    UUID previous = TenantContext.get().orElse(null);
+    TenantContext.set(id);
+    try {
+      Organization organization = get(id);
+      long users = userProfiles.countActive(id);
+      long departmentCount = departments.countActive(id);
+      long requestCount = requests.countTotal(id);
+      long pending = approvalSteps.countCurrentPending(id);
+      ProvisioningInfo provisioning =
+          provisionings
+              .findByOrganizationId(id)
+              .map(PlatformTenantService::provisioningInfo)
+              .orElse(null);
+      var subscription =
+          subscriptions.summaries().stream()
+              .filter(summary -> summary.organizationId().equals(id))
+              .findFirst()
+              .orElse(null);
+      return new TenantDetail(
+          organization,
+          subscription,
+          provisioning,
+          new TenantUsage(users, departmentCount, requestCount, pending));
+    } finally {
+      if (previous == null) {
+        TenantContext.clear();
+      } else {
+        TenantContext.set(previous);
+      }
+    }
   }
 
   @Transactional
@@ -208,42 +185,32 @@ public class PlatformTenantService {
   @Transactional
   public void inviteAdministrator(UUID id, String email, String name) {
     get(id);
-    jdbc.update(
-        """
-        insert into tenant_provisioning
-            (organization_id, admin_email, admin_name, status, created_at, updated_at)
-        values (?, ?, ?, 'PENDING', now(), now())
-        on conflict (organization_id) do update
-           set admin_email = excluded.admin_email,
-               admin_name = excluded.admin_name,
-               status = 'PENDING',
-               last_error = null,
-               updated_at = now()
-        """,
-        id,
-        email,
-        name);
+    TenantProvisioning provisioning =
+        provisionings
+            .findByOrganizationId(id)
+            .orElseGet(() -> new TenantProvisioning(id, email, name, clock.instant()));
+    provisioning.updateAdministrator(email, name, clock.instant());
+    provisionings.save(provisioning);
     events.publishEvent(new TenantAdminInviteRequested(id, email, name));
     audit.record("tenant_admin_invite_requested", id, Map.of("email", email));
   }
 
   @Transactional
   public void retryProvisioning(UUID id) {
-    var rows =
-        jdbc.queryForList(
-            "select admin_email, admin_name from tenant_provisioning where organization_id = ?",
-            id);
-    if (rows.isEmpty()) {
-      throw new ResourceNotFoundException(
-          "No provisioning request exists for tenant %s".formatted(id));
-    }
-    String email = (String) rows.get(0).get("admin_email");
-    String name = (String) rows.get(0).get("admin_name");
-    jdbc.update(
-        "update tenant_provisioning set status = 'PENDING', last_error = null, updated_at = now() where organization_id = ?",
-        id);
-    events.publishEvent(new TenantAdminInviteRequested(id, email, name));
-    audit.record("tenant_provisioning_retried", id, Map.of("adminEmail", email));
+    TenantProvisioning provisioning =
+        provisionings
+            .findByOrganizationId(id)
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(
+                        "No provisioning request exists for tenant %s".formatted(id)));
+    provisioning.markPending(clock.instant());
+    provisionings.save(provisioning);
+    events.publishEvent(
+        new TenantAdminInviteRequested(
+            id, provisioning.getAdminEmail(), provisioning.getAdminName()));
+    audit.record(
+        "tenant_provisioning_retried", id, Map.of("adminEmail", provisioning.getAdminEmail()));
   }
 
   @Transactional
@@ -306,9 +273,18 @@ public class PlatformTenantService {
     return value;
   }
 
+  private static ProvisioningInfo provisioningInfo(TenantProvisioning provisioning) {
+    return new ProvisioningInfo(
+        provisioning.getAdminEmail(),
+        provisioning.getAdminName(),
+        provisioning.getStatus().name(),
+        provisioning.getLastError(),
+        provisioning.getUpdatedAt());
+  }
+
   public record TenantListEntry(Organization organization, String adminName, String adminEmail) {}
 
-  private record TenantAdminContact(UUID organizationId, String adminName, String adminEmail) {}
+  private record TenantAdminContact(String adminName, String adminEmail) {}
 
   public record TenantDetail(
       Organization organization,

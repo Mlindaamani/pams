@@ -2,17 +2,18 @@ package com.company.procurement.platform.services;
 
 import com.company.procurement.identity.services.KeycloakAdminPort;
 import com.company.procurement.notification.services.EmailTemplateService;
+import com.company.procurement.organization.domain.Organization;
+import com.company.procurement.organization.repositories.OrganizationRepository;
+import com.company.procurement.platform.repositories.TenantProvisioningRepository;
 import com.company.procurement.shared.mail.MailPort;
 import com.company.procurement.shared.mail.MailProperties;
 import java.security.SecureRandom;
-import java.sql.Timestamp;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -24,7 +25,8 @@ public class TenantProvisioningService {
   private static final Logger log = LoggerFactory.getLogger(TenantProvisioningService.class);
   private static final Set<String> ADMIN_ROLES = Set.of("ADMIN");
 
-  private final JdbcTemplate jdbc;
+  private final TenantProvisioningRepository provisionings;
+  private final OrganizationRepository organizations;
   private final KeycloakAdminPort keycloak;
   private final MailPort mail;
   private final MailProperties mailProperties;
@@ -33,13 +35,15 @@ public class TenantProvisioningService {
   private final SecureRandom random = new SecureRandom();
 
   public TenantProvisioningService(
-      JdbcTemplate jdbc,
+      TenantProvisioningRepository provisionings,
+      OrganizationRepository organizations,
       KeycloakAdminPort keycloak,
       MailPort mail,
       MailProperties mailProperties,
       EmailTemplateService templates,
       Clock clock) {
-    this.jdbc = jdbc;
+    this.provisionings = provisionings;
+    this.organizations = organizations;
     this.keycloak = keycloak;
     this.mail = mail;
     this.mailProperties = mailProperties;
@@ -51,22 +55,24 @@ public class TenantProvisioningService {
   public void onInviteRequested(TenantAdminInviteRequested event) {
     try {
       String temporaryPassword = temporaryPassword();
-      String subject =
-          keycloak.createOrResetUser(
-              event.organizationId(),
-              event.email(),
-              event.displayName(),
-              ADMIN_ROLES,
-              temporaryPassword);
-      long now = clock.millis();
-      jdbc.update(
-          "update tenant_provisioning set status = 'ACTIVE', completed_at = ?, updated_at = ? where organization_id = ?",
-          new Timestamp(now),
-          new Timestamp(now),
-          event.organizationId());
+      keycloak.createOrResetUser(
+          event.organizationId(),
+          event.email(),
+          event.displayName(),
+          ADMIN_ROLES,
+          temporaryPassword);
+      provisionings
+          .findByOrganizationId(event.organizationId())
+          .ifPresent(
+              provisioning -> {
+                provisioning.markActive(clock.instant());
+                provisionings.save(provisioning);
+              });
       String tenantName =
-          jdbc.queryForObject(
-              "select name from organization where id = ?", String.class, event.organizationId());
+          organizations
+              .findById(event.organizationId())
+              .map(Organization::getName)
+              .orElse("your organization");
       String loginUrl = mailProperties.appUrl() + "/login";
       String text =
           """
@@ -104,12 +110,13 @@ public class TenantProvisioningService {
       log.info("Tenant administrator provisioned for organization {}", event.organizationId());
     } catch (RuntimeException ex) {
       log.warn("Tenant administrator provisioning failed for {}", event.organizationId(), ex);
-      long now = clock.millis();
-      jdbc.update(
-          "update tenant_provisioning set status = 'FAILED', last_error = ?, updated_at = ? where organization_id = ?",
-          safeMessage(ex),
-          new Timestamp(now),
-          event.organizationId());
+      provisionings
+          .findByOrganizationId(event.organizationId())
+          .ifPresent(
+              provisioning -> {
+                provisioning.markFailed(safeMessage(ex), clock.instant());
+                provisionings.save(provisioning);
+              });
     }
   }
 

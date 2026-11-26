@@ -29,5 +29,7 @@ public interface OrganizationRepository {
 
   List<UUID> findAllIds();
 
+  List<Organization> findAllByIds(java.util.Collection<UUID> ids);
+
   void flush();
 }

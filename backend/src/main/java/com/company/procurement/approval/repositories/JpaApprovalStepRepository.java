@@ -1,6 +1,7 @@
 package com.company.procurement.approval.repositories;
 
 import com.company.procurement.approval.domain.ApprovalStep;
+import com.company.procurement.approval.domain.ApprovalStepStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -37,4 +38,16 @@ public interface JpaApprovalStepRepository extends JpaRepository<ApprovalStep, U
        order by s.slaDueAt asc
       """)
   List<ApprovalStep> findCurrentPendingSteps(@Param("organizationId") UUID organizationId);
+
+  long countByOrganizationIdAndStatus(UUID organizationId, ApprovalStepStatus status);
+
+  @Query(
+      """
+      select count(s) from ApprovalStep s
+       join s.instance ai
+       where s.organizationId = :organizationId
+         and s.status = com.company.procurement.approval.domain.ApprovalStepStatus.PENDING
+         and ai.currentSequence = s.sequence
+      """)
+  long countCurrentPending(@Param("organizationId") UUID organizationId);
 }

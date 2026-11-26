@@ -7,6 +7,7 @@ import com.company.procurement.purchaseorder.domain.PurchaseOrderFilter;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderLineDraft;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderNumberGenerator;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
+import com.company.procurement.purchaseorder.repositories.PurchaseOrderInvoicingPort;
 import com.company.procurement.purchaseorder.repositories.PurchaseOrderRepository;
 import com.company.procurement.request.services.PurchaseRequestLineSnapshot;
 import com.company.procurement.request.services.PurchaseRequestService;
@@ -31,7 +32,6 @@ import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PurchaseOrderService {
 
   private final PurchaseOrderRepository orders;
+  private final PurchaseOrderInvoicingPort invoicing;
   private final PurchaseRequestService requests;
   private final VendorService vendors;
   private final BudgetService budgets;
@@ -48,11 +49,11 @@ public class PurchaseOrderService {
   private final OutboxService outbox;
   private final AuditEventService audit;
   private final ApplicationEventPublisher events;
-  private final JdbcTemplate jdbc;
   private final Clock clock;
 
   public PurchaseOrderService(
       PurchaseOrderRepository orders,
+      PurchaseOrderInvoicingPort invoicing,
       PurchaseRequestService requests,
       VendorService vendors,
       BudgetService budgets,
@@ -61,9 +62,9 @@ public class PurchaseOrderService {
       OutboxService outbox,
       AuditEventService audit,
       ApplicationEventPublisher events,
-      JdbcTemplate jdbc,
       Clock clock) {
     this.orders = orders;
+    this.invoicing = invoicing;
     this.requests = requests;
     this.vendors = vendors;
     this.budgets = budgets;
@@ -72,7 +73,6 @@ public class PurchaseOrderService {
     this.outbox = outbox;
     this.audit = audit;
     this.events = events;
-    this.jdbc = jdbc;
     this.clock = clock;
   }
 
@@ -242,13 +242,10 @@ public class PurchaseOrderService {
   }
 
   private boolean hasInvoices(UUID organizationId, UUID purchaseOrderId) {
-    Long count =
-        jdbc.queryForObject(
-            "select count(*) from vendor_invoice where organization_id = ? and purchase_order_id = ?",
-            Long.class,
-            organizationId,
-            purchaseOrderId);
-    return count != null && count > 0;
+    return orders
+        .findByIdAndOrganizationId(purchaseOrderId, organizationId)
+        .map(invoicing::hasInvoices)
+        .orElse(false);
   }
 
   @Transactional

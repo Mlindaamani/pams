@@ -1,7 +1,6 @@
 package com.company.procurement.purchaseorder.services;
 
 import com.company.procurement.approval.domain.ApprovalPolicy;
-import com.company.procurement.approval.domain.ApprovalStepDraft;
 import com.company.procurement.approval.domain.ApproverType;
 import com.company.procurement.approval.repositories.ApprovalPolicyRepository;
 import com.company.procurement.approval.services.ApprovalChainResolver;
@@ -10,7 +9,11 @@ import com.company.procurement.audit.services.AuditEventService;
 import com.company.procurement.organization.domain.UserProfile;
 import com.company.procurement.organization.services.UserProfileLookupService;
 import com.company.procurement.purchaseorder.domain.PurchaseOrder;
+import com.company.procurement.purchaseorder.domain.PurchaseOrderApproval;
+import com.company.procurement.purchaseorder.domain.PurchaseOrderApprovalStep;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
+import com.company.procurement.purchaseorder.repositories.PurchaseOrderApprovalRepository;
+import com.company.procurement.purchaseorder.repositories.PurchaseOrderApprovalStepRepository;
 import com.company.procurement.purchaseorder.repositories.PurchaseOrderRepository;
 import com.company.procurement.request.services.PurchaseRequestService;
 import com.company.procurement.shared.error.BusinessRuleException;
@@ -21,7 +24,6 @@ import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.services.OutboxService;
 import com.company.procurement.shared.services.PermissionService;
 import com.company.procurement.shared.tenant.TenantContext;
-import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -29,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +40,10 @@ public class PurchaseOrderApprovalService {
 
   private static final String PENDING = "PENDING";
   private static final String APPROVED = "APPROVED";
+  private static final String SKIPPED = "SKIPPED";
 
-  private final JdbcTemplate jdbc;
+  private final PurchaseOrderApprovalRepository approvals;
+  private final PurchaseOrderApprovalStepRepository steps;
   private final PurchaseOrderRepository orders;
   private final ApprovalPolicyRepository policies;
   private final ApprovalChainResolver resolver;
@@ -53,7 +56,8 @@ public class PurchaseOrderApprovalService {
   private final Clock clock;
 
   public PurchaseOrderApprovalService(
-      JdbcTemplate jdbc,
+      PurchaseOrderApprovalRepository approvals,
+      PurchaseOrderApprovalStepRepository steps,
       PurchaseOrderRepository orders,
       ApprovalPolicyRepository policies,
       ApprovalChainResolver resolver,
@@ -64,7 +68,8 @@ public class PurchaseOrderApprovalService {
       AuditEventService audit,
       OutboxService outbox,
       Clock clock) {
-    this.jdbc = jdbc;
+    this.approvals = approvals;
+    this.steps = steps;
     this.orders = orders;
     this.policies = policies;
     this.resolver = resolver;
@@ -119,35 +124,45 @@ public class PurchaseOrderApprovalService {
   public ApprovalView approve(UUID purchaseOrderId, String comment) {
     UUID organizationId = TenantContext.require();
     PurchaseOrder order = requireOrder(organizationId, purchaseOrderId);
-    ApprovalRow approval = requirePendingApproval(organizationId, purchaseOrderId);
-    StepRow step = currentStep(approval, order);
+    ApprovalStage stage = requirePendingApproval(organizationId, purchaseOrderId);
+    PurchaseOrderApprovalStep step = currentStep(stage, order);
     Instant now = clock.instant();
-    jdbc.update(
-        "update purchase_order_approval_step set status = 'APPROVED', comment = ?, acted_by = ?, acted_at = ?, updated_at = now(), updated_by = ? where id = ?",
-        blankToNull(comment),
-        currentUser.subject(),
-        Timestamp.from(now),
-        currentUser.username(),
-        step.id());
-    int required = requiredApprovalsAt(approval.id(), step.sequence());
-    int eligible = eligibleCountAt(approval.id(), step.sequence());
-    int approved = approvedCountAt(approval.id(), step.sequence());
+    step.approve(blankToNull(comment), currentUser.subject(), now);
+
+    List<PurchaseOrderApprovalStep> currentSteps =
+        stage.steps().stream().filter(value -> value.getSequence() == step.getSequence()).toList();
+    int required =
+        currentSteps.stream().mapToInt(PurchaseOrderApprovalStep::getMinApprovals).max().orElse(1);
+    int eligible =
+        (int) currentSteps.stream().filter(value -> !SKIPPED.equals(value.getStatus())).count();
+    int approved =
+        (int) currentSteps.stream().filter(value -> APPROVED.equals(value.getStatus())).count();
     if (approved >= Math.min(required, eligible)) {
-      skipRemainingAt(approval.id(), step.sequence(), "Quorum met", now);
+      currentSteps.stream()
+          .filter(value -> PENDING.equals(value.getStatus()))
+          .forEach(value -> value.skip("Quorum met", "system", now));
     }
-    if (hasPendingAt(approval.id(), step.sequence())) {
+    steps.saveAll(currentSteps);
+
+    boolean pending = currentSteps.stream().anyMatch(value -> PENDING.equals(value.getStatus()));
+    if (pending) {
       audit.recordCurrentActor(
           "purchase_order",
           purchaseOrderId,
           "purchase_order_approval_step_approved",
-          Map.of("sequence", step.sequence(), "comment", comment == null ? "" : comment));
+          Map.of("sequence", step.getSequence(), "comment", comment == null ? "" : comment));
     } else {
-      Integer next = nextPendingSequence(approval.id(), step.sequence());
+      Integer next =
+          stage.steps().stream()
+              .filter(value -> PENDING.equals(value.getStatus()))
+              .filter(value -> value.getSequence() > step.getSequence())
+              .map(PurchaseOrderApprovalStep::getSequence)
+              .min(Integer::compareTo)
+              .orElse(null);
       if (next == null) {
-        jdbc.update(
-            "update purchase_order_approval set status = 'APPROVED', updated_at = now(), updated_by = ?, version = version + 1 where id = ?",
-            currentUser.username(),
-            approval.id());
+        PurchaseOrderApproval approval = stage.approval();
+        approval.approve();
+        approvals.save(approval);
         order.approveForIssue();
         orders.save(order);
         audit.recordCurrentActor(
@@ -160,16 +175,14 @@ public class PurchaseOrderApprovalService {
                 "poId", purchaseOrderId.toString(),
                 "poNumber", order.getPoNumber()));
       } else {
-        jdbc.update(
-            "update purchase_order_approval set current_sequence = ?, updated_at = now(), updated_by = ?, version = version + 1 where id = ?",
-            next,
-            currentUser.username(),
-            approval.id());
+        PurchaseOrderApproval approval = stage.approval();
+        approval.moveToSequence(next);
+        approvals.save(approval);
         audit.recordCurrentActor(
             "purchase_order",
             purchaseOrderId,
             "purchase_order_approval_step_approved",
-            Map.of("sequence", step.sequence(), "comment", comment == null ? "" : comment));
+            Map.of("sequence", step.getSequence(), "comment", comment == null ? "" : comment));
       }
     }
     return view(organizationId, purchaseOrderId);
@@ -179,20 +192,14 @@ public class PurchaseOrderApprovalService {
   public ApprovalView reject(UUID purchaseOrderId, String comment) {
     UUID organizationId = TenantContext.require();
     PurchaseOrder order = requireOrder(organizationId, purchaseOrderId);
-    ApprovalRow approval = requirePendingApproval(organizationId, purchaseOrderId);
-    StepRow step = currentStep(approval, order);
+    ApprovalStage stage = requirePendingApproval(organizationId, purchaseOrderId);
+    PurchaseOrderApprovalStep step = currentStep(stage, order);
     Instant now = clock.instant();
-    jdbc.update(
-        "update purchase_order_approval_step set status = 'REJECTED', comment = ?, acted_by = ?, acted_at = ?, updated_at = now(), updated_by = ? where id = ?",
-        blankToNull(comment),
-        currentUser.subject(),
-        Timestamp.from(now),
-        currentUser.username(),
-        step.id());
-    jdbc.update(
-        "update purchase_order_approval set status = 'REJECTED', updated_at = now(), updated_by = ?, version = version + 1 where id = ?",
-        currentUser.username(),
-        approval.id());
+    step.reject(blankToNull(comment), currentUser.subject(), now);
+    steps.save(step);
+    PurchaseOrderApproval approval = stage.approval();
+    approval.reject();
+    approvals.save(approval);
     order.rejectApproval();
     orders.save(order);
     requests.reopenAfterPurchaseOrderCancellation(order.getPurchaseRequestId());
@@ -208,20 +215,14 @@ public class PurchaseOrderApprovalService {
   public ApprovalView requestChanges(UUID purchaseOrderId, String comment) {
     UUID organizationId = TenantContext.require();
     PurchaseOrder order = requireOrder(organizationId, purchaseOrderId);
-    ApprovalRow approval = requirePendingApproval(organizationId, purchaseOrderId);
-    StepRow step = currentStep(approval, order);
+    ApprovalStage stage = requirePendingApproval(organizationId, purchaseOrderId);
+    PurchaseOrderApprovalStep step = currentStep(stage, order);
     Instant now = clock.instant();
-    jdbc.update(
-        "update purchase_order_approval_step set status = 'SKIPPED', comment = ?, acted_by = ?, acted_at = ?, updated_at = now(), updated_by = ? where id = ?",
-        blankToNull(comment),
-        currentUser.subject(),
-        Timestamp.from(now),
-        currentUser.username(),
-        step.id());
-    jdbc.update(
-        "update purchase_order_approval set status = 'CHANGES_REQUESTED', updated_at = now(), updated_by = ?, version = version + 1 where id = ?",
-        currentUser.username(),
-        approval.id());
+    step.skip(blankToNull(comment), currentUser.subject(), now);
+    steps.save(step);
+    PurchaseOrderApproval approval = stage.approval();
+    approval.requestChanges();
+    approvals.save(approval);
     order.requestApprovalChanges();
     orders.save(order);
     audit.recordCurrentActor(
@@ -240,19 +241,23 @@ public class PurchaseOrderApprovalService {
   @Transactional
   public void cancelForPurchaseOrder(UUID purchaseOrderId) {
     UUID organizationId = TenantContext.require();
-    jdbc.update(
-        "update purchase_order_approval set status = 'CANCELED', updated_at = now(), updated_by = ?, version = version + 1 where organization_id = ? and purchase_order_id = ? and status = 'PENDING'",
-        currentUser.username(),
-        organizationId,
-        purchaseOrderId);
+    approvals
+        .findByOrganizationIdAndPurchaseOrderId(organizationId, purchaseOrderId)
+        .filter(approval -> PENDING.equals(approval.getStatus()))
+        .ifPresent(
+            approval -> {
+              approval.cancel();
+              approvals.save(approval);
+            });
   }
 
   @Transactional(readOnly = true)
   public void requireIssueAllowed(UUID purchaseOrderId, PurchaseOrder order) {
     UUID organizationId = TenantContext.require();
-    Optional<ApprovalRow> approval = approvalRow(organizationId, purchaseOrderId);
+    Optional<PurchaseOrderApproval> approval =
+        approvals.findByOrganizationIdAndPurchaseOrderId(organizationId, purchaseOrderId);
     if (approval.isPresent()) {
-      if (!APPROVED.equals(approval.get().status())
+      if (!APPROVED.equals(approval.get().getStatus())
           || order.getStatus() != PurchaseOrderStatus.APPROVED) {
         throw new BusinessRuleException(
             "Purchase order must complete approval before it can be issued");
@@ -279,73 +284,46 @@ public class PurchaseOrderApprovalService {
             false,
             requests.departmentIdForPurchaseRequest(order.getPurchaseRequestId()));
     Instant now = clock.instant();
-    UUID approvalId = UUID.randomUUID();
-    jdbc.update(
-        """
-        insert into purchase_order_approval
-            (id, organization_id, purchase_order_id, policy_id, policy_version, policy_name,
-             status, current_sequence, created_at, created_by, updated_at, updated_by)
-        values (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?)
-        """,
-        approvalId,
-        organizationId,
-        order.getId(),
-        chain.policyId(),
-        chain.policyVersion(),
-        chain.policyName(),
-        chain.steps().get(0).stage(),
-        Timestamp.from(now),
-        currentUser.username(),
-        Timestamp.from(now),
-        currentUser.username());
-    for (ApprovalStepDraft step : chain.steps()) {
-      jdbc.update(
-          """
-          insert into purchase_order_approval_step
-              (id, organization_id, approval_id, sequence, name, approver_type, approver_role,
-               assignee_user_id, status, sla_due_at, min_approvals, created_at, created_by,
-               updated_at, updated_by)
-          values (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
-          """,
-          UUID.randomUUID(),
-          organizationId,
-          approvalId,
-          step.stage(),
-          step.name(),
-          step.approverType().name(),
-          step.approverRole(),
-          step.assigneeUserId(),
-          Timestamp.from(now.plus(Duration.ofHours(step.slaHours()))),
-          step.minApprovals(),
-          Timestamp.from(now),
-          currentUser.username(),
-          Timestamp.from(now),
-          currentUser.username());
-    }
+    PurchaseOrderApproval approval =
+        approvals.save(
+            new PurchaseOrderApproval(
+                organizationId,
+                order.getId(),
+                chain.policyId(),
+                chain.policyVersion(),
+                chain.policyName(),
+                chain.steps().get(0).stage()));
+    steps.saveAll(
+        chain.steps().stream()
+            .map(
+                step ->
+                    new PurchaseOrderApprovalStep(
+                        organizationId,
+                        approval.getId(),
+                        step.stage(),
+                        step.name(),
+                        step.approverType().name(),
+                        step.approverRole(),
+                        step.assigneeUserId(),
+                        now.plus(Duration.ofHours(step.slaHours())),
+                        step.minApprovals()))
+            .toList());
   }
 
   private void resetExistingApproval(UUID organizationId, UUID purchaseOrderId) {
-    Integer count =
-        jdbc.queryForObject(
-            "select count(*) from purchase_order_approval where organization_id = ? and purchase_order_id = ? and status = 'PENDING'",
-            Integer.class,
-            organizationId,
-            purchaseOrderId);
-    if (count != null && count > 0) {
-      throw new ConflictException("A purchase-order approval is already pending");
-    }
-    jdbc.update(
-        "delete from purchase_order_approval_step where organization_id = ? and approval_id in (select id from purchase_order_approval where organization_id = ? and purchase_order_id = ?)",
-        organizationId,
-        organizationId,
-        purchaseOrderId);
-    jdbc.update(
-        "delete from purchase_order_approval where organization_id = ? and purchase_order_id = ?",
-        organizationId,
-        purchaseOrderId);
+    approvals
+        .findByOrganizationIdAndPurchaseOrderId(organizationId, purchaseOrderId)
+        .ifPresent(
+            approval -> {
+              if (PENDING.equals(approval.getStatus())) {
+                throw new ConflictException("A purchase-order approval is already pending");
+              }
+              steps.deleteByApprovalId(approval.getId());
+              approvals.deleteByPurchaseOrder(organizationId, purchaseOrderId);
+            });
   }
 
-  private boolean isEligible(PurchaseOrder order, StepRow step) {
+  private boolean isEligible(PurchaseOrder order, PurchaseOrderApprovalStep step) {
     if (order.getRequesterSubject().equals(currentUser.subject())) {
       return false;
     }
@@ -355,12 +333,13 @@ public class PurchaseOrderApprovalService {
         && order.getTotalAmount().compareTo(actor.getApprovalLimitAmount()) > 0) {
       return false;
     }
-    if (ApproverType.ROLE.name().equals(step.approverType())) {
-      return step.approverRole() != null && permissions.has("approval:act:" + step.approverRole());
+    if (ApproverType.ROLE.name().equals(step.getApproverType())) {
+      return step.getApproverRole() != null
+          && permissions.has("approval:act:" + step.getApproverRole());
     }
-    if (ApproverType.USER.name().equals(step.approverType())
-        || ApproverType.REQUESTER_MANAGER.name().equals(step.approverType())) {
-      return actor != null && actor.getId().equals(step.assigneeUserId());
+    if (ApproverType.USER.name().equals(step.getApproverType())
+        || ApproverType.REQUESTER_MANAGER.name().equals(step.getApproverType())) {
+      return actor != null && actor.getId().equals(step.getAssigneeUserId());
     }
     return false;
   }
@@ -374,47 +353,22 @@ public class PurchaseOrderApprovalService {
                     "Purchase order %s not found".formatted(purchaseOrderId)));
   }
 
-  private ApprovalRow requirePendingApproval(UUID organizationId, UUID purchaseOrderId) {
-    ApprovalRow approval =
-        approvalRow(organizationId, purchaseOrderId)
+  private ApprovalStage requirePendingApproval(UUID organizationId, UUID purchaseOrderId) {
+    PurchaseOrderApproval approval =
+        approvals
+            .findByOrganizationIdAndPurchaseOrderId(organizationId, purchaseOrderId)
             .orElseThrow(
                 () -> new BusinessRuleException("Purchase order has no approval workflow"));
-    if (!PENDING.equals(approval.status())) {
+    if (!PENDING.equals(approval.getStatus())) {
       throw new BusinessRuleException("Purchase-order approval is not pending");
     }
-    return approval;
+    return new ApprovalStage(approval, steps.findByApprovalId(approval.getId()));
   }
 
-  private Optional<ApprovalRow> approvalRow(UUID organizationId, UUID purchaseOrderId) {
-    return jdbc
-        .query(
-            "select id, status, current_sequence from purchase_order_approval where organization_id = ? and purchase_order_id = ?",
-            (rs, row) ->
-                new ApprovalRow(
-                    rs.getObject("id", UUID.class),
-                    rs.getString("status"),
-                    rs.getInt("current_sequence")),
-            organizationId,
-            purchaseOrderId)
-        .stream()
-        .findFirst();
-  }
-
-  private StepRow currentStep(ApprovalRow approval, PurchaseOrder order) {
-    return jdbc
-        .query(
-            "select id, sequence, name, approver_type, approver_role, assignee_user_id from purchase_order_approval_step where approval_id = ? and sequence = ? and status = 'PENDING' order by id",
-            (rs, row) ->
-                new StepRow(
-                    rs.getObject("id", UUID.class),
-                    rs.getInt("sequence"),
-                    rs.getString("name"),
-                    rs.getString("approver_type"),
-                    rs.getString("approver_role"),
-                    rs.getObject("assignee_user_id", UUID.class)),
-            approval.id(),
-            approval.currentSequence())
-        .stream()
+  private PurchaseOrderApprovalStep currentStep(ApprovalStage stage, PurchaseOrder order) {
+    return stage.steps().stream()
+        .filter(step -> step.getSequence() == stage.approval().getCurrentSequence())
+        .filter(step -> PENDING.equals(step.getStatus()))
         .filter(step -> isEligible(order, step))
         .findFirst()
         .orElseThrow(
@@ -423,107 +377,38 @@ public class PurchaseOrderApprovalService {
                     "You are not an eligible approver for the current purchase-order stage"));
   }
 
-  private boolean hasPendingAt(UUID approvalId, int sequence) {
-    Integer count =
-        jdbc.queryForObject(
-            "select count(*) from purchase_order_approval_step where approval_id = ? and sequence = ? and status = 'PENDING'",
-            Integer.class,
-            approvalId,
-            sequence);
-    return count != null && count > 0;
-  }
-
-  private int requiredApprovalsAt(UUID approvalId, int sequence) {
-    Integer value =
-        jdbc.queryForObject(
-            "select coalesce(max(min_approvals), 1) from purchase_order_approval_step where approval_id = ? and sequence = ?",
-            Integer.class,
-            approvalId,
-            sequence);
-    return value == null ? 1 : value;
-  }
-
-  private int approvedCountAt(UUID approvalId, int sequence) {
-    Integer value =
-        jdbc.queryForObject(
-            "select count(*) from purchase_order_approval_step where approval_id = ? and sequence = ? and status = 'APPROVED'",
-            Integer.class,
-            approvalId,
-            sequence);
-    return value == null ? 0 : value;
-  }
-
-  private int eligibleCountAt(UUID approvalId, int sequence) {
-    Integer value =
-        jdbc.queryForObject(
-            "select count(*) from purchase_order_approval_step where approval_id = ? and sequence = ? and status <> 'SKIPPED'",
-            Integer.class,
-            approvalId,
-            sequence);
-    return value == null ? 0 : value;
-  }
-
-  private void skipRemainingAt(UUID approvalId, int sequence, String reason, Instant now) {
-    jdbc.update(
-        "update purchase_order_approval_step set status = 'SKIPPED', comment = ?, acted_by = 'system', acted_at = ?, updated_at = now(), updated_by = ? where approval_id = ? and sequence = ? and status = 'PENDING'",
-        reason,
-        Timestamp.from(now),
-        currentUser.username(),
-        approvalId,
-        sequence);
-  }
-
-  private Integer nextPendingSequence(UUID approvalId, int currentSequence) {
-    return jdbc
-        .query(
-            "select sequence from purchase_order_approval_step where approval_id = ? and status = 'PENDING' and sequence > ? order by sequence limit 1",
-            (rs, row) -> rs.getInt("sequence"),
-            approvalId,
-            currentSequence)
-        .stream()
-        .findFirst()
-        .orElse(null);
-  }
-
   private ApprovalView view(UUID organizationId, UUID purchaseOrderId) {
-    ApprovalRow approval =
-        approvalRow(organizationId, purchaseOrderId)
+    PurchaseOrderApproval approval =
+        approvals
+            .findByOrganizationIdAndPurchaseOrderId(organizationId, purchaseOrderId)
             .orElseThrow(() -> new ResourceNotFoundException("Approval not found"));
-    List<StepView> steps =
-        jdbc.query(
-            "select id, sequence, name, approver_type, approver_role, assignee_user_id, status, comment, acted_by, acted_at, sla_due_at from purchase_order_approval_step where approval_id = ? order by sequence",
-            (rs, row) ->
-                new StepView(
-                    rs.getObject("id", UUID.class),
-                    rs.getInt("sequence"),
-                    rs.getString("name"),
-                    rs.getString("approver_type"),
-                    rs.getString("approver_role"),
-                    rs.getObject("assignee_user_id", UUID.class),
-                    rs.getString("status"),
-                    rs.getString("comment"),
-                    rs.getString("acted_by"),
-                    rs.getTimestamp("acted_at") == null
-                        ? null
-                        : rs.getTimestamp("acted_at").toInstant(),
-                    rs.getTimestamp("sla_due_at").toInstant()),
-            approval.id());
-    return new ApprovalView(approval.id(), approval.status(), approval.currentSequence(), steps);
+    List<StepView> stepViews =
+        steps.findByApprovalId(approval.getId()).stream()
+            .map(
+                step ->
+                    new StepView(
+                        step.getId(),
+                        step.getSequence(),
+                        step.getName(),
+                        step.getApproverType(),
+                        step.getApproverRole(),
+                        step.getAssigneeUserId(),
+                        step.getStatus(),
+                        step.getComment(),
+                        step.getActedBy(),
+                        step.getActedAt(),
+                        step.getSlaDueAt()))
+            .toList();
+    return new ApprovalView(
+        approval.getId(), approval.getStatus(), approval.getCurrentSequence(), stepViews);
   }
 
   private static String blankToNull(String value) {
     return value == null || value.isBlank() ? null : value.trim();
   }
 
-  private record ApprovalRow(UUID id, String status, int currentSequence) {}
-
-  private record StepRow(
-      UUID id,
-      int sequence,
-      String name,
-      String approverType,
-      String approverRole,
-      UUID assigneeUserId) {}
+  private record ApprovalStage(
+      PurchaseOrderApproval approval, List<PurchaseOrderApprovalStep> steps) {}
 
   public record ApprovalView(UUID id, String status, int currentSequence, List<StepView> steps) {}
 

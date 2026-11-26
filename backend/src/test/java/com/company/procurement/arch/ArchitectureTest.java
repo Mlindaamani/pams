@@ -11,9 +11,11 @@ import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.Repository;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,6 +72,51 @@ class ArchitectureTest {
           .should()
           .dependOnClassesThat()
           .resideInAnyPackage("..infrastructure..", "..repositories..");
+
+  @ArchTest
+  static final ArchRule services_do_not_use_jdbc =
+      noClasses()
+          .that()
+          .resideInAPackage("..services..")
+          .should()
+          .dependOnClassesThat()
+          .areAssignableTo(JdbcOperations.class);
+
+  @ArchTest
+  static final ArchRule services_do_not_use_entity_manager =
+      noClasses()
+          .that()
+          .resideInAPackage("..services..")
+          .should()
+          .dependOnClassesThat()
+          .areAssignableTo(EntityManager.class);
+
+  @ArchTest
+  static final ArchRule services_do_not_use_spring_data_repositories =
+      noClasses()
+          .that()
+          .resideInAPackage("..services..")
+          .should()
+          .dependOnClassesThat()
+          .areAssignableTo(Repository.class);
+
+  @ArchTest
+  static final ArchRule api_does_not_use_jdbc =
+      noClasses()
+          .that()
+          .resideInAPackage("..api..")
+          .should()
+          .dependOnClassesThat()
+          .areAssignableTo(JdbcOperations.class);
+
+  @ArchTest
+  static final ArchRule api_does_not_use_entity_manager =
+      noClasses()
+          .that()
+          .resideInAPackage("..api..")
+          .should()
+          .dependOnClassesThat()
+          .areAssignableTo(EntityManager.class);
 
   @ArchTest
   static final ArchRule controllers_do_not_use_repositories =

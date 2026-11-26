@@ -32,6 +32,21 @@ public class VendorInvoiceRepositoryAdapter implements VendorInvoiceRepository {
   }
 
   @Override
+  public Optional<VendorInvoice> findByIdAndOrganizationId(UUID id, UUID organizationId) {
+    return jpa.findByIdAndOrganizationId(id, organizationId);
+  }
+
+  @Override
+  public Optional<VendorInvoice> findForUpdate(UUID id, UUID organizationId) {
+    return jpa.findForUpdate(id, organizationId);
+  }
+
+  @Override
+  public List<VendorInvoice> findAllByIds(java.util.Collection<UUID> ids) {
+    return jpa.findAllByIdIn(ids);
+  }
+
+  @Override
   public boolean existsActiveByVendorAndNumber(
       UUID organizationId, UUID vendorId, String invoiceNumber) {
     return jpa.existsActiveByVendorAndNumber(organizationId, vendorId, invoiceNumber.trim());
@@ -41,6 +56,35 @@ public class VendorInvoiceRepositoryAdapter implements VendorInvoiceRepository {
   public Page<VendorInvoice> search(
       UUID organizationId, VendorInvoiceFilter filter, Pageable pageable) {
     return jpa.findAll(specification(organizationId, filter), pageable);
+  }
+
+  @Override
+  public long countByPurchaseOrder(UUID organizationId, UUID purchaseOrderId) {
+    return jpa.countByOrganizationIdAndPurchaseOrderId(organizationId, purchaseOrderId);
+  }
+
+  @Override
+  public long countByVendor(UUID organizationId, UUID vendorId) {
+    return jpa.countByOrganizationIdAndVendorId(organizationId, vendorId);
+  }
+
+  @Override
+  public List<AgingProjection> aging(UUID organizationId) {
+    return jpa.agingReport(organizationId).stream()
+        .map(
+            row ->
+                new AgingProjection(
+                    row.getVendorId(),
+                    row.getVendorName(),
+                    row.getCurrency(),
+                    row.getCurrentAmount(),
+                    row.getDays1To30(),
+                    row.getDays31To60(),
+                    row.getDays61To90(),
+                    row.getDaysOver90(),
+                    row.getTotalOutstanding(),
+                    row.getInvoiceCount()))
+        .toList();
   }
 
   @Override

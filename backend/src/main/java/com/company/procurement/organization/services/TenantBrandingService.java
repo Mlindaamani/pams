@@ -1,18 +1,18 @@
 package com.company.procurement.organization.services;
 
 import com.company.procurement.audit.services.AuditEventService;
+import com.company.procurement.organization.domain.Organization;
+import com.company.procurement.organization.domain.TenantBranding;
+import com.company.procurement.organization.repositories.OrganizationRepository;
+import com.company.procurement.organization.repositories.TenantBrandingRepository;
 import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
-import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.storage.FileStoragePort;
 import com.company.procurement.shared.tenant.TenantContext;
-import java.sql.Timestamp;
-import java.time.Clock;
-import java.util.List;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,92 +27,39 @@ public class TenantBrandingService {
   private static final Set<String> FAVICON_TYPES =
       Set.of("image/png", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon");
 
-  private final JdbcTemplate jdbc;
+  private final TenantBrandingRepository brandings;
+  private final OrganizationRepository organizations;
   private final FileStoragePort storage;
-  private final CurrentUser currentUser;
   private final AuditEventService audit;
-  private final Clock clock;
 
   public TenantBrandingService(
-      JdbcTemplate jdbc,
+      TenantBrandingRepository brandings,
+      OrganizationRepository organizations,
       FileStoragePort storage,
-      CurrentUser currentUser,
-      AuditEventService audit,
-      Clock clock) {
-    this.jdbc = jdbc;
+      AuditEventService audit) {
+    this.brandings = brandings;
+    this.organizations = organizations;
     this.storage = storage;
-    this.currentUser = currentUser;
     this.audit = audit;
-    this.clock = clock;
   }
 
   @Transactional(readOnly = true)
   public BrandingView current() {
-    UUID organizationId = TenantContext.require();
-    String tenantName =
-        jdbc.queryForObject(
-            "select name from organization where id = ?", String.class, organizationId);
-    List<Map<String, Object>> rows =
-        jdbc.queryForList(
-            "select * from tenant_branding where organization_id = ?", organizationId);
-    if (rows.isEmpty()) {
-      return new BrandingView(
-          organizationId,
-          tenantName,
-          "#0B5CAD",
-          "#00695C",
-          tenantName,
-          null,
-          false,
-          false,
-          10,
-          "INTER",
-          "COMFORTABLE",
-          "Requests",
-          "Purchase orders",
-          "Vendors",
-          "Budgets",
-          "Catalog items",
-          0,
-          null);
-    }
-    Map<String, Object> row = rows.get(0);
-    return new BrandingView(
-        organizationId,
-        (String) row.getOrDefault("display_name", tenantName),
-        (String) row.get("primary_color"),
-        (String) row.get("secondary_color"),
-        (String) row.get("email_from_name"),
-        (String) row.get("support_email"),
-        row.get("logo_object_key") != null,
-        row.get("favicon_object_key") != null,
-        ((Number) row.get("corner_radius")).intValue(),
-        (String) row.get("font_family"),
-        (String) row.get("ui_density"),
-        (String) row.get("request_label"),
-        (String) row.get("order_label"),
-        (String) row.get("vendor_label"),
-        (String) row.get("budget_label"),
-        (String) row.get("catalog_label"),
-        ((Number) row.get("version")).longValue(),
-        instant(row.get("updated_at")));
+    return current(TenantContext.require());
+  }
+
+  @Transactional(readOnly = true)
+  public BrandingView current(UUID organizationId) {
+    Organization organization = requireOrganization(organizationId);
+    return view(organization, brandings.findById(organizationId).orElse(null));
   }
 
   @Transactional
   public BrandingView update(BrandingCommand command) {
     UUID organizationId = TenantContext.require();
     validate(command);
-    Timestamp now = Timestamp.from(clock.instant());
-    ensureRow(organizationId, now);
-    jdbc.update(
-        """
-        update tenant_branding
-           set display_name = ?, primary_color = ?, secondary_color = ?, email_from_name = ?,
-               support_email = ?, corner_radius = ?, font_family = ?, ui_density = ?,
-               request_label = ?, order_label = ?, vendor_label = ?, budget_label = ?,
-               catalog_label = ?, updated_at = ?, updated_by = ?, version = version + 1
-         where organization_id = ?
-        """,
+    TenantBranding branding = ensure(organizationId);
+    branding.update(
         command.displayName().trim(),
         command.primaryColor().toUpperCase(),
         command.secondaryColor().toUpperCase(),
@@ -125,10 +72,8 @@ public class TenantBrandingService {
         label(command.orderLabel(), "Purchase orders"),
         label(command.vendorLabel(), "Vendors"),
         label(command.budgetLabel(), "Budgets"),
-        label(command.catalogLabel(), "Catalog items"),
-        now,
-        actor(),
-        organizationId);
+        label(command.catalogLabel(), "Catalog items"));
+    brandings.save(branding);
     audit.recordCurrentActor(
         "TenantBranding",
         organizationId,
@@ -157,9 +102,8 @@ public class TenantBrandingService {
       throw new BusinessRuleException("Logo must be PNG, JPEG, WebP or SVG");
     }
     UUID organizationId = TenantContext.require();
-    Timestamp now = Timestamp.from(clock.instant());
-    ensureRow(organizationId, now);
-    String previous = currentLogoKey(organizationId);
+    TenantBranding branding = ensure(organizationId);
+    String previous = branding.getLogoObjectKey();
     String extension =
         switch (type) {
           case "image/png" -> "png";
@@ -169,18 +113,8 @@ public class TenantBrandingService {
         };
     String key = "branding/%s/logo-%s.%s".formatted(organizationId, UUID.randomUUID(), extension);
     storage.put(key, content, type);
-    jdbc.update(
-        """
-        update tenant_branding
-           set logo_object_key = ?, logo_content_type = ?, updated_at = ?, updated_by = ?,
-               version = version + 1
-         where organization_id = ?
-        """,
-        key,
-        type,
-        now,
-        actor(),
-        organizationId);
+    branding.setLogo(key, type);
+    brandings.save(branding);
     if (previous != null) {
       try {
         storage.delete(previous);
@@ -205,9 +139,8 @@ public class TenantBrandingService {
       throw new BusinessRuleException("Favicon must be PNG, ICO or SVG");
     }
     UUID organizationId = TenantContext.require();
-    Timestamp now = Timestamp.from(clock.instant());
-    ensureRow(organizationId, now);
-    String previous = currentFaviconKey(organizationId);
+    TenantBranding branding = ensure(organizationId);
+    String previous = branding.getFaviconObjectKey();
     String extension =
         switch (type) {
           case "image/png" -> "png";
@@ -217,18 +150,8 @@ public class TenantBrandingService {
     String key =
         "branding/%s/favicon-%s.%s".formatted(organizationId, UUID.randomUUID(), extension);
     storage.put(key, content, type);
-    jdbc.update(
-        """
-        update tenant_branding
-           set favicon_object_key = ?, favicon_content_type = ?, updated_at = ?,
-               updated_by = ?, version = version + 1
-         where organization_id = ?
-        """,
-        key,
-        type,
-        now,
-        actor(),
-        organizationId);
+    branding.setFavicon(key, type);
+    brandings.save(branding);
     if (previous != null) {
       try {
         storage.delete(previous);
@@ -244,116 +167,116 @@ public class TenantBrandingService {
   @Transactional(readOnly = true)
   public Logo currentFavicon() {
     UUID organizationId = TenantContext.require();
-    List<Map<String, Object>> rows =
-        jdbc.queryForList(
-            "select favicon_object_key, favicon_content_type from tenant_branding where organization_id = ?",
-            organizationId);
-    if (rows.isEmpty() || rows.get(0).get("favicon_object_key") == null) {
-      throw new ResourceNotFoundException("No branding favicon is configured");
-    }
-    String key = (String) rows.get(0).get("favicon_object_key");
-    String type = (String) rows.get(0).get("favicon_content_type");
-    try (var input = storage.get(key)) {
-      return new Logo(input.readAllBytes(), type);
-    } catch (java.io.IOException ex) {
-      throw new IllegalStateException("Could not read branding favicon", ex);
-    }
+    TenantBranding branding =
+        brandings
+            .findById(organizationId)
+            .filter(value -> value.getFaviconObjectKey() != null)
+            .orElseThrow(() -> new ResourceNotFoundException("No branding favicon is configured"));
+    return read(branding.getFaviconObjectKey(), branding.getFaviconContentType(), "favicon");
   }
 
   @Transactional
   public BrandingView removeFavicon() {
     UUID organizationId = TenantContext.require();
-    ensureRow(organizationId, Timestamp.from(clock.instant()));
-    String key = currentFaviconKey(organizationId);
-    jdbc.update(
-        """
-        update tenant_branding
-           set favicon_object_key = null, favicon_content_type = null, updated_at = ?,
-               updated_by = ?, version = version + 1
-         where organization_id = ?
-        """,
-        Timestamp.from(clock.instant()),
-        actor(),
-        organizationId);
-    if (key != null) storage.delete(key);
+    TenantBranding branding = ensure(organizationId);
+    String key = branding.getFaviconObjectKey();
+    branding.clearFavicon();
+    brandings.save(branding);
+    if (key != null) {
+      storage.delete(key);
+    }
     return current();
   }
 
   @Transactional(readOnly = true)
   public Logo currentLogo() {
     UUID organizationId = TenantContext.require();
-    List<Map<String, Object>> rows =
-        jdbc.queryForList(
-            "select logo_object_key, logo_content_type from tenant_branding where organization_id = ?",
-            organizationId);
-    if (rows.isEmpty() || rows.get(0).get("logo_object_key") == null) {
-      throw new ResourceNotFoundException("No branding logo is configured");
-    }
-    String key = (String) rows.get(0).get("logo_object_key");
-    String type = (String) rows.get(0).get("logo_content_type");
-    try (var input = storage.get(key)) {
-      return new Logo(input.readAllBytes(), type);
-    } catch (java.io.IOException ex) {
-      throw new IllegalStateException("Could not read branding logo", ex);
-    }
+    TenantBranding branding =
+        brandings
+            .findById(organizationId)
+            .filter(value -> value.getLogoObjectKey() != null)
+            .orElseThrow(() -> new ResourceNotFoundException("No branding logo is configured"));
+    return read(branding.getLogoObjectKey(), branding.getLogoContentType(), "logo");
   }
 
   @Transactional
   public BrandingView removeLogo() {
     UUID organizationId = TenantContext.require();
-    ensureRow(organizationId, Timestamp.from(clock.instant()));
-    String key = currentLogoKey(organizationId);
-    jdbc.update(
-        """
-        update tenant_branding
-           set logo_object_key = null, logo_content_type = null, updated_at = ?,
-               updated_by = ?, version = version + 1
-         where organization_id = ?
-        """,
-        Timestamp.from(clock.instant()),
-        actor(),
-        organizationId);
-    if (key != null) storage.delete(key);
+    TenantBranding branding = ensure(organizationId);
+    String key = branding.getLogoObjectKey();
+    branding.clearLogo();
+    brandings.save(branding);
+    if (key != null) {
+      storage.delete(key);
+    }
     audit.recordCurrentActor("TenantBranding", organizationId, "BRANDING_LOGO_REMOVED", Map.of());
     return current();
   }
 
-  private void ensureRow(UUID organizationId, Timestamp now) {
-    jdbc.update(
-        """
-        insert into tenant_branding
-            (organization_id, primary_color, secondary_color, created_at, created_by,
-             updated_at, updated_by)
-        values (?, '#0B5CAD', '#00695C', ?, ?, ?, ?)
-        on conflict (organization_id) do nothing
-        """,
-        organizationId,
-        now,
-        actor(),
-        now,
-        actor());
+  private TenantBranding ensure(UUID organizationId) {
+    return brandings
+        .findById(organizationId)
+        .orElseGet(() -> brandings.save(new TenantBranding(organizationId)));
   }
 
-  private String currentLogoKey(UUID organizationId) {
-    List<String> keys =
-        jdbc.queryForList(
-            "select logo_object_key from tenant_branding where organization_id = ?",
-            String.class,
-            organizationId);
-    return keys.isEmpty() ? null : keys.get(0);
+  private Organization requireOrganization(UUID organizationId) {
+    return organizations
+        .findById(organizationId)
+        .orElseThrow(
+            () ->
+                new ResourceNotFoundException(
+                    "Organization %s not found".formatted(organizationId)));
   }
 
-  private String currentFaviconKey(UUID organizationId) {
-    List<String> keys =
-        jdbc.queryForList(
-            "select favicon_object_key from tenant_branding where organization_id = ?",
-            String.class,
-            organizationId);
-    return keys.isEmpty() ? null : keys.get(0);
+  private Logo read(String key, String contentType, String asset) {
+    try (var input = storage.get(key)) {
+      return new Logo(input.readAllBytes(), contentType);
+    } catch (java.io.IOException ex) {
+      throw new IllegalStateException("Could not read branding " + asset, ex);
+    }
   }
 
-  private String actor() {
-    return currentUser.username();
+  private static BrandingView view(Organization organization, TenantBranding branding) {
+    if (branding == null) {
+      return new BrandingView(
+          organization.getId(),
+          organization.getName(),
+          "#0B5CAD",
+          "#00695C",
+          organization.getName(),
+          null,
+          false,
+          false,
+          10,
+          "INTER",
+          "COMFORTABLE",
+          "Requests",
+          "Purchase orders",
+          "Vendors",
+          "Budgets",
+          "Catalog items",
+          0,
+          null);
+    }
+    return new BrandingView(
+        organization.getId(),
+        branding.getDisplayName() == null ? organization.getName() : branding.getDisplayName(),
+        branding.getPrimaryColor(),
+        branding.getSecondaryColor(),
+        branding.getEmailFromName(),
+        branding.getSupportEmail(),
+        branding.getLogoObjectKey() != null,
+        branding.getFaviconObjectKey() != null,
+        branding.getCornerRadius(),
+        branding.getFontFamily(),
+        branding.getUiDensity(),
+        branding.getRequestLabel(),
+        branding.getOrderLabel(),
+        branding.getVendorLabel(),
+        branding.getBudgetLabel(),
+        branding.getCatalogLabel(),
+        branding.getVersion(),
+        branding.getUpdatedAt());
   }
 
   private static void validate(BrandingCommand command) {
@@ -405,10 +328,6 @@ public class TenantBrandingService {
     return value == null || value.isBlank() ? null : value.trim();
   }
 
-  private static java.time.Instant instant(Object value) {
-    return value instanceof Timestamp timestamp ? timestamp.toInstant() : null;
-  }
-
   public record BrandingView(
       UUID organizationId,
       String displayName,
@@ -427,7 +346,7 @@ public class TenantBrandingService {
       String budgetLabel,
       String catalogLabel,
       long version,
-      java.time.Instant updatedAt) {}
+      Instant updatedAt) {}
 
   public record BrandingCommand(
       String displayName,

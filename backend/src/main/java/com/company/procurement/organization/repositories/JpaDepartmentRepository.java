@@ -15,4 +15,6 @@ public interface JpaDepartmentRepository
 
   boolean existsByOrganizationIdAndNameIgnoreCaseAndIdNot(
       UUID organizationId, String name, UUID id);
+
+  long countByOrganizationId(UUID organizationId);
 }

@@ -10,6 +10,7 @@ import com.company.procurement.shared.services.OutboxService;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.vendor.domain.Vendor;
 import com.company.procurement.vendor.domain.VendorStatus;
+import com.company.procurement.vendor.repositories.VendorReferencePort;
 import com.company.procurement.vendor.repositories.VendorRepository;
 import java.time.Clock;
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,22 +26,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class VendorService {
 
   private final VendorRepository vendors;
+  private final VendorReferencePort references;
   private final AuditEventService audit;
-  private final JdbcTemplate jdbc;
   private final Clock clock;
   private final CurrentActorProvider actorProvider;
   private final OutboxService outbox;
 
   public VendorService(
       VendorRepository vendors,
+      VendorReferencePort references,
       AuditEventService audit,
-      JdbcTemplate jdbc,
       Clock clock,
       CurrentActorProvider actorProvider,
       OutboxService outbox) {
     this.vendors = vendors;
+    this.references = references;
     this.audit = audit;
-    this.jdbc = jdbc;
     this.clock = clock;
     this.actorProvider = actorProvider;
     this.outbox = outbox;
@@ -155,18 +155,7 @@ public class VendorService {
   public void delete(UUID id) {
     UUID organizationId = TenantContext.require();
     Vendor vendor = get(id);
-    Long references =
-        jdbc.queryForObject(
-            """
-            select (select count(*) from purchase_order where organization_id = ? and vendor_id = ?)
-                 + (select count(*) from vendor_invoice where organization_id = ? and vendor_id = ?)
-            """,
-            Long.class,
-            organizationId,
-            id,
-            organizationId,
-            id);
-    if (references != null && references > 0) {
+    if (references.referenceCount(organizationId, id) > 0) {
       throw new BusinessRuleException(
           "This vendor is referenced by documents and cannot be deleted; suspend or blacklist it instead");
     }

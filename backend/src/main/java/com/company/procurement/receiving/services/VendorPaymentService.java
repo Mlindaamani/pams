@@ -1,8 +1,14 @@
 package com.company.procurement.receiving.services;
 
 import com.company.procurement.audit.services.AuditEventService;
+import com.company.procurement.receiving.domain.VendorInvoice;
+import com.company.procurement.receiving.domain.VendorInvoiceStatus;
+import com.company.procurement.receiving.domain.VendorPayment;
+import com.company.procurement.receiving.domain.VendorPaymentAllocation;
+import com.company.procurement.receiving.repositories.VendorInvoiceRepository;
+import com.company.procurement.receiving.repositories.VendorPaymentAllocationRepository;
+import com.company.procurement.receiving.repositories.VendorPaymentRepository;
 import com.company.procurement.shared.error.BusinessRuleException;
-import com.company.procurement.shared.error.ConflictException;
 import com.company.procurement.shared.error.ResourceNotFoundException;
 import com.company.procurement.shared.numbering.DocumentNumberGenerator;
 import com.company.procurement.shared.numbering.DocumentType;
@@ -10,15 +16,19 @@ import com.company.procurement.shared.outbox.OutboxEventTypes;
 import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.services.OutboxService;
 import com.company.procurement.shared.tenant.TenantContext;
+import com.company.procurement.vendor.domain.Vendor;
+import com.company.procurement.vendor.domain.VendorStatus;
+import com.company.procurement.vendor.repositories.VendorRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.jdbc.core.JdbcTemplate;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +36,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class VendorPaymentService {
 
-  private final JdbcTemplate jdbc;
+  private final VendorPaymentRepository payments;
+  private final VendorPaymentAllocationRepository allocations;
+  private final VendorInvoiceRepository invoices;
+  private final VendorRepository vendors;
   private final CurrentUser currentUser;
   private final AuditEventService audit;
   private final Clock clock;
@@ -34,13 +47,19 @@ public class VendorPaymentService {
   private final OutboxService outbox;
 
   public VendorPaymentService(
-      JdbcTemplate jdbc,
+      VendorPaymentRepository payments,
+      VendorPaymentAllocationRepository allocations,
+      VendorInvoiceRepository invoices,
+      VendorRepository vendors,
       CurrentUser currentUser,
       AuditEventService audit,
       Clock clock,
       DocumentNumberGenerator numbers,
       OutboxService outbox) {
-    this.jdbc = jdbc;
+    this.payments = payments;
+    this.allocations = allocations;
+    this.invoices = invoices;
+    this.vendors = vendors;
     this.currentUser = currentUser;
     this.audit = audit;
     this.clock = clock;
@@ -54,140 +73,99 @@ public class VendorPaymentService {
     if (command.allocations() == null || command.allocations().isEmpty()) {
       throw new BusinessRuleException("At least one invoice allocation is required");
     }
-    Map<String, Object> vendor =
-        jdbc
-            .queryForList(
-                "select id, status from vendor where organization_id = ? and id = ? and deleted_at is null",
-                organizationId,
-                command.vendorId())
-            .stream()
-            .findFirst()
+    Vendor vendor =
+        vendors
+            .findByIdAndOrganizationId(command.vendorId(), organizationId)
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(
                         "Vendor %s not found".formatted(command.vendorId())));
-    if (!"ACTIVE".equals(vendor.get("status"))) {
+    if (vendor.getStatus() != VendorStatus.ACTIVE) {
       throw new BusinessRuleException("Only active vendors can receive payments");
     }
     String currency = null;
     BigDecimal total = BigDecimal.ZERO;
-    List<AllocationValidation> validated = new ArrayList<>();
+    List<ValidatedAllocation> validated = new ArrayList<>();
     for (AllocationCommand allocation : command.allocations()) {
-      Map<String, Object> invoice =
-          jdbc
-              .queryForList(
-                  "select id, vendor_id, invoice_number, status, currency, total_amount, paid_amount from vendor_invoice where organization_id = ? and id = ?",
-                  organizationId,
-                  allocation.invoiceId())
-              .stream()
-              .findFirst()
+      VendorInvoice invoice =
+          invoices
+              .findByIdAndOrganizationId(allocation.invoiceId(), organizationId)
               .orElseThrow(
                   () ->
                       new ResourceNotFoundException(
                           "Invoice %s not found".formatted(allocation.invoiceId())));
-      if (!command.vendorId().equals(invoice.get("vendor_id"))) {
+      if (!command.vendorId().equals(invoice.getVendorId())) {
         throw new BusinessRuleException("All invoices in a payment must belong to the same vendor");
       }
-      String status = (String) invoice.get("status");
-      if (!"APPROVED".equals(status) && !"PARTIALLY_PAID".equals(status)) {
+      if (invoice.getStatus() != VendorInvoiceStatus.APPROVED
+          && invoice.getStatus() != VendorInvoiceStatus.PARTIALLY_PAID) {
         throw new BusinessRuleException(
             "Only approved or partially paid invoices can be scheduled for payment");
       }
-      String invoiceCurrency = (String) invoice.get("currency");
-      if (currency == null) currency = invoiceCurrency;
-      if (!currency.equals(invoiceCurrency)) {
+      if (currency == null) {
+        currency = invoice.getCurrency();
+      }
+      if (!currency.equals(invoice.getCurrency())) {
         throw new BusinessRuleException("All payment allocations must use the same currency");
       }
-      BigDecimal outstanding =
-          ((BigDecimal) invoice.get("total_amount"))
-              .subtract((BigDecimal) invoice.get("paid_amount"));
+      BigDecimal outstanding = invoice.getTotalAmount().subtract(invoice.getPaidAmount());
       BigDecimal amount = allocation.amount().setScale(4, java.math.RoundingMode.HALF_UP);
       if (amount.signum() <= 0 || amount.compareTo(outstanding) > 0) {
         throw new BusinessRuleException(
             "Payment allocation for invoice %s exceeds the outstanding amount"
-                .formatted(invoice.get("invoice_number")));
+                .formatted(invoice.getInvoiceNumber()));
       }
       total = total.add(amount);
-      validated.add(
-          new AllocationValidation(
-              allocation.invoiceId(), (String) invoice.get("invoice_number"), amount));
+      validated.add(new ValidatedAllocation(invoice.getId(), amount));
     }
-    UUID paymentId = UUID.randomUUID();
     Instant now = clock.instant();
     String paymentNumber =
         numbers.next(organizationId, DocumentType.VENDOR_PAYMENT, command.paymentDate().getYear());
-    jdbc.update(
-        """
-        insert into vendor_payment
-            (id, organization_id, payment_number, vendor_id, status, payment_date, method, reference,
-             currency, total_amount, notes, created_at, created_by, updated_at, updated_by)
-        values (?, ?, ?, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        paymentId,
-        organizationId,
-        paymentNumber,
-        command.vendorId(),
-        java.sql.Date.valueOf(command.paymentDate()),
-        command.method(),
-        command.reference(),
-        currency,
-        total,
-        command.notes(),
-        java.sql.Timestamp.from(now),
-        currentUser.username(),
-        java.sql.Timestamp.from(now),
-        currentUser.username());
-    for (AllocationValidation allocation : validated) {
-      jdbc.update(
-          """
-          insert into vendor_payment_allocation
-              (id, organization_id, payment_id, invoice_id, amount, created_at)
-          values (?, ?, ?, ?, ?, ?)
-          """,
-          UUID.randomUUID(),
-          organizationId,
-          paymentId,
-          allocation.invoiceId(),
-          allocation.amount(),
-          java.sql.Timestamp.from(now));
-    }
+    VendorPayment payment =
+        payments.save(
+            new VendorPayment(
+                organizationId,
+                paymentNumber,
+                command.vendorId(),
+                command.paymentDate(),
+                command.method(),
+                command.reference(),
+                currency,
+                total,
+                command.notes()));
+    allocations.saveAll(
+        validated.stream()
+            .map(
+                allocation ->
+                    new VendorPaymentAllocation(
+                        organizationId,
+                        payment.getId(),
+                        allocation.invoiceId(),
+                        allocation.amount(),
+                        now))
+            .toList());
     audit.recordCurrentActor(
         "vendor_payment",
-        paymentId,
+        payment.getId(),
         "vendor_payment_scheduled",
         Map.of("total", total.toPlainString(), "currency", currency));
     outbox.enqueue(
         OutboxEventTypes.VENDOR_PAYMENT_SCHEDULED,
         "vendor_payment",
-        paymentId,
-        Map.of(
-            "paymentId",
-            paymentId.toString(),
-            "paymentNumber",
-            paymentNumber,
-            "vendorId",
-            command.vendorId().toString(),
-            "status",
-            "SCHEDULED",
-            "total",
-            total.toPlainString(),
-            "currency",
-            currency));
-    return view(organizationId, paymentId);
+        payment.getId(),
+        paymentPayload(payment, "SCHEDULED"));
+    return view(organizationId, payment.getId());
   }
 
   @Transactional
   public PaymentView approve(UUID id) {
     UUID organizationId = TenantContext.require();
-    PaymentRow payment = payment(organizationId, id);
-    if (!"SCHEDULED".equals(payment.status())) {
+    VendorPayment payment = requireForUpdate(organizationId, id);
+    if (!"SCHEDULED".equals(payment.getStatus())) {
       throw new BusinessRuleException("Only scheduled payments can be approved");
     }
-    jdbc.update(
-        "update vendor_payment set status = 'APPROVED', updated_at = now(), updated_by = ?, version = version + 1 where organization_id = ? and id = ?",
-        currentUser.username(),
-        organizationId,
-        id);
+    payment.approve();
+    payments.save(payment);
     audit.recordCurrentActor("vendor_payment", id, "vendor_payment_approved", Map.of());
     outbox.enqueue(
         OutboxEventTypes.VENDOR_PAYMENT_APPROVED,
@@ -200,75 +178,55 @@ public class VendorPaymentService {
   @Transactional
   public PaymentView markPaid(UUID id) {
     UUID organizationId = TenantContext.require();
-    PaymentRow payment = payment(organizationId, id);
-    if (!"APPROVED".equals(payment.status())) {
+    VendorPayment payment = requireForUpdate(organizationId, id);
+    if (!"APPROVED".equals(payment.getStatus())) {
       throw new BusinessRuleException("Only approved payments can be marked paid");
     }
-    List<Map<String, Object>> allocations =
-        jdbc.queryForList(
-            "select invoice_id, amount from vendor_payment_allocation where organization_id = ? and payment_id = ?",
-            organizationId,
-            id);
-    for (Map<String, Object> allocation : allocations) {
-      int updated =
-          jdbc.update(
-              """
-              update vendor_invoice
-                 set paid_amount = paid_amount + ?,
-                     status = case when paid_amount + ? >= total_amount then 'PAID'
-                                   else 'PARTIALLY_PAID' end,
-                     updated_at = now(),
-                     version = version + 1
-               where organization_id = ? and id = ?
-                 and status in ('APPROVED', 'PARTIALLY_PAID')
-                 and paid_amount + ? <= total_amount
-              """,
-              allocation.get("amount"),
-              allocation.get("amount"),
-              organizationId,
-              allocation.get("invoice_id"),
-              allocation.get("amount"));
-      if (updated != 1) {
-        throw new ConflictException("Invoice payment allocation could not be applied");
-      }
-    }
-    jdbc.update(
-        "update vendor_payment set status = 'PAID', paid_at = now(), updated_at = now(), updated_by = ?, version = version + 1 where organization_id = ? and id = ?",
-        currentUser.username(),
-        organizationId,
-        id);
+    List<VendorPaymentAllocation> paymentAllocations = allocations.findByPaymentId(id);
+    paymentAllocations.stream()
+        .sorted(Comparator.comparing(VendorPaymentAllocation::getInvoiceId))
+        .forEach(
+            allocation -> {
+              VendorInvoice invoice =
+                  invoices
+                      .findForUpdate(allocation.getInvoiceId(), organizationId)
+                      .orElseThrow(
+                          () ->
+                              new ResourceNotFoundException(
+                                  "Invoice %s not found".formatted(allocation.getInvoiceId())));
+              invoice.applyPayment(allocation.getAmount());
+              invoices.save(invoice);
+            });
+    Instant now = clock.instant();
+    payment.markPaid(now);
+    payments.save(payment);
     audit.recordCurrentActor("vendor_payment", id, "vendor_payment_paid", Map.of());
     outbox.enqueue(
         OutboxEventTypes.VENDOR_PAYMENT_PAID,
         "vendor_payment",
         id,
         paymentPayload(payment, "PAID"));
-    for (Map<String, Object> allocation : allocations) {
-      UUID invoiceId = (UUID) allocation.get("invoice_id");
-      String invoiceStatus =
-          jdbc.queryForObject(
-              "select status from vendor_invoice where organization_id = ? and id = ?",
-              String.class,
-              organizationId,
-              invoiceId);
-      if ("PAID".equals(invoiceStatus)) {
-        Map<String, Object> invoice =
-            jdbc.queryForMap(
-                "select invoice_number, purchase_order_id, po_number, total_amount, currency from vendor_invoice where organization_id = ? and id = ?",
-                organizationId,
-                invoiceId);
+    for (VendorPaymentAllocation allocation : paymentAllocations) {
+      VendorInvoice invoice =
+          invoices
+              .findByIdAndOrganizationId(allocation.getInvoiceId(), organizationId)
+              .orElseThrow(
+                  () ->
+                      new ResourceNotFoundException(
+                          "Invoice %s not found".formatted(allocation.getInvoiceId())));
+      if (invoice.getStatus() == VendorInvoiceStatus.PAID) {
         outbox.enqueue(
             OutboxEventTypes.VENDOR_INVOICE_PAID,
             "vendor_invoice",
-            invoiceId,
+            invoice.getId(),
             Map.of(
-                "invoiceId", invoiceId.toString(),
-                "invoiceNumber", invoice.get("invoice_number"),
-                "purchaseOrderId", invoice.get("purchase_order_id").toString(),
-                "poNumber", invoice.get("po_number"),
+                "invoiceId", invoice.getId().toString(),
+                "invoiceNumber", invoice.getInvoiceNumber(),
+                "purchaseOrderId", invoice.getPurchaseOrderId().toString(),
+                "poNumber", invoice.getPoNumber(),
                 "status", "PAID",
-                "total", invoice.get("total_amount").toString(),
-                "currency", invoice.get("currency")));
+                "total", invoice.getTotalAmount().toString(),
+                "currency", invoice.getCurrency()));
       }
     }
     return view(organizationId, id);
@@ -277,15 +235,12 @@ public class VendorPaymentService {
   @Transactional
   public PaymentView cancel(UUID id) {
     UUID organizationId = TenantContext.require();
-    PaymentRow payment = payment(organizationId, id);
-    if ("PAID".equals(payment.status()) || "CANCELED".equals(payment.status())) {
+    VendorPayment payment = requireForUpdate(organizationId, id);
+    if ("PAID".equals(payment.getStatus()) || "CANCELED".equals(payment.getStatus())) {
       throw new BusinessRuleException("This payment can no longer be canceled");
     }
-    jdbc.update(
-        "update vendor_payment set status = 'CANCELED', updated_at = now(), updated_by = ?, version = version + 1 where organization_id = ? and id = ?",
-        currentUser.username(),
-        organizationId,
-        id);
+    payment.cancel();
+    payments.save(payment);
     audit.recordCurrentActor("vendor_payment", id, "vendor_payment_canceled", Map.of());
     outbox.enqueue(
         OutboxEventTypes.VENDOR_PAYMENT_CANCELLED,
@@ -295,25 +250,38 @@ public class VendorPaymentService {
     return view(organizationId, id);
   }
 
-  private static Map<String, Object> paymentPayload(PaymentRow payment, String status) {
+  private static Map<String, Object> paymentPayload(VendorPayment payment, String status) {
     return Map.of(
-        "paymentId", payment.id().toString(),
-        "paymentNumber", payment.paymentNumber(),
-        "vendorId", payment.vendorId().toString(),
+        "paymentId", payment.getId().toString(),
+        "paymentNumber", payment.getPaymentNumber(),
+        "vendorId", payment.getVendorId().toString(),
         "status", status,
-        "total", payment.totalAmount().toPlainString(),
-        "currency", payment.currency());
+        "total", payment.getTotalAmount().toPlainString(),
+        "currency", payment.getCurrency());
   }
 
   @Transactional(readOnly = true)
   public List<PaymentView> list() {
     UUID organizationId = TenantContext.require();
-    return jdbc
-        .queryForList(
-            "select id from vendor_payment where organization_id = ? order by payment_date desc, created_at desc",
-            organizationId)
-        .stream()
-        .map(row -> view(organizationId, (UUID) row.get("id")))
+    List<VendorPayment> paymentRows = payments.findByOrganizationId(organizationId);
+    if (paymentRows.isEmpty()) return List.of();
+    List<UUID> paymentIds = paymentRows.stream().map(VendorPayment::getId).toList();
+    Map<UUID, List<VendorPaymentAllocation>> allocationsByPayment =
+        allocations.findByPaymentIds(paymentIds).stream()
+            .collect(Collectors.groupingBy(VendorPaymentAllocation::getPaymentId));
+    Map<UUID, String> invoiceNumbers =
+        invoiceNumbers(
+            allocationsByPayment.values().stream()
+                .flatMap(List::stream)
+                .map(VendorPaymentAllocation::getInvoiceId)
+                .toList());
+    return paymentRows.stream()
+        .map(
+            payment ->
+                view(
+                    payment,
+                    allocationsByPayment.getOrDefault(payment.getId(), List.of()),
+                    invoiceNumbers))
         .toList();
   }
 
@@ -326,111 +294,77 @@ public class VendorPaymentService {
   public AgingReport aging() {
     UUID organizationId = TenantContext.require();
     List<AgingRow> rows =
-        jdbc.query(
-            """
-            select v.id vendor_id, v.name vendor_name, i.currency,
-                   sum(case when coalesce(i.due_date, i.invoice_date) >= current_date
-                            then i.total_amount - i.paid_amount else 0 end) as current_amount,
-                   sum(case when current_date - coalesce(i.due_date, i.invoice_date)
-                                  between 1 and 30
-                            then i.total_amount - i.paid_amount else 0 end) as days_1_30,
-                   sum(case when current_date - coalesce(i.due_date, i.invoice_date)
-                                  between 31 and 60
-                            then i.total_amount - i.paid_amount else 0 end) as days_31_60,
-                   sum(case when current_date - coalesce(i.due_date, i.invoice_date)
-                                  between 61 and 90
-                            then i.total_amount - i.paid_amount else 0 end) as days_61_90,
-                   sum(case when current_date - coalesce(i.due_date, i.invoice_date) > 90
-                            then i.total_amount - i.paid_amount else 0 end) as days_over_90,
-                   sum(i.total_amount - i.paid_amount) as total_outstanding,
-                   count(*) as invoice_count
-              from vendor_invoice i
-              join vendor v on v.id = i.vendor_id
-             where i.organization_id = ?
-               and i.status in ('APPROVED', 'PARTIALLY_PAID')
-               and i.total_amount - i.paid_amount > 0
-             group by v.id, v.name, i.currency
-             order by v.name, i.currency
-            """,
-            (rs, row) ->
-                new AgingRow(
-                    rs.getObject("vendor_id", UUID.class),
-                    rs.getString("vendor_name"),
-                    rs.getString("currency"),
-                    rs.getBigDecimal("current_amount"),
-                    rs.getBigDecimal("days_1_30"),
-                    rs.getBigDecimal("days_31_60"),
-                    rs.getBigDecimal("days_61_90"),
-                    rs.getBigDecimal("days_over_90"),
-                    rs.getBigDecimal("total_outstanding"),
-                    rs.getLong("invoice_count")),
-            organizationId);
+        invoices.aging(organizationId).stream()
+            .map(
+                row ->
+                    new AgingRow(
+                        row.vendorId(),
+                        row.vendorName(),
+                        row.currency(),
+                        row.currentAmount(),
+                        row.days1To30(),
+                        row.days31To60(),
+                        row.days61To90(),
+                        row.daysOver90(),
+                        row.totalOutstanding(),
+                        row.invoiceCount()))
+            .toList();
     return new AgingReport(clock.instant(), rows);
   }
 
-  private PaymentView view(UUID organizationId, UUID paymentId) {
-    PaymentRow payment = payment(organizationId, paymentId);
-    List<AllocationView> allocations =
-        jdbc.query(
-            """
-            select a.invoice_id, i.invoice_number, a.amount
-              from vendor_payment_allocation a
-              join vendor_invoice i on i.id = a.invoice_id
-             where a.organization_id = ? and a.payment_id = ?
-             order by i.invoice_number
-            """,
-            (rs, row) ->
-                new AllocationView(
-                    rs.getObject("invoice_id", UUID.class),
-                    rs.getString("invoice_number"),
-                    rs.getBigDecimal("amount")),
-            organizationId,
-            paymentId);
-    return new PaymentView(
-        payment.id(),
-        payment.paymentNumber(),
-        payment.vendorId(),
-        payment.status(),
-        payment.paymentDate(),
-        payment.method(),
-        payment.reference(),
-        payment.currency(),
-        payment.totalAmount(),
-        payment.notes(),
-        payment.paidAt(),
-        payment.version(),
-        allocations);
+  private VendorPayment requireForUpdate(UUID organizationId, UUID id) {
+    return payments
+        .findForUpdate(id, organizationId)
+        .orElseThrow(() -> new ResourceNotFoundException("Payment %s not found".formatted(id)));
   }
 
-  private PaymentRow payment(UUID organizationId, UUID id) {
-    return jdbc
-        .query(
-            """
-            select id, payment_number, vendor_id, status, payment_date, method, reference, currency,
-                   total_amount, notes, paid_at, version
-              from vendor_payment where organization_id = ? and id = ?
-            """,
-            (rs, row) ->
-                new PaymentRow(
-                    rs.getObject("id", UUID.class),
-                    rs.getString("payment_number"),
-                    rs.getObject("vendor_id", UUID.class),
-                    rs.getString("status"),
-                    rs.getDate("payment_date").toLocalDate(),
-                    rs.getString("method"),
-                    rs.getString("reference"),
-                    rs.getString("currency"),
-                    rs.getBigDecimal("total_amount"),
-                    rs.getString("notes"),
-                    rs.getTimestamp("paid_at") == null
-                        ? null
-                        : rs.getTimestamp("paid_at").toInstant(),
-                    rs.getLong("version")),
-            organizationId,
-            id)
-        .stream()
-        .findFirst()
-        .orElseThrow(() -> new ResourceNotFoundException("Payment %s not found".formatted(id)));
+  private PaymentView view(UUID organizationId, UUID paymentId) {
+    VendorPayment payment =
+        payments
+            .findByIdAndOrganizationId(paymentId, organizationId)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Payment %s not found".formatted(paymentId)));
+    List<VendorPaymentAllocation> paymentAllocations = allocations.findByPaymentId(paymentId);
+    Map<UUID, String> invoiceNumbers =
+        invoiceNumbers(
+            paymentAllocations.stream().map(VendorPaymentAllocation::getInvoiceId).toList());
+    return view(payment, paymentAllocations, invoiceNumbers);
+  }
+
+  private PaymentView view(
+      VendorPayment payment,
+      List<VendorPaymentAllocation> paymentAllocations,
+      Map<UUID, String> invoiceNumbers) {
+    List<AllocationView> allocationViews =
+        paymentAllocations.stream()
+            .map(
+                allocation ->
+                    new AllocationView(
+                        allocation.getInvoiceId(),
+                        invoiceNumbers.getOrDefault(allocation.getInvoiceId(), "—"),
+                        allocation.getAmount()))
+            .sorted(Comparator.comparing(AllocationView::invoiceNumber))
+            .toList();
+    return new PaymentView(
+        payment.getId(),
+        payment.getPaymentNumber(),
+        payment.getVendorId(),
+        payment.getStatus(),
+        payment.getPaymentDate(),
+        payment.getMethod(),
+        payment.getReference(),
+        payment.getCurrency(),
+        payment.getTotalAmount(),
+        payment.getNotes(),
+        payment.getPaidAt(),
+        payment.getVersion(),
+        allocationViews);
+  }
+
+  private Map<UUID, String> invoiceNumbers(List<UUID> invoiceIds) {
+    if (invoiceIds.isEmpty()) return Map.of();
+    return invoices.findAllByIds(invoiceIds).stream()
+        .collect(Collectors.toMap(VendorInvoice::getId, VendorInvoice::getInvoiceNumber));
   }
 
   public record CreatePaymentCommand(
@@ -474,19 +408,5 @@ public class VendorPaymentService {
       BigDecimal totalOutstanding,
       long invoiceCount) {}
 
-  private record AllocationValidation(UUID invoiceId, String invoiceNumber, BigDecimal amount) {}
-
-  private record PaymentRow(
-      UUID id,
-      String paymentNumber,
-      UUID vendorId,
-      String status,
-      LocalDate paymentDate,
-      String method,
-      String reference,
-      String currency,
-      BigDecimal totalAmount,
-      String notes,
-      Instant paidAt,
-      long version) {}
+  private record ValidatedAllocation(UUID invoiceId, BigDecimal amount) {}
 }

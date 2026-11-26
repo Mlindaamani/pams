@@ -2,6 +2,7 @@ package com.company.procurement.purchaseorder.repositories;
 
 import com.company.procurement.purchaseorder.domain.PurchaseOrder;
 import com.company.procurement.purchaseorder.domain.PurchaseOrderFilter;
+import com.company.procurement.purchaseorder.domain.PurchaseOrderStatus;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,5 +90,15 @@ public class PurchaseOrderRepositoryAdapter implements PurchaseOrderRepository {
       }
       return cb.and(predicates.toArray(Predicate[]::new));
     };
+  }
+
+  @Override
+  public long countNonDraft(UUID organizationId) {
+    return jpa.countByOrganizationIdAndStatusNot(organizationId, PurchaseOrderStatus.DRAFT);
+  }
+
+  @Override
+  public long countByVendor(UUID organizationId, UUID vendorId) {
+    return jpa.countByOrganizationIdAndVendorId(organizationId, vendorId);
   }
 }

@@ -17,4 +17,6 @@ public interface ApprovalPolicyRepository {
       UUID organizationId, String entityType, BigDecimal amount);
 
   Page<ApprovalPolicy> search(UUID organizationId, Boolean active, Pageable pageable);
+
+  long countActive(UUID organizationId);
 }

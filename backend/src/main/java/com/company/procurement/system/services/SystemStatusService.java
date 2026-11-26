@@ -1,11 +1,14 @@
 package com.company.procurement.system.services;
 
+import com.company.procurement.approval.repositories.ApprovalStepRepository;
+import com.company.procurement.notification.repositories.NotificationRepository;
+import com.company.procurement.shared.repositories.OutboxEventRepository;
 import com.company.procurement.shared.tenant.TenantContext;
 import com.company.procurement.system.dto.SystemStatusResponse;
+import com.company.procurement.system.repositories.SystemStatusRepository;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,13 +16,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SystemStatusService {
 
-  private final JdbcTemplate jdbcTemplate;
+  private final SystemStatusRepository systemStatus;
+  private final OutboxEventRepository outboxEvents;
+  private final ApprovalStepRepository approvalSteps;
+  private final NotificationRepository notifications;
   private final ObjectProvider<BuildProperties> buildProperties;
   private final Clock clock;
 
   public SystemStatusService(
-      JdbcTemplate jdbcTemplate, ObjectProvider<BuildProperties> buildProperties, Clock clock) {
-    this.jdbcTemplate = jdbcTemplate;
+      SystemStatusRepository systemStatus,
+      OutboxEventRepository outboxEvents,
+      ApprovalStepRepository approvalSteps,
+      NotificationRepository notifications,
+      ObjectProvider<BuildProperties> buildProperties,
+      Clock clock) {
+    this.systemStatus = systemStatus;
+    this.outboxEvents = outboxEvents;
+    this.approvalSteps = approvalSteps;
+    this.notifications = notifications;
     this.buildProperties = buildProperties;
     this.clock = clock;
   }
@@ -27,26 +41,11 @@ public class SystemStatusService {
   @Transactional(readOnly = true)
   public SystemStatusResponse status() {
     var organizationId = TenantContext.require();
-    String database = "UP";
-    try {
-      jdbcTemplate.queryForObject("select 1", Integer.class);
-    } catch (RuntimeException ex) {
-      database = "DOWN";
-    }
-    long outboxPending =
-        count(
-            "select count(*) from outbox_event where processed_at is null and dead_lettered_at is null");
-    long outboxDead = count("select count(*) from outbox_event where dead_lettered_at is not null");
-    long pendingApprovals =
-        jdbcTemplate.queryForObject(
-            "select count(*) from approval_step where organization_id = ? and status = 'PENDING'",
-            Long.class,
-            organizationId);
-    long unreadNotifications =
-        jdbcTemplate.queryForObject(
-            "select count(*) from notification where organization_id = ? and read_at is null",
-            Long.class,
-            organizationId);
+    String database = systemStatus.databaseAvailable() ? "UP" : "DOWN";
+    long outboxPending = outboxEvents.countPending();
+    long outboxDead = outboxEvents.countDeadLettered();
+    long pendingApprovals = approvalSteps.countPending(organizationId);
+    long unreadNotifications = notifications.countUnread(organizationId);
     BuildProperties build = buildProperties.getIfAvailable();
     String version =
         build != null
@@ -65,10 +64,5 @@ public class SystemStatusService {
         version,
         buildTime,
         clock.instant());
-  }
-
-  private long count(String sql) {
-    Long value = jdbcTemplate.queryForObject(sql, Long.class);
-    return value == null ? 0 : value;
   }
 }

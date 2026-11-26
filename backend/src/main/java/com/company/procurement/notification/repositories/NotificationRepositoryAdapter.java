@@ -52,6 +52,11 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
   }
 
   @Override
+  public long countUnread(UUID organizationId) {
+    return jpa.countByOrganizationIdAndReadAtIsNull(organizationId);
+  }
+
+  @Override
   public int markAllRead(UUID organizationId, String recipientSubject, java.time.Instant now) {
     return jpa.markAllRead(organizationId, recipientSubject, now);
   }

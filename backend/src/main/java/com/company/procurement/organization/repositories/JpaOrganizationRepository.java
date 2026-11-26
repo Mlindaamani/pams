@@ -14,6 +14,8 @@ public interface JpaOrganizationRepository
   @Query("select o.id from Organization o")
   List<UUID> findAllIds();
 
+  List<Organization> findAllByIdIn(java.util.Collection<UUID> ids);
+
   Optional<Organization> findBySlug(String slug);
 
   boolean existsBySlug(String slug);

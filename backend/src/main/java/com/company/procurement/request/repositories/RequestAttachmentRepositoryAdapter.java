@@ -41,4 +41,9 @@ public class RequestAttachmentRepositoryAdapter implements RequestAttachmentRepo
   public void delete(RequestAttachment attachment) {
     jpa.delete(attachment);
   }
+
+  @Override
+  public long sumSizeBytes(UUID organizationId) {
+    return jpa.sumSizeBytes(organizationId);
+  }
 }

@@ -8,7 +8,6 @@ import com.company.procurement.shared.security.CurrentUser;
 import com.company.procurement.shared.tenant.TenantContext;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,19 +15,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CatalogDiscoveryService {
 
-  private final JdbcTemplate jdbc;
+  private final CatalogPopularityPort popularity;
   private final CatalogItemService items;
   private final CatalogAudienceService audiences;
   private final UserProfileLookupService profiles;
   private final CurrentUser currentUser;
 
   public CatalogDiscoveryService(
-      JdbcTemplate jdbc,
+      CatalogPopularityPort popularity,
       CatalogItemService items,
       CatalogAudienceService audiences,
       UserProfileLookupService profiles,
       CurrentUser currentUser) {
-    this.jdbc = jdbc;
+    this.popularity = popularity;
     this.items = items;
     this.audiences = audiences;
     this.profiles = profiles;
@@ -59,36 +58,9 @@ public class CatalogDiscoveryService {
     UUID organizationId = TenantContext.require();
     UUID targetDepartment = departmentId == null ? profile.getDepartmentId() : departmentId;
     int boundedLimit = Math.min(Math.max(limit, 1), 20);
-    List<UUID> ids =
-        jdbc.queryForList(
-            """
-            select ci.id, count(*) uses
-              from purchase_request_line l
-              join purchase_request r on r.id = l.purchase_request_id
-              join catalog_item ci on ci.id = l.catalog_item_id
-             where l.organization_id = ?
-               and r.department_id = ?
-               and l.catalog_item_id is not null
-               and r.status <> 'DRAFT'
-               and ci.deleted_at is null
-               and ci.active = true
-               and (
-                   ci.department_scope = 'ALL'
-                   or exists (
-                       select 1 from catalog_item_department d
-                        where d.catalog_item_id = ci.id and d.department_id = ?
-                   )
-               )
-             group by ci.id
-             order by uses desc, max(r.created_at) desc
-             limit ?
-            """,
-            UUID.class,
-            organizationId,
-            targetDepartment,
-            targetDepartment,
-            boundedLimit);
-    return ids.stream().map(items::get).toList();
+    return popularity.popularItemIds(organizationId, targetDepartment, boundedLimit).stream()
+        .map(items::get)
+        .toList();
   }
 
   @Transactional

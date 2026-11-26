@@ -18,4 +18,9 @@ public interface JpaUserProfileRepository
 
   boolean existsByOrganizationIdAndKeycloakSubjectAndIdNot(
       UUID organizationId, String keycloakSubject, UUID id);
+
+  long countByOrganizationIdAndActiveTrue(UUID organizationId);
+
+  Optional<UserProfile> findFirstByOrganizationIdAndActiveTrueOrderByCreatedAtAsc(
+      UUID organizationId);
 }

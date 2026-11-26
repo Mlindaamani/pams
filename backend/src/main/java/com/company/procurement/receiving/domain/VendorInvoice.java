@@ -2,6 +2,7 @@ package com.company.procurement.receiving.domain;
 
 import com.company.procurement.shared.domain.TenantEntity;
 import com.company.procurement.shared.domain.TenantFilter;
+import com.company.procurement.shared.error.BusinessRuleException;
 import com.company.procurement.shared.error.IllegalStateTransitionException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -246,6 +247,26 @@ public class VendorInvoice extends TenantEntity {
 
   public BigDecimal getPaidAmount() {
     return paidAmount == null ? BigDecimal.ZERO : paidAmount;
+  }
+
+  public void applyPayment(BigDecimal amount) {
+    if (amount == null || amount.signum() <= 0) {
+      throw new BusinessRuleException("Payment amount must be greater than zero");
+    }
+    if (status != VendorInvoiceStatus.APPROVED && status != VendorInvoiceStatus.PARTIALLY_PAID) {
+      throw new BusinessRuleException(
+          "Only approved or partially paid invoices can receive payment");
+    }
+    BigDecimal updated = getPaidAmount().add(amount);
+    if (updated.compareTo(totalAmount) > 0) {
+      throw new BusinessRuleException(
+          "Payment exceeds the outstanding amount on invoice " + invoiceNumber);
+    }
+    this.paidAmount = updated;
+    this.status =
+        updated.compareTo(totalAmount) >= 0
+            ? VendorInvoiceStatus.PAID
+            : VendorInvoiceStatus.PARTIALLY_PAID;
   }
 
   public Instant getApprovedAt() {

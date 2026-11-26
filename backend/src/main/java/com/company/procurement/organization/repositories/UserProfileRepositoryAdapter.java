@@ -76,4 +76,14 @@ public class UserProfileRepositoryAdapter implements UserProfileRepository {
       return cb.and(predicates.toArray(Predicate[]::new));
     };
   }
+
+  @Override
+  public long countActive(UUID organizationId) {
+    return jpa.countByOrganizationIdAndActiveTrue(organizationId);
+  }
+
+  @Override
+  public Optional<UserProfile> findFirstActiveByOrganizationId(UUID organizationId) {
+    return jpa.findFirstByOrganizationIdAndActiveTrueOrderByCreatedAtAsc(organizationId);
+  }
 }

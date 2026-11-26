@@ -22,6 +22,8 @@ public interface JpaNotificationRepository
   boolean existsByOrganizationIdAndEventIdAndRecipientSubject(
       UUID organizationId, UUID eventId, String recipientSubject);
 
+  long countByOrganizationIdAndReadAtIsNull(UUID organizationId);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       """

@@ -57,6 +57,11 @@ public class OrganizationRepositoryAdapter implements OrganizationRepository {
   }
 
   @Override
+  public List<Organization> findAllByIds(java.util.Collection<UUID> ids) {
+    return jpa.findAllByIdIn(ids);
+  }
+
+  @Override
   public Page<Organization> search(UUID id, String name, String slug, Pageable pageable) {
     return jpa.findAll(specification(id, name, slug), pageable);
   }

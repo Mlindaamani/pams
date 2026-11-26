@@ -3,6 +3,7 @@ package com.company.procurement.platform.services;
 import com.company.procurement.organization.domain.Organization;
 import com.company.procurement.organization.domain.OrganizationStatus;
 import com.company.procurement.organization.repositories.OrganizationRepository;
+import com.company.procurement.platform.repositories.PlatformAnalyticsRepository;
 import com.company.procurement.reporting.config.CacheConfig;
 import com.company.procurement.shared.error.BadRequestException;
 import java.io.Serializable;
@@ -21,7 +22,6 @@ import java.util.concurrent.Callable;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,17 +30,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class PlatformAnalyticsService {
 
   private final OrganizationRepository organizations;
-  private final JdbcTemplate jdbcTemplate;
+  private final PlatformAnalyticsRepository analytics;
   private final CacheManager cacheManager;
   private final Clock clock;
 
   public PlatformAnalyticsService(
       OrganizationRepository organizations,
-      JdbcTemplate jdbcTemplate,
+      PlatformAnalyticsRepository analytics,
       CacheManager cacheManager,
       Clock clock) {
     this.organizations = organizations;
-    this.jdbcTemplate = jdbcTemplate;
+    this.analytics = analytics;
     this.cacheManager = cacheManager;
     this.clock = clock;
   }
@@ -59,7 +59,7 @@ public class PlatformAnalyticsService {
     Map<String, Long> orderCountByCurrency = new HashMap<>();
     Map<String, Long> requestStatusCounts = new HashMap<>();
     Map<String, Map<String, Long>> requestTrend = new HashMap<>();
-    Map<String, Map<String, BigDecimal>> spendTrend = new HashMap<>();
+    Map<String, BigDecimal> spendTrendTotals = new HashMap<>();
     Map<String, Long> spendTrendOrders = new HashMap<>();
     List<TenantMetric> tenantMetrics = new ArrayList<>();
 
@@ -69,148 +69,67 @@ public class PlatformAnalyticsService {
     long mismatchInvoices = 0;
     long newTenants = 0;
 
-    for (Organization tenant : tenants) {
-      if (tenant.getCreatedAt() != null
-          && !tenant.getCreatedAt().isBefore(window.from())
-          && tenant.getCreatedAt().isBefore(window.to())) {
-        newTenants++;
+    try {
+      for (Organization tenant : tenants) {
+        if (tenant.getCreatedAt() != null
+            && !tenant.getCreatedAt().isBefore(window.from())
+            && tenant.getCreatedAt().isBefore(window.to())) {
+          newTenants++;
+        }
+        analytics.useTenant(tenant.getId());
+        long users = analytics.countActiveUsers(tenant.getId());
+        long requests = analytics.countRequests(tenant.getId(), window.from(), window.to());
+        long pending = analytics.countCurrentPendingApprovals(tenant.getId());
+        long mismatches = analytics.countMismatchedInvoices(tenant.getId());
+        Instant lastActivity = analytics.lastActivity(tenant.getId());
+
+        Map<String, BigDecimal> tenantSpend = new LinkedHashMap<>();
+        for (PlatformAnalyticsRepository.CurrencyTotal total :
+            analytics.spendByCurrency(tenant.getId(), window.from(), window.to())) {
+          tenantSpend.put(total.currency(), total.total());
+          spendByCurrency.merge(total.currency(), total.total(), BigDecimal::add);
+          orderCountByCurrency.merge(total.currency(), total.orderCount(), Long::sum);
+        }
+
+        for (PlatformAnalyticsRepository.MonthStatusCount row :
+            analytics.requestStatusTrend(tenant.getId(), window.from(), window.to())) {
+          requestStatusCounts.merge(row.status(), row.count(), Long::sum);
+          requestTrend
+              .computeIfAbsent(row.month(), ignored -> new HashMap<>())
+              .merge(row.status(), row.count(), Long::sum);
+        }
+
+        for (PlatformAnalyticsRepository.MonthCurrencyTotal row :
+            analytics.spendTrend(tenant.getId(), window.from(), window.to())) {
+          String key = row.month() + "|" + row.currency();
+          spendTrendTotals.merge(key, row.total(), BigDecimal::add);
+          spendTrendOrders.merge(key, row.orderCount(), Long::sum);
+        }
+
+        totalUsers += users;
+        totalRequests += requests;
+        pendingApprovals += pending;
+        mismatchInvoices += mismatches;
+        tenantMetrics.add(
+            new TenantMetric(
+                tenant.getId(),
+                tenant.getName(),
+                tenant.getSlug(),
+                tenant.getStatus(),
+                users,
+                requests,
+                pending,
+                mismatches,
+                tenantSpend,
+                lastActivity));
       }
-      setTenant(tenant.getId());
-      long users =
-          count(
-              "select count(*) from user_profile where organization_id = ? and deleted_at is null and active = true",
-              tenant.getId());
-      long requests =
-          count(
-              "select count(*) from purchase_request where organization_id = ? and created_at >= ? and created_at < ?",
-              tenant.getId(),
-              ts(window.from()),
-              ts(window.to()));
-      long pending =
-          count(
-              """
-              select count(*)
-                from approval_step s
-                join approval_instance ai on ai.id = s.instance_id
-               where s.organization_id = ?
-                 and ai.current_sequence = s.sequence
-                 and s.status = 'PENDING'
-              """,
-              tenant.getId());
-      long mismatches =
-          count(
-              "select count(*) from vendor_invoice where organization_id = ? and status = 'MISMATCHED'",
-              tenant.getId());
-      Instant lastActivity =
-          jdbcTemplate.queryForObject(
-                      "select max(updated_at) from purchase_request where organization_id = ?",
-                      java.sql.Timestamp.class,
-                      tenant.getId())
-                  == null
-              ? null
-              : jdbcTemplate
-                  .queryForObject(
-                      "select max(updated_at) from purchase_request where organization_id = ?",
-                      java.sql.Timestamp.class,
-                      tenant.getId())
-                  .toInstant();
-
-      Map<String, BigDecimal> tenantSpend = new LinkedHashMap<>();
-      jdbcTemplate.query(
-          """
-              select po.currency, sum(pol.line_total) total, count(distinct po.id) orders
-                from purchase_order po
-                join purchase_order_line pol on pol.purchase_order_id = po.id
-               where po.organization_id = ?
-                 and po.status in ('ISSUED','PARTIALLY_RECEIVED','RECEIVED','CLOSED')
-                 and po.issued_at >= ? and po.issued_at < ?
-               group by po.currency
-              """,
-          (rs, rowNum) -> {
-            String currency = rs.getString("currency");
-            BigDecimal total = rs.getBigDecimal("total");
-            long orders = rs.getLong("orders");
-            tenantSpend.put(currency, total);
-            spendByCurrency.merge(currency, total, BigDecimal::add);
-            orderCountByCurrency.merge(currency, orders, Long::sum);
-            return null;
-          },
-          tenant.getId(),
-          ts(window.from()),
-          ts(window.to()));
-
-      jdbcTemplate.query(
-          """
-          select to_char(date_trunc('month', created_at), 'YYYY-MM') as month_label,
-                 status, count(*) n
-            from purchase_request
-           where organization_id = ? and created_at >= ? and created_at < ?
-           group by 1, 2
-          """,
-          (rs, rowNum) -> {
-            String month = rs.getString("month_label");
-            String status = rs.getString("status");
-            long value = rs.getLong("n");
-            requestStatusCounts.merge(status, value, Long::sum);
-            requestTrend
-                .computeIfAbsent(month, ignored -> new HashMap<>())
-                .merge(status, value, Long::sum);
-            return null;
-          },
-          tenant.getId(),
-          ts(window.from()),
-          ts(window.to()));
-
-      jdbcTemplate.query(
-          """
-          select to_char(date_trunc('month', po.issued_at), 'YYYY-MM') as month_label,
-                 po.currency, sum(pol.line_total) total, count(distinct po.id) orders
-            from purchase_order po
-            join purchase_order_line pol on pol.purchase_order_id = po.id
-           where po.organization_id = ?
-             and po.status in ('ISSUED','PARTIALLY_RECEIVED','RECEIVED','CLOSED')
-             and po.issued_at >= ? and po.issued_at < ?
-           group by 1, 2
-          """,
-          (rs, rowNum) -> {
-            String month = rs.getString("month_label");
-            String currency = rs.getString("currency");
-            BigDecimal total = rs.getBigDecimal("total");
-            long orders = rs.getLong("orders");
-            spendTrend
-                .computeIfAbsent(month + "|" + currency, ignored -> new HashMap<>())
-                .merge(currency, total, BigDecimal::add);
-            spendTrendOrders.merge(month + "|" + currency, orders, Long::sum);
-            return null;
-          },
-          tenant.getId(),
-          ts(window.from()),
-          ts(window.to()));
-
-      totalUsers += users;
-      totalRequests += requests;
-      pendingApprovals += pending;
-      mismatchInvoices += mismatches;
-      tenantMetrics.add(
-          new TenantMetric(
-              tenant.getId(),
-              tenant.getName(),
-              tenant.getSlug(),
-              tenant.getStatus(),
-              users,
-              requests,
-              pending,
-              mismatches,
-              tenantSpend,
-              lastActivity));
+    } finally {
+      analytics.useTenant(null);
     }
-
-    setTenant(null);
     long activeTenants =
         tenants.stream().filter(tenant -> tenant.getStatus() == OrganizationStatus.ACTIVE).count();
     long suspendedTenants = tenants.size() - activeTenants;
-    long outboxDeadLetters =
-        count("select count(*) from outbox_event where dead_lettered_at is not null");
+    long outboxDeadLetters = analytics.countOutboxDeadLetters();
 
     List<CurrencySpend> currencySpend =
         spendByCurrency.entrySet().stream()
@@ -224,15 +143,15 @@ public class PlatformAnalyticsService {
             .toList();
 
     List<MonthlySpend> monthlySpend =
-        spendTrend.entrySet().stream()
+        spendTrendTotals.entrySet().stream()
             .map(
                 entry -> {
-                  String key = entry.getKey();
-                  String[] parts = key.split("\\|");
-                  BigDecimal total =
-                      entry.getValue().values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+                  String[] parts = entry.getKey().split("\\|");
                   return new MonthlySpend(
-                      parts[0], parts[1], total, spendTrendOrders.getOrDefault(key, 0L));
+                      parts[0],
+                      parts[1],
+                      entry.getValue(),
+                      spendTrendOrders.getOrDefault(entry.getKey(), 0L));
                 })
             .sorted(Comparator.comparing(MonthlySpend::month).thenComparing(MonthlySpend::currency))
             .toList();
@@ -277,22 +196,6 @@ public class PlatformAnalyticsService {
         monthlySpend,
         monthlyRequests,
         tenantMetrics);
-  }
-
-  private void setTenant(UUID organizationId) {
-    jdbcTemplate.queryForObject(
-        "select set_config('app.current_org', ?, false)",
-        String.class,
-        organizationId == null ? "" : organizationId.toString());
-  }
-
-  private long count(String sql, Object... args) {
-    Long value = jdbcTemplate.queryForObject(sql, Long.class, args);
-    return value == null ? 0 : value;
-  }
-
-  private static java.sql.Timestamp ts(Instant instant) {
-    return java.sql.Timestamp.from(instant);
   }
 
   private Window window(Instant fromParam, Instant toParam) {

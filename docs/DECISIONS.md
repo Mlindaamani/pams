@@ -2125,3 +2125,27 @@ technical packages for the same concern.
 **Consequences.** Services and persistence are easy to find per feature. The service layer name is
 explicit, repository ports and adapters sit together, and ArchUnit continues to protect the
 remaining boundaries. This supersedes the package locations in ADR-005.
+
+---
+
+## ADR-107 — Persistence is ORM-first and repository-owned
+
+**Context.** Several services accessed `JdbcTemplate` directly and contained inline SQL. This
+bypassed the repository ports, duplicated tenant rules and made the persistence model hard to
+change.
+
+**Decision.**
+- Services contain business rules, transactions and orchestration only; they never use
+  `JdbcTemplate`, `EntityManager` or SQL.
+- Simple persistence uses Spring Data derived queries and entity methods.
+- Dynamic filters use Specifications.
+- Complex joins, aggregates and bulk reads use `@Query` on Spring Data repository interfaces.
+- PostgreSQL-specific read-only queries use `@Query(nativeQuery = true)` only inside repository
+  adapters; no native SQL is allowed in services or controllers.
+- Missing tables receive proper entities, including tenant filters, natural/composite keys, JSONB
+  mappings and optimistic locking where updates can race.
+- `set_config` for tenant/RLS setup remains in tenant infrastructure.
+
+**Consequences.** Persistence is discoverable per module and reusable outside HTTP flows. The
+migration is phased: low-risk configuration and branding first, then subscriptions, approvals,
+payments, reporting and analytics. ArchUnit prevents SQL and Spring Data repositories from entering API controllers and services.
