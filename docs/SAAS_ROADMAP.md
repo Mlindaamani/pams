@@ -199,6 +199,8 @@ flowchart LR
 
 **Goal:** Make PAMS trustworthy enough for a paying customer’s business-critical data.
 
+See `docs/REMAINING_WORK.md` for a concrete launch-gap checklist with owners and evidence required.
+
 ### 5.1 Infrastructure and Operations
 
 - [ ] Production and staging environments separated

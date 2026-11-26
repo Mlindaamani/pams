@@ -1,7 +1,8 @@
 # Production Readiness
 
 This document covers the repository-controlled production baseline. External services, legal
-documents, managed infrastructure and penetration testing remain operational tasks.
+documents, managed infrastructure and penetration testing remain operational tasks. See
+`docs/REMAINING_WORK.md` for the authoritative list of unfinished launch work.
 
 ## Backups
 
