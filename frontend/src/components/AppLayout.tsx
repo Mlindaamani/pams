@@ -675,7 +675,9 @@ export function AppLayout() {
                 <HomeIcon fontSize="small" />
               </Link>
               {activeGroup && <Typography color="text.secondary">{activeGroup.label}</Typography>}
-              <Typography color="text.primary">{activeItem?.label ?? 'Details'}</Typography>
+              <Typography color="text.primary">
+                {location.pathname === '/profile' ? 'My profile' : (activeItem?.label ?? 'Details')}
+              </Typography>
             </Breadcrumbs>
           </Box>
         </Box>

@@ -1,11 +1,18 @@
 import { useEffect } from 'react';
-import { Box, Button, Skeleton, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useAuth } from 'react-oidc-context';
-import { useThemeMode } from '@/components/ThemeModeProvider';
 
 export function LoginPage() {
   const auth = useAuth();
-  const { mode } = useThemeMode();
 
   useEffect(() => {
     if (!auth.isLoading && !auth.isAuthenticated && !auth.activeNavigator) {
@@ -13,39 +20,60 @@ export function LoginPage() {
     }
   }, [auth]);
 
-  if (auth.error) {
-    return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h6" color="error">
-          Sign-in failed
-        </Typography>
-        <Typography>{auth.error.message}</Typography>
-        <Button sx={{ mt: 2 }} variant="contained" onClick={() => void auth.signinRedirect()}>
-          Try again
-        </Button>
-      </Box>
-    );
-  }
-
   return (
-    <Stack alignItems="center" justifyContent="center" sx={{ minHeight: '100vh' }} spacing={3}>
-      <Box
-        component="img"
-        src={mode === 'dark' ? '/logo/pams-logo-reverse.svg' : '/logo/pams-logo.svg'}
-        alt="PAMS"
-        sx={{ width: 320, maxWidth: '85vw' }}
-      />
-      <Stack
-        spacing={1.5}
-        sx={{ width: 320, maxWidth: '85vw' }}
-        aria-busy="true"
-        aria-label="Signing in"
-      >
-        <Skeleton variant="rounded" height={42} />
-        <Skeleton variant="rounded" height={42} />
-        <Skeleton variant="text" width="70%" />
-      </Stack>
-      <Typography color="text.secondary">Redirecting to Keycloak…</Typography>
-    </Stack>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        p: 2,
+        bgcolor: 'background.default',
+      }}
+    >
+      <Card sx={{ width: '100%', maxWidth: 440 }}>
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+          <Stack spacing={3}>
+            <Stack spacing={0.75}>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1.5 }}>
+                PAMS
+              </Typography>
+              <Typography variant="h5" component="h1">
+                Sign in
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {auth.error
+                  ? 'The secure sign-in page could not be completed.'
+                  : 'You are being redirected to the secure sign-in page.'}
+              </Typography>
+            </Stack>
+
+            {auth.error ? (
+              <Alert severity="error">
+                {auth.error.message || 'Sign-in failed. Please try again.'}
+              </Alert>
+            ) : (
+              <Stack direction="row" spacing={1.5} alignItems="center" role="status">
+                <CircularProgress size={22} />
+                <Typography variant="body2" color="text.secondary">
+                  Connecting to Keycloak…
+                </Typography>
+              </Stack>
+            )}
+
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => void auth.signinRedirect()}
+              disabled={auth.isLoading}
+            >
+              {auth.error ? 'Try again' : 'Open sign-in page'}
+            </Button>
+            <Typography variant="caption" color="text.secondary" textAlign="center">
+              Use your organization account. Contact your administrator if you need access.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

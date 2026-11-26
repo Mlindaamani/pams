@@ -15,6 +15,10 @@ export async function listUsers(params: {
   ) as Promise<Page<UserProfile>>;
 }
 
+export async function getUser(id: string): Promise<UserProfile> {
+  return unwrap(api.GET('/api/v1/users/{id}', { params: { path: { id } } }));
+}
+
 export async function getMe(): Promise<UserProfile> {
   return unwrap(api.GET('/api/v1/users/me'));
 }

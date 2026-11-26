@@ -17,6 +17,7 @@ import { InvoiceDetailPage } from '@/features/invoices/InvoiceDetailPage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
 import { DepartmentsPage } from '@/features/admin/DepartmentsPage';
 import { UsersPage } from '@/features/admin/UsersPage';
+import { UserFormPage } from '@/features/admin/UserFormPage';
 import { CatalogPage } from '@/features/admin/CatalogPage';
 import { OrganizationPage } from '@/features/admin/OrganizationPage';
 import { BrandingPage } from '@/features/admin/BrandingPage';
@@ -165,6 +166,14 @@ export const router = createBrowserRouter([
       { path: 'delegations', element: guard('read', 'Delegation', <DelegationsPage />) },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'admin/users', element: guard('read', 'User', <UsersPage />) },
+      {
+        path: 'admin/users/new',
+        element: guard('manage', 'User', <UserFormPage />),
+      },
+      {
+        path: 'admin/users/:id/edit',
+        element: guard('manage', 'User', <UserFormPage />),
+      },
       { path: 'admin/departments', element: guard('read', 'Department', <DepartmentsPage />) },
       { path: 'admin/catalog', element: guard('read', 'Catalog', <CatalogPage />) },
       { path: 'admin/organization', element: guard('read', 'Organization', <OrganizationPage />) },

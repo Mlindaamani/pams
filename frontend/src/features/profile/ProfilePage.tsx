@@ -33,6 +33,7 @@ import {
   uploadMyAvatar,
 } from '@/features/admin/usersApi';
 import { listDepartments } from '@/features/reference/api';
+import { isAppRole, roleLabel } from '@/features/admin/userRoles';
 import { VirtualizedCombobox } from '@/components/VirtualizedCombobox';
 
 export function ProfilePage() {
@@ -177,7 +178,7 @@ export function ProfilePage() {
 
   if (me.isLoading) return <Loading />;
 
-  const roles = rolesFromAccessToken(auth.user?.access_token);
+  const roles = rolesFromAccessToken(auth.user?.access_token).filter(isAppRole);
   const departmentName = departments.data?.content.find(
     (department) => department.id === me.data?.departmentId,
   )?.name;
@@ -401,7 +402,7 @@ export function ProfilePage() {
                           size="small"
                           color="primary"
                           variant="outlined"
-                          label={role}
+                          label={roleLabel(role)}
                         />
                       ))
                     )}
