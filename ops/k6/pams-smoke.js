@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
 const KEYCLOAK_URL = __ENV.KEYCLOAK_URL || 'http://localhost:8081';
-const USERNAME = __ENV.USERNAME || 'admin';
-const PASSWORD = __ENV.PASSWORD || 'admin';
+const USERNAME = __ENV.USERNAME || 'admin@crdb.com';
+const PASSWORD = __ENV.PASSWORD || 'rach,369';
 const CLIENT_ID = __ENV.CLIENT_ID || 'pams-cli';
 const CLIENT_SECRET = __ENV.CLIENT_SECRET || 'change-me-pams-cli-secret';
 

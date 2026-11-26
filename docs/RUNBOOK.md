@@ -105,12 +105,14 @@ Write endpoints under `/api/v1`, CSV exports and audit exports are limited per u
 ### Local token for API tools
 
 The SPA uses `pams-frontend`; password grants are disabled there. Use the local-only `pams-cli`
-client for curl and k6:
+client for curl and k6. Tenant admins: CRDB `admin@crdb.com`, ZeusTech `admin@zeustech.com`
+(development-only password `rach,369`). Role demo users use password = username (`officer`,
+`requester`, `approver`, `finance`, `auditor`).
 
 ```bash
 curl -s -X POST http://localhost:8081/realms/pams/protocol/openid-connect/token \
   -d grant_type=password -d client_id=pams-cli \
-  -d client_secret=change-me-pams-cli-secret -d username=admin -d password=admin
+  -d client_secret=change-me-pams-cli-secret -d username=admin@crdb.com -d password='rach,369'
 ```
 
 ## Database and object-storage backup/restore
@@ -176,6 +178,7 @@ healthcheck. Tag images with the git SHA/semantic version; never deploy `latest`
 ```bash
 make k6                         # 10 VUs / 30s smoke
 PEAK_VUS=50 make load-test      # ramp to 50, then 1.5x headroom
+# Override USERNAME/PASSWORD to use ZeusTech or another tenant admin.
 ```
 
 `ops/k6/pams-load.js` logs in with a Keycloak password grant and exercises request, vendor, budget
@@ -183,9 +186,10 @@ and spend-report reads. It ramps to `PEAK_VUS`, holds, then ramps to `HEADROOM_V
 Thresholds are `p95 < 500ms`, `p99 < 1s` and error rate `< 1%`. Run against production-like staging,
 not against live customer traffic. Record results per release:
 
-| Date | Version | Peak / headroom VUs | p95 | p99 | Error rate | Notes |
-|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | Pending production-like run |
+| Date | Version | Peak / headroom VUs | p95 | Error rate | Notes |
+|---|---|---|---|---|---|
+| 2026-11-26 | branch @ `13694c9` | 2 / 3 | 19.1 ms | 0% | Local dev smoke only, not capacity evidence |
+| — | — | — | — | — | Pending production-like run |
 
 ## Incident checklist
 

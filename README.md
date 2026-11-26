@@ -38,16 +38,18 @@ The API listens on `http://localhost:8080`; the OpenAPI schema is served at runt
 management port) at `http://localhost:9090/actuator`.
 Keycloak is at `http://localhost:8081` (realm `pams`). The master admin comes from `KEYCLOAK_ADMIN`/`KEYCLOAK_ADMIN_PASSWORD` (`admin`/`admin` in `.env.example`).
 
-All API endpoints require a Keycloak bearer token. Demo users (password = username): `admin`
-(ADMIN), `officer` (PROCUREMENT_OFFICER), `requester` (REQUESTER), `approver` (APPROVER), `finance`
-(FINANCE), `auditor` (AUDITOR). The SaaS Creator platform account is `pams` / `admin@pams.com`
-(development-only password `rach,369`); it has no tenant organization and manages the platform area.
+All API endpoints require a Keycloak bearer token. Development tenant administrators are CRDB
+(`admin@crdb.com`) and ZeusTech (`admin@zeustech.com`), both with the development-only password
+`rach,369`. Role demo users (password = username): `officer` (PROCUREMENT_OFFICER), `requester`
+(REQUESTER), `approver` (APPROVER), `finance` (FINANCE), `auditor` (AUDITOR). The SaaS Creator
+platform account is `pams` / `admin@pams.com` (development-only password `rach,369`); it has no
+tenant organization and manages the platform area.
 Get a tenant API token with:
 
 ```bash
 curl -s -X POST http://localhost:8081/realms/pams/protocol/openid-connect/token \
   -d grant_type=password -d client_id=pams-cli -d client_secret=change-me-pams-cli-secret \
-  -d username=admin -d password=admin
+  -d username=admin@crdb.com -d password='rach,369'
 ```
 
 The web app is at `http://localhost:3000`. In development Compose runs Vite with the frontend source
