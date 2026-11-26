@@ -17,6 +17,11 @@
 - `organization_id` on every tenant table, resolved from the JWT `organization_id` claim.
 - Defense in depth: Hibernate tenant filter and PostgreSQL RLS (`pams_app` role).
 - Cross-tenant lookups return `404`; tenant-isolation tests cover new endpoints.
+- `RlsInventoryTest` and `make rls-inventory` (backed by `ops/postgres/rls-inventory.sql`) verify every table carrying
+  `organization_id`. Documented exceptions are cross-tenant infrastructure tables that cannot use a
+  single `app.current_org`: `outbox_event`, `tenant_provisioning`, `tenant_subscription`,
+  `webhook_delivery` and `webhook_subscription`. API access to the webhook tables still filters by
+  organization; platform tables are platform-only.
 
 ## Data and transport
 
@@ -31,7 +36,9 @@
 - Secrets only via environment/secret manager; `.env` is git-ignored, `.env.example` is not secret.
 - Never log tokens, passwords, bank details or full PII. Mask sensitive values.
 - Dependencies/images scanned in CI (Trivy); rotate Keycloak/DB/MinIO credentials regularly.
-- Rate limiting protects write endpoints; 429 includes `Retry-After`.
+- Rate limiting protects write endpoints and CSV/tenant exports; 429 includes `Retry-After`.
+- Keycloak brute-force protection locks an account after 10 failures, with incremental waits up to
+  15 minutes inside a 12-hour failure window.
 - Actuator management port must not be publicly routed; only health probes may be exposed.
 
 ## Webhooks

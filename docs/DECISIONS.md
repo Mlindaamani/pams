@@ -1008,8 +1008,8 @@ use regardless of entitlement, so plan limits were enforceable but feature packa
   core reports and advanced report CSV export.
 - Frontend abilities combine permissions **and** feature entitlements, hiding navigation, route
   access and actions that the current plan does not include.
-- `sso` remains a Keycloak/commercial configuration; `audit_export` remains informational until an
-  audit export endpoint exists; `priority_support` is commercial only.
+- `sso` remains a Keycloak/commercial configuration; `audit_export` is enforced on the CSV export
+  endpoint; `priority_support` is commercial only.
 - Rename the Platform navigation item **Platform dashboard** to **Dashboard** (route unchanged).
 
 **Consequences.** Starter tenants no longer see or can call invoice, receipt, webhook or report-export

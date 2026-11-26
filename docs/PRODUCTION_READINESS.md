@@ -81,9 +81,12 @@ secure cookies and request-size limits at the edge. The app containers do not te
 
 - CI runs dependency scanning and container scanning.
 - Run an independent penetration test before the first production customer.
-- Keep the tenant-isolation/RLS tests green and repeat the database RLS inventory for every new
-  tenant table.
-- Rate-limit login, invitations, uploads and exports at the edge or in the application.
+- Keep the tenant-isolation/RLS tests green and repeat
+  `ops/postgres/rls-inventory.sql` for every new tenant table. `RlsInventoryTest` enforces the
+  documented cross-tenant exceptions.
+- Rate-limit login, invitations, uploads and exports at the edge or in the application. Application
+  writes/exports and Keycloak brute-force protection are enabled; edge/WAF limits remain operator
+  configuration.
 - Add backup encryption and restore-access audit before storing real customer data.
 
 ## Tenant lifecycle

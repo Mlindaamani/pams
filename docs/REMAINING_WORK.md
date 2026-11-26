@@ -29,6 +29,7 @@ strategy and sequencing document; this file tracks concrete launch gaps.
 | Backup/restore scripts, backup verification and local restore validation | Implemented |
 | CI scanning, immutable images, deploy/rollback automation | Implemented in repository; environments not configured |
 | Alert thresholds and incident-response runbook | Implemented in repository; paging/status accounts not configured |
+| RLS inventory guard and tenant table exceptions | Implemented and tested |
 | Peak/headroom load-test script | Implemented; production-like run and recorded result missing |
 | Phase A production launch gates | **Incomplete** |
 | Phase B onboarding/self-serve activation | **Incomplete** |
@@ -79,8 +80,9 @@ These items must be closed before the first paying tenant carries business-criti
   - Remediate critical/high findings and retain the report before onboarding customers.
 - [ ] **Tenant-isolation evidence report for every endpoint and report.** *(Engineering)*
   - Convert the existing test suite into an endpoint/report coverage matrix with results.
-- [ ] **Documented RLS inventory for every tenant-owned table.** *(Engineering)*
-  - Include new tables in the review checklist and record the audit evidence.
+- [x] **Documented RLS inventory for every tenant-owned table.** *(Engineering)*
+  - `RlsInventoryTest` and `ops/postgres/rls-inventory.sql`; cross-tenant poller/platform
+    exceptions are documented in `docs/SECURITY.md`.
 - [ ] **Audit-log retention and access policy.** *(Legal + Operator)*
   - Define retention, legal hold, export access and deletion rules.
 - [ ] **DPA, privacy policy, terms of service and retention policy.** *(Legal)*
@@ -165,8 +167,7 @@ The revenue dashboard exists, but these inputs are still missing for reliable CA
 
 ## 5. Documentation Hygiene
 
-- [ ] Reconcile stale audit-export notes in `docs/SUBSCRIPTION_BILLING.md` and `docs/DECISIONS.md`;
-  the CSV export endpoint now exists and is feature-gated.
+- [x] Reconcile stale audit-export notes; the CSV export endpoint exists and is feature-gated.
 - [ ] Record the first staging deploy, rollback drill and production-like load-test result.
 - [ ] Add the final staging/production URLs and support contacts to `docs/RUNBOOK.md` and
   `docs/INCIDENT_RESPONSE.md`.

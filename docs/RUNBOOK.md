@@ -85,6 +85,10 @@ Write endpoints under `/api/v1`, CSV exports and audit exports are limited per u
 (`pams.rate-limit.*`, default 120 requests per 60s). Exceeding the bucket returns `429` with
 `Retry-After`. Disable only in tests.
 
+Keycloak brute-force protection is enabled for the `pams` realm: 10 failures per account within the
+12-hour window, incremental 60s waits up to 15 minutes. Keep this enabled in production and mirror it
+at the edge/WAF where possible.
+
 ## Tracing and logs
 
 - Dev: readable logs with `requestId`/`traceId`.

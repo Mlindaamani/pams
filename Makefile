@@ -2,7 +2,7 @@ SHELL := /bin/bash
 BACKEND := ./backend
 MVN := $(BACKEND)/mvnw -f $(BACKEND)/pom.xml
 
-.PHONY: up down logs test build lint format migrate api-types keycloak-verify keycloak-orphans backend-compile web-build web-test web-lint web-e2e stripe-test-clock k6 load-test backup-verify prod-build prod-up prod-deploy prod-rollback backup prod-backup restore prod-restore clean
+.PHONY: up down logs test build lint format migrate api-types rls-inventory keycloak-verify keycloak-orphans backend-compile web-build web-test web-lint web-e2e stripe-test-clock k6 load-test backup-verify prod-build prod-up prod-deploy prod-rollback backup prod-backup restore prod-restore clean
 
 up:
 	docker compose up -d
@@ -30,6 +30,9 @@ migrate:
 
 api-types:
 	cd frontend && npm run api:generate
+
+rls-inventory:
+	docker compose exec -T postgres psql -U pams -d pams -P pager=off -f - < ops/postgres/rls-inventory.sql
 
 keycloak-verify:
 	ops/keycloak/verify-admin-client.sh

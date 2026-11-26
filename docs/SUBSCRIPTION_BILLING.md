@@ -201,11 +201,12 @@ Enforced features currently include:
 - `webhooks`
 - `core_reports`
 - `advanced_reports` (CSV export)
+- `audit_export` (CSV export at `GET /api/v1/audit-events/export`)
 - `custom_branding`
 
 Missing entitlement returns HTTP `403` with code `feature-not-enabled`. The tenant UI loads
-`GET /api/v1/me/features` and hides routes/actions accordingly. `sso`, `audit_export` and
-`priority_support` remain commercial/informational until their runtime capabilities are implemented.
+`GET /api/v1/me/features` and hides routes/actions accordingly. `sso` remains commercial until an
+SSO runtime capability is implemented; `priority_support` is commercial only.
 
 ### 4.2 Usage limits
 
@@ -424,8 +425,8 @@ does not implement its own card retry schedule.
 | Stripe event retention | No cleanup policy | Add retention/archival policy |
 | Billing emails | PAMS sends lifecycle notices | Consider Stripe invoice/receipt email policy |
 | Customer billing details | Customer created with name only | Collect billing email/address/tax ID where needed |
-| Audit export | Feature exists, endpoint not implemented | Build export before enforcing `audit_export` |
-| Entitlement runtime | Enforced for key modules | Add runtime enforcement for SSO and audit export when built |
+| Audit export | Implemented and feature-gated | Keep entitlement and retention policy aligned |
+| Entitlement runtime | Enforced for key modules including audit export | Add runtime enforcement for SSO when built |
 
 ---
 

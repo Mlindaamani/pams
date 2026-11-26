@@ -224,14 +224,14 @@ See `docs/REMAINING_WORK.md` for a concrete launch-gap checklist with owners and
 
 - [ ] Independent penetration test before first production customer
 - [ ] Tenant-isolation test for every endpoint and report
-- [ ] RLS enabled and verified on every tenant-owned table
+- [x] RLS enabled and verified on every tenant-owned table (documented cross-tenant exceptions)
 - [ ] Audit-log retention and access policy
 - [ ] DPA, privacy policy and terms of service
 - [x] Tenant data export
 - [x] Tenant deletion/anonymization
 - [ ] Backup encryption and restore access audit
 - [x] Dependency and container scanning in CI
-- [ ] Rate limits for login, invitations, uploads and exports
+- [x] Rate limits for login, invitations, uploads and exports
 - [ ] Incident response plan and breach notification process
 
 ### 5.3 Billing Readiness
