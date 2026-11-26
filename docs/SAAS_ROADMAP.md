@@ -227,7 +227,7 @@ flowchart LR
 - [ ] DPA, privacy policy and terms of service
 - [ ] Data export and tenant deletion/anonymization
 - [ ] Backup encryption and restore access audit
-- [ ] Dependency and container scanning in CI
+- [x] Dependency and container scanning in CI
 - [ ] Rate limits for login, invitations, uploads and exports
 - [ ] Incident response plan and breach notification process
 

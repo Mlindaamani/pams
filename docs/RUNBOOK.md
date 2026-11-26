@@ -81,8 +81,9 @@ ops/keycloak/verify-admin-client.sh
 
 ## Rate limiting
 
-Write endpoints under `/api/v1` are limited per user/IP (`pams.rate-limit.*`, default 120 requests
-per 60s). Exceeding the bucket returns `429` with `Retry-After`. Disable only in tests.
+Write endpoints under `/api/v1`, CSV exports and audit exports are limited per user/IP
+(`pams.rate-limit.*`, default 120 requests per 60s). Exceeding the bucket returns `429` with
+`Retry-After`. Disable only in tests.
 
 ## Tracing and logs
 
@@ -112,17 +113,29 @@ curl -s -X POST http://localhost:8081/realms/pams/protocol/openid-connect/token 
   -d client_secret=change-me-pams-cli-secret -d username=admin -d password=admin
 ```
 
-## Database backup/restore
+## Database and object-storage backup/restore
+
+Use the verified backup script; it captures PostgreSQL (`pams`), Keycloak (`keycloak`) and MinIO
+objects together, writes checksums and a manifest, and prunes old backups:
 
 ```bash
-docker exec pams-postgres pg_dump -U pams -Fc pams > pams.dump
-docker exec pams-postgres pg_dump -U pams -Fc keycloak > keycloak.dump
-docker exec -i pams-postgres pg_restore -U pams -d pams --clean --if-exists < pams.dump
-docker exec -i pams-postgres pg_restore -U pams -d keycloak --clean --if-exists < keycloak.dump
+BACKUP_ROOT=/var/backups/pams BACKUP_RETENTION_DAYS=30 ops/backup/backup.sh
+# Production compose:
+COMPOSE_FILE=docker-compose.prod.yml BACKUP_ROOT=/var/backups/pams ops/backup/backup.sh
 ```
 
-Back up `pams` and `keycloak` together: the application profiles reference Keycloak subject IDs.
-Flyway migrations run on startup; never edit an applied migration.
+Restores are destructive and require explicit confirmation:
+
+```bash
+BACKUP_DIR=/var/backups/pams/20261126T120000Z ops/backup/restore.sh --confirm
+# Production compose:
+COMPOSE_FILE=docker-compose.prod.yml BACKUP_DIR=/var/backups/pams/20261126T120000Z \
+  ops/backup/restore.sh --confirm
+```
+
+See `docs/PRODUCTION_READINESS.md` for target RPO/RTO, restore drills, secrets/TLS and monitoring
+requirements. Back up `pams` and `keycloak` together: the application profiles reference Keycloak
+subject IDs. Flyway migrations run on startup; never edit an applied migration.
 
 ## Production
 

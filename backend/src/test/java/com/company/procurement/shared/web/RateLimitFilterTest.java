@@ -51,6 +51,22 @@ class RateLimitFilterTest {
   }
 
   @Test
+  void limitsCsvExportsAfterBucketIsExhausted() throws Exception {
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken("export-user", null, List.of()));
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/reports/spend.csv");
+    AtomicInteger invocations = new AtomicInteger();
+    FilterChain chain = (req, res) -> invocations.incrementAndGet();
+
+    filter.doFilter(request, new MockHttpServletResponse(), chain);
+    MockHttpServletResponse second = new MockHttpServletResponse();
+    filter.doFilter(request, second, chain);
+
+    assertThat(invocations).hasValue(1);
+    assertThat(second.getStatus()).isEqualTo(429);
+  }
+
+  @Test
   void doesNotLimitReads() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/vendors");
     AtomicInteger invocations = new AtomicInteger();

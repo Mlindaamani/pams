@@ -43,9 +43,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    return !properties.enabled()
-        || !LIMITED_METHODS.contains(request.getMethod())
-        || !request.getRequestURI().startsWith("/api/v1");
+    String method = request.getMethod();
+    String path = request.getRequestURI();
+    boolean limited = LIMITED_METHODS.contains(method) || isLimitedExport(method, path);
+    return !properties.enabled() || !limited || !path.startsWith("/api/v1");
+  }
+
+  private static boolean isLimitedExport(String method, String path) {
+    return "GET".equals(method) && (path.endsWith(".csv") || path.endsWith("/export"));
   }
 
   @Override

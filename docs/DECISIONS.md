@@ -2152,3 +2152,23 @@ and ArchUnit prevents them from coming back. Remaining SQL is limited to reposit
 infrastructure: `set_config` tenant/session setup, outbox `FOR UPDATE SKIP LOCKED`, atomic sequence
 upserts, Stripe event idempotency and PostgreSQL reporting/projection queries. Those exceptions are
 covered by integration tests.
+
+---
+
+## ADR-108 — Verified backups cover PostgreSQL, Keycloak and MinIO
+
+**Context.** Production restore requires the application database, Keycloak identity data and object
+storage to be consistent. Manual ad-hoc dumps are easy to skip or mix from different points in time.
+
+**Decision.**
+- Provide `ops/backup/backup.sh` and `ops/backup/restore.sh` for the full stateful set.
+- Write timestamped archives with checksums, a manifest and immediate archive verification.
+- Pin restore to an explicit backup directory and require `--confirm`; restore replaces DB, Keycloak
+  and object storage together.
+- Document target RPO/RTO, retention, encryption expectations and restore drills in
+  `docs/PRODUCTION_READINESS.md`.
+- Keep encryption, off-host storage and managed PITR as deployment responsibilities.
+
+**Consequences.** A single command produces a restorable backup and restore drills are repeatable.
+The scripts do not replace managed database PITR, encrypted off-site storage or production access
+controls.

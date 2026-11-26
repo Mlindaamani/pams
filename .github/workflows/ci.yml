@@ -37,6 +37,14 @@ jobs:
       - name: Build backend image
         run: docker build -t pams-backend:ci .
 
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: pams-backend:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
   frontend:
     name: Frontend (lint, tests, build, scan, image)
     runs-on: ubuntu-latest
@@ -78,3 +86,22 @@ jobs:
 
       - name: Build frontend image
         run: docker build -t pams-web:ci .
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: pams-web:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+  ops:
+    name: Ops scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate backup scripts
+        run: |
+          bash -n ops/backup/backup.sh
+          bash -n ops/backup/restore.sh
