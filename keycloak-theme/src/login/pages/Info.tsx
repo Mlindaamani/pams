@@ -55,22 +55,14 @@ export default function Info(props: PageProps<Extract<KcContext, { pageId: "info
 
                     if (pageRedirectUri) {
                         return (
-                            <Button
-                                variant="text"
-                                href={pageRedirectUri}
-                                sx={{textTransform: 'none'}}
-                            >
+                            <Button variant="text" href={pageRedirectUri} sx={{ textTransform: "none" }}>
                                 {msg("backToApplication")}
                             </Button>
                         );
                     }
                     if (actionUri) {
                         return (
-                            <Button
-                                variant="text"
-                                href={actionUri}
-                                sx={{textTransform: 'none'}}
-                            >
+                            <Button variant="text" href={actionUri} sx={{ textTransform: "none" }}>
                                 {msg("proceedWithAction")}
                             </Button>
                         );
@@ -78,11 +70,7 @@ export default function Info(props: PageProps<Extract<KcContext, { pageId: "info
 
                     if (client.baseUrl) {
                         return (
-                            <Button
-                                variant="text"
-                                href={client.baseUrl}
-                                sx={{textTransform: 'none'}}
-                            >
+                            <Button variant="text" href={client.baseUrl} sx={{ textTransform: "none" }}>
                                 {msg("backToApplication")}
                             </Button>
                         );

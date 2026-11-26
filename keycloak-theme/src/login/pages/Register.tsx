@@ -8,14 +8,14 @@ import type { UserProfileFormFieldsProps } from "keycloakify/login/UserProfileFo
 import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
-import Button from '@mui/material/Button';
-import FormControl from '@mui/material/FormControl';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
-import Checkbox from '@mui/material/Checkbox';
+import Button from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
+import Checkbox from "@mui/material/Checkbox";
 import "./register.css";
-import {Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 
 type RegisterProps = PageProps<Extract<KcContext, { pageId: "register.ftl" }>, I18n> & {
     UserProfileFormFields: LazyOrNot<(props: UserProfileFormFieldsProps) => JSX.Element>;
@@ -39,13 +39,14 @@ export default function Register(props: RegisterProps) {
     const [areTermsAccepted, setAreTermsAccepted] = useState(false);
 
     useLayoutEffect(() => {
-        (window as any)["onSubmitRecaptcha"] = () => {
-            // @ts-expect-error
+        const recaptchaWindow = window as Window & { onSubmitRecaptcha?: () => void };
+        recaptchaWindow.onSubmitRecaptcha = () => {
+            // @ts-expect-error -- the Keycloak registration form is not typed by the login context
             document.getElementById("kc-register-form").requestSubmit();
         };
 
         return () => {
-            delete (window as any)["onSubmitRecaptcha"];
+            delete recaptchaWindow.onSubmitRecaptcha;
         };
     }, []);
 
@@ -67,12 +68,10 @@ export default function Register(props: RegisterProps) {
                     doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                 />
 
-                    <Typography
-                        variant="caption"
-                        className="kc-caption-info"
-                    >
-                        {"*"}{  msg("requiredFields")}
-                    </Typography>
+                <Typography variant="caption" className="kc-caption-info">
+                    {"*"}
+                    {msg("requiredFields")}
+                </Typography>
                 {termsAcceptanceRequired && (
                     <TermsAcceptance
                         i18n={i18n}
@@ -92,27 +91,29 @@ export default function Register(props: RegisterProps) {
                 <div className={kcClsx("kcFormGroupClass")}>
                     {recaptchaRequired && !recaptchaVisible && recaptchaAction !== undefined ? (
                         <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                            <Button variant="contained"
-                                    sx={{width: "100%"}}
-                                    className={clsx(
-                                        kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass"),
-                                        "g-recaptcha"
-                                    )}
-                                    data-sitekey={recaptchaSiteKey}
-                                    data-callback="onSubmitRecaptcha"
-                                    data-action={recaptchaAction}
-                                    type="submit"
+                            <Button
+                                variant="contained"
+                                sx={{ width: "100%" }}
+                                className={clsx(
+                                    kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass"),
+                                    "g-recaptcha"
+                                )}
+                                data-sitekey={recaptchaSiteKey}
+                                data-callback="onSubmitRecaptcha"
+                                data-action={recaptchaAction}
+                                type="submit"
                             >
                                 {msg("doRegister")}
                             </Button>
                         </div>
                     ) : (
                         <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                            <Button variant="contained"
-                                    sx={{width: "100%"}}
-                                    disabled={!isFormSubmittable || (termsAcceptanceRequired && !areTermsAccepted)}
-                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                                    type="submit"
+                            <Button
+                                variant="contained"
+                                sx={{ width: "100%" }}
+                                disabled={!isFormSubmittable || (termsAcceptanceRequired && !areTermsAccepted)}
+                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                                type="submit"
                             >
                                 {msgStr("doRegister")}
                             </Button>
@@ -121,7 +122,9 @@ export default function Register(props: RegisterProps) {
                     <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
                         <div className={kcClsx("kcFormOptionsWrapperClass")}>
                             <span>
-                                <Button variant="text" href={url.loginUrl} sx={{textTransform: 'none'}}>{msg("backToLogin")}</Button>
+                                <Button variant="text" href={url.loginUrl} sx={{ textTransform: "none" }}>
+                                    {msg("backToLogin")}
+                                </Button>
                             </span>
                         </div>
                     </div>
@@ -156,12 +159,7 @@ function TermsAcceptance(props: {
                         <FormGroup>
                             <FormControlLabel
                                 required
-                                control={
-                                    <Checkbox
-                                        checked={areTermsAccepted}
-                                        onChange={(_, checked) => onAreTermsAcceptedValueChange(checked)}
-                                    />
-                                }
+                                control={<Checkbox checked={areTermsAccepted} onChange={(_, checked) => onAreTermsAcceptedValueChange(checked)} />}
                                 label={msg("acceptTerms")}
                                 id="termsAccepted"
                                 name="termsAccepted"

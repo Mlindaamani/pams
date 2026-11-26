@@ -28,7 +28,8 @@ services:
 # Keycloak service for authentication and authorization
   keycloak:
     build:
-      context: ./keycloak-theme
+      context: .
+      dockerfile: keycloak-theme/Dockerfile
     image: pams-keycloak:${PAMS_KEYCLOAK_TAG:-dev}
     container_name: pams-keycloak
     command: ["start-dev", "--import-realm"]
@@ -181,7 +182,7 @@ services:
     image: node:22-alpine
     container_name: pams-web
     network_mode: host
-    working_dir: /app
+    working_dir: /app/frontend
     command:
       [
         "sh",
@@ -189,8 +190,8 @@ services:
         "[ -f node_modules/.package-lock.json ] || npm ci; exec npm run dev -- --host 0.0.0.0 --port ${WEB_PORT:-3000}",
       ]
     volumes:
-      - ./frontend:/app
-      - web-node-modules:/app/node_modules
+      - ./:/app
+      - web-node-modules:/app/frontend/node_modules
     environment:
       PAMS_API_BASE_URL: ${PAMS_PUBLIC_API_URL:-http://localhost:8080}
       PAMS_OIDC_AUTHORITY: ${PAMS_PUBLIC_OIDC_AUTHORITY:-http://localhost:8081/realms/pams}

@@ -24,7 +24,6 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import React from "react";
 
-
 export default function UserProfileFormFields(props: UserProfileFormFieldsProps<KcContext, I18n>) {
     const { kcContext, i18n, kcClsx, onIsFormSubmittableValueChange, doMakeUserConfirmPassword, BeforeField } = props;
 
@@ -712,15 +711,12 @@ function InputFieldByTypeMaterial(props: InputFieldByTypeProps) {
     }
 }
 
-
 function InputTagMaterial(props: InputFieldByTypeProps & { fieldIndex: number | undefined }) {
     const { attribute, fieldIndex, valueOrValues, dispatchFormAction, i18n, displayableErrors } = props;
 
     const { advancedMsgStr } = i18n;
 
-    const value = fieldIndex !== undefined
-        ? (valueOrValues as string[])[fieldIndex]
-        : (valueOrValues as string);
+    const value = fieldIndex !== undefined ? (valueOrValues as string[])[fieldIndex] : (valueOrValues as string);
 
     return (
         <TextField
@@ -733,11 +729,10 @@ function InputTagMaterial(props: InputFieldByTypeProps & { fieldIndex: number | 
                 dispatchFormAction({
                     action: "update",
                     name: attribute.name,
-                    valueOrValues: fieldIndex !== undefined
-                        ? (valueOrValues as string[]).map((v, i) =>
-                            i === fieldIndex ? event.target.value : v
-                        )
-                        : event.target.value
+                    valueOrValues:
+                        fieldIndex !== undefined
+                            ? (valueOrValues as string[]).map((v, i) => (i === fieldIndex ? event.target.value : v))
+                            : event.target.value
                 })
             }
             onBlur={() =>
@@ -748,9 +743,7 @@ function InputTagMaterial(props: InputFieldByTypeProps & { fieldIndex: number | 
                 })
             }
             placeholder={
-                attribute.annotations.inputTypePlaceholder === undefined
-                    ? undefined
-                    : advancedMsgStr(attribute.annotations.inputTypePlaceholder)
+                attribute.annotations.inputTypePlaceholder === undefined ? undefined : advancedMsgStr(attribute.annotations.inputTypePlaceholder)
             }
             disabled={attribute.readOnly}
             error={displayableErrors.length > 0}
@@ -792,9 +785,7 @@ function PasswordWrapperMaterial(props: {
 
     return (
         <FormControl variant="outlined" fullWidth error={displayableErrors.length > 0} required={attribute.required}>
-            <InputLabel htmlFor={passwordInputId}>
-                {msg(passwordInputId === "password-confirm" ? "passwordConfirm" : "password")}
-            </InputLabel>
+            <InputLabel htmlFor={passwordInputId}>{msg(passwordInputId === "password-confirm" ? "passwordConfirm" : "password")}</InputLabel>
             <OutlinedInput
                 id={passwordInputId}
                 name={passwordInputId}

@@ -22,10 +22,7 @@ export default function DeleteAccountConfirm(props: PageProps<Extract<KcContext,
         <Template kcContext={kcContext} i18n={i18n} doUseDefaultCss={doUseDefaultCss} classes={classes} headerNode={msg("deleteAccountConfirm")}>
             <form action={url.loginAction} className="form-vertical" method="post">
                 <div className="alert alert-warning">
-                    <Alert
-                        severity="warning"
-                        variant="outlined"
-                    >
+                    <Alert severity="warning" variant="outlined">
                         {msg("irreversibleAction")}
                     </Alert>
                 </div>
@@ -42,21 +39,25 @@ export default function DeleteAccountConfirm(props: PageProps<Extract<KcContext,
                 </ul>
                 <p className="delete-account-text">{msg("finalDeletionConfirmation")}</p>
                 <div id="kc-form-buttons">
-                    <Button variant="contained"
-                            sx={{ width: "100%" }}
-                            className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                            type="submit"
-                    >{msgStr("doConfirmDelete")}
+                    <Button
+                        variant="contained"
+                        sx={{ width: "100%" }}
+                        className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                        type="submit"
+                    >
+                        {msgStr("doConfirmDelete")}
                     </Button>
                     {triggered_from_aia && (
-                        <Button variant="outlined"
-                                className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                                type="submit"
-                                name="cancel-aia"
-                                value="true"
-                                sx={{ width: "100%" }}
-                                formNoValidate
-                        >{msgStr("doCancel")}
+                        <Button
+                            variant="outlined"
+                            className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                            type="submit"
+                            name="cancel-aia"
+                            value="true"
+                            sx={{ width: "100%" }}
+                            formNoValidate
+                        >
+                            {msgStr("doCancel")}
                         </Button>
                     )}
                 </div>

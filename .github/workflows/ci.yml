@@ -120,6 +120,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Lint, format and audit
+        run: |
+          npm run lint
+          npm run format:check
+          npm audit --omit=dev
+
       - name: Build theme JAR
         run: |
           mvn -version

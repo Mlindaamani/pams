@@ -28,12 +28,13 @@ export default function LogoutConfirm(props: PageProps<Extract<KcContext, { page
                             <div className={kcClsx("kcFormOptionsWrapperClass")}></div>
                         </div>
                         <div id="kc-form-buttons" className={kcClsx("kcFormGroupClass")}>
-                            <Button variant="contained"
-                                    tabIndex={4}
-                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                                    name="confirmLogout"
-                                    id="kc-logout"
-                                    type="submit"
+                            <Button
+                                variant="contained"
+                                tabIndex={4}
+                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                                name="confirmLogout"
+                                id="kc-logout"
+                                type="submit"
                             >
                                 {msgStr("doLogout")}
                             </Button>
@@ -42,11 +43,7 @@ export default function LogoutConfirm(props: PageProps<Extract<KcContext, { page
                 </form>
                 <div id="kc-info-message">
                     {!logoutConfirm.skipLink && client.baseUrl && (
-                        <Button
-                            variant="text"
-                            href={client.baseUrl}
-                            sx={{textTransform: 'none'}}
-                        >
+                        <Button variant="text" href={client.baseUrl} sx={{ textTransform: "none" }}>
                             {msg("backToApplication")}
                         </Button>
                     )}

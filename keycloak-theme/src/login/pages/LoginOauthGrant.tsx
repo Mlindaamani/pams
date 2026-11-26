@@ -2,7 +2,7 @@ import { getKcClsx } from "keycloakify/login/lib/kcClsx";
 import { PageProps } from "keycloakify/login/pages/PageProps";
 import { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
-import Button from '@mui/material/Button';
+import Button from "@mui/material/Button";
 import "./LoginOauthGrant.css";
 
 export default function LoginOauthGrant(props: PageProps<Extract<KcContext, { pageId: "login-oauth-grant.ftl" }>, I18n>) {
@@ -54,7 +54,7 @@ export default function LoginOauthGrant(props: PageProps<Extract<KcContext, { pa
                             {client.attributes.tosUri && (
                                 <>
                                     {msg("oauthGrantReview")}
-                                    <a href={client.attributes.tosUri} target="_blank">
+                                    <a href={client.attributes.tosUri} target="_blank" rel="noreferrer">
                                         {msg("oauthGrantTos")}
                                     </a>
                                 </>
@@ -62,7 +62,7 @@ export default function LoginOauthGrant(props: PageProps<Extract<KcContext, { pa
                             {client.attributes.policyUri && (
                                 <>
                                     {msg("oauthGrantReview")}
-                                    <a href={client.attributes.policyUri} target="_blank">
+                                    <a href={client.attributes.policyUri} target="_blank" rel="noreferrer">
                                         {msg("oauthGrantPolicy")}
                                     </a>
                                 </>
@@ -79,20 +79,24 @@ export default function LoginOauthGrant(props: PageProps<Extract<KcContext, { pa
 
                         <div id="kc-form-buttons">
                             <div className={kcClsx("kcFormButtonsWrapperClass")}>
-                                <Button variant="contained"
-                                        className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                                        name="accept"
-                                        id="kc-login"
-                                        type="submit"
-                                        sx={{width:"100%"}}>
+                                <Button
+                                    variant="contained"
+                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                                    name="accept"
+                                    id="kc-login"
+                                    type="submit"
+                                    sx={{ width: "100%" }}
+                                >
                                     {msgStr("doYes")}
                                 </Button>
-                                <Button variant="outlined"
-                                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                                        name="cancel"
-                                        id="kc-cancel"
-                                        type="submit"
-                                        sx={{width:"100%"}}>
+                                <Button
+                                    variant="outlined"
+                                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                                    name="cancel"
+                                    id="kc-cancel"
+                                    type="submit"
+                                    sx={{ width: "100%" }}
+                                >
                                     {msgStr("doNo")}
                                 </Button>
                             </div>

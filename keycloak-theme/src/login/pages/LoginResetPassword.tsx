@@ -33,11 +33,13 @@ export default function LoginResetPassword(props: PageProps<Extract<KcContext, {
                 <div className={kcClsx("kcFormGroupClass")}>
                     <div className={kcClsx("kcInputWrapperClass")}>
                         <TextField
-                            label={!realm.loginWithEmailAllowed
-                                ? msg("username")
-                                : !realm.registrationEmailAsUsername
-                                    ? msg("usernameOrEmail")
-                                    : msg("email")}
+                            label={
+                                !realm.loginWithEmailAllowed
+                                    ? msg("username")
+                                    : !realm.registrationEmailAsUsername
+                                      ? msg("usernameOrEmail")
+                                      : msg("email")
+                            }
                             variant="outlined"
                             id="username"
                             name="username"
@@ -47,22 +49,22 @@ export default function LoginResetPassword(props: PageProps<Extract<KcContext, {
                             defaultValue={auth.attemptedUsername ?? ""}
                             aria-invalid={messagesPerField.existsError("username")}
                             error={messagesPerField.existsError("username")}
-                            helperText={messagesPerField.existsError("username") && (
-                                <span
-                                    id="input-error-username"
-                                    className={kcClsx("kcInputErrorMessageClass")}
-                                    aria-live="polite"
-                                    dangerouslySetInnerHTML={{
-                                        __html: kcSanitize(messagesPerField.get("username"))
-                                    }}
-                                />
-                            )}
+                            helperText={
+                                messagesPerField.existsError("username") && (
+                                    <span
+                                        id="input-error-username"
+                                        className={kcClsx("kcInputErrorMessageClass")}
+                                        aria-live="polite"
+                                        dangerouslySetInnerHTML={{
+                                            __html: kcSanitize(messagesPerField.get("username"))
+                                        }}
+                                    />
+                                )
+                            }
                         />
                     </div>
                 </div>
-                <div>
-                    {realm.duplicateEmailsAllowed ? msg("emailInstructionUsername") : msg("emailInstruction")}
-                </div>
+                <div>{realm.duplicateEmailsAllowed ? msg("emailInstructionUsername") : msg("emailInstruction")}</div>
                 <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
                     <Button
                         className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
@@ -77,11 +79,7 @@ export default function LoginResetPassword(props: PageProps<Extract<KcContext, {
                     <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
                         <div className={kcClsx("kcFormOptionsWrapperClass")}>
                             <span>
-                                <Button
-                                    variant="text"
-                                    href={url.loginUrl}
-                                    sx={{textTransform: 'none'}}
-                                >
+                                <Button variant="text" href={url.loginUrl} sx={{ textTransform: "none" }}>
                                     {msg("backToLogin")}
                                 </Button>
                             </span>

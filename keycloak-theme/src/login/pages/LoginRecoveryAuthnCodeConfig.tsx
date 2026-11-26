@@ -5,17 +5,16 @@ import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import Alert from "@mui/material/Alert";
-import AlertTitle from '@mui/material/AlertTitle';
+import AlertTitle from "@mui/material/AlertTitle";
 import Button from "@mui/material/Button";
-import PrintIcon from '@mui/icons-material/Print';
-import DownloadIcon from '@mui/icons-material/Download';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
+import PrintIcon from "@mui/icons-material/Print";
+import DownloadIcon from "@mui/icons-material/Download";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
 import { List, ListItem, ListItemText, Typography } from "@mui/material";
 import "./LoginRecoveryAuthnCodeConfig.css";
-
 
 export default function LoginRecoveryAuthnCodeConfig(props: PageProps<Extract<KcContext, { pageId: "login-recovery-authn-code-config.ftl" }>, I18n>) {
     const { kcContext, i18n, doUseDefaultCss, Template, classes } = props;
@@ -42,8 +41,7 @@ export default function LoginRecoveryAuthnCodeConfig(props: PageProps<Extract<Kc
             headerNode={msg("recovery-code-config-header")}
         >
             <div className={clsx("pf-c-alert", "pf-m-warning", "pf-m-inline", kcClsx("kcRecoveryCodesWarning"))} aria-label="Warning alert">
-                <Alert severity="warning"
-                        variant="outlined">
+                <Alert severity="warning" variant="outlined">
                     <AlertTitle>{msg("recovery-code-config-warning-title")}</AlertTitle>
                     {msg("recovery-code-config-warning-message")}
                 </Alert>
@@ -68,25 +66,25 @@ export default function LoginRecoveryAuthnCodeConfig(props: PageProps<Extract<Kc
 
             {/* actions */}
             <div className={kcClsx("kcRecoveryCodesActions")}>
-                <Button variant="outlined"
-                        id="printRecoveryCodes"
-                        className={clsx("pf-c-button", "pf-m-link")}
-                        type="button"
-                        endIcon={<PrintIcon />}>
+                <Button variant="outlined" id="printRecoveryCodes" className={clsx("pf-c-button", "pf-m-link")} type="button" endIcon={<PrintIcon />}>
                     {msg("recovery-codes-print")}
                 </Button>
-                <Button variant="outlined"
-                        id="downloadRecoveryCodes"
-                        className={clsx("pf-c-button", "pf-m-link")}
-                        type="button"
-                        endIcon={<DownloadIcon />}>
+                <Button
+                    variant="outlined"
+                    id="downloadRecoveryCodes"
+                    className={clsx("pf-c-button", "pf-m-link")}
+                    type="button"
+                    endIcon={<DownloadIcon />}
+                >
                     {msg("recovery-codes-download")}
                 </Button>
-                <Button variant="outlined"
-                        id="copyRecoveryCodes"
-                        className={clsx("pf-c-button", "pf-m-link")}
-                        type="button"
-                        endIcon={<ContentCopyIcon />}>
+                <Button
+                    variant="outlined"
+                    id="copyRecoveryCodes"
+                    className={clsx("pf-c-button", "pf-m-link")}
+                    type="button"
+                    endIcon={<ContentCopyIcon />}
+                >
                     {msg("recovery-codes-copy")}
                 </Button>
             </div>
@@ -94,16 +92,17 @@ export default function LoginRecoveryAuthnCodeConfig(props: PageProps<Extract<Kc
             {/* confirmation checkbox */}
             <div className={kcClsx("kcFormOptionsClass")}>
                 <FormGroup>
-                <FormControlLabel control={<Checkbox />}
-                                  label={msg("recovery-codes-confirmation-message")}
-                                  className={kcClsx("kcCheckInputClass")}
-                                  id="kcRecoveryCodesConfirmationCheck"
-                                  name="kcRecoveryCodesConfirmationCheck"
-                                  onChange={event => {
-                                      //@ts-expect-error: This is inherited from the original code
-                                      document.getElementById("saveRecoveryAuthnCodesBtn").disabled = !event.target.checked;
-                                  }}
-                />
+                    <FormControlLabel
+                        control={<Checkbox />}
+                        label={msg("recovery-codes-confirmation-message")}
+                        className={kcClsx("kcCheckInputClass")}
+                        id="kcRecoveryCodesConfirmationCheck"
+                        name="kcRecoveryCodesConfirmationCheck"
+                        onChange={event => {
+                            //@ts-expect-error: This is inherited from the original code
+                            document.getElementById("saveRecoveryAuthnCodesBtn").disabled = !event.target.checked;
+                        }}
+                    />
                 </FormGroup>
             </div>
 
@@ -116,30 +115,39 @@ export default function LoginRecoveryAuthnCodeConfig(props: PageProps<Extract<Kc
 
                 {isAppInitiatedAction ? (
                     <>
-                        <Button variant="contained"
-                                type="submit"
-                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                                id="saveRecoveryAuthnCodesBtn"
-                                disabled
-                                sx={{width:"100%"}}
-                        >{msgStr("recovery-codes-action-complete")}</Button>
-
-                        <Button variant="outlined"
-                                type="submit"
-                                className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                                id="cancelRecoveryAuthnCodesBtn"
-                                name="cancel-aia"
-                                value="true"
-                                sx={{width:"100%"}}
-                        >{msg("recovery-codes-action-cancel")}</Button>
-                    </>
-                ) : (
-                    <Button variant="contained"
+                        <Button
+                            variant="contained"
                             type="submit"
                             className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
                             id="saveRecoveryAuthnCodesBtn"
-                            sx={{width:"100%"}}
-                    >{msgStr("recovery-codes-action-complete")}</Button>
+                            disabled
+                            sx={{ width: "100%" }}
+                        >
+                            {msgStr("recovery-codes-action-complete")}
+                        </Button>
+
+                        <Button
+                            variant="outlined"
+                            type="submit"
+                            className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                            id="cancelRecoveryAuthnCodesBtn"
+                            name="cancel-aia"
+                            value="true"
+                            sx={{ width: "100%" }}
+                        >
+                            {msg("recovery-codes-action-cancel")}
+                        </Button>
+                    </>
+                ) : (
+                    <Button
+                        variant="contained"
+                        type="submit"
+                        className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                        id="saveRecoveryAuthnCodesBtn"
+                        sx={{ width: "100%" }}
+                    >
+                        {msgStr("recovery-codes-action-complete")}
+                    </Button>
                 )}
             </form>
         </Template>
@@ -155,12 +163,13 @@ function LogoutOtherSessions(props: { kcClsx: KcClsx; i18n: I18n }) {
         <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
             <div className={kcClsx("kcFormOptionsWrapperClass")}>
                 <FormGroup>
-                    <FormControlLabel control={<Checkbox defaultChecked />}
-                                      label={msg("logoutOtherSessions")}
-                                      className="checkbox"
-                                      id="logout-sessions"
-                                      name="logout-sessions"
-                                      value="on"
+                    <FormControlLabel
+                        control={<Checkbox defaultChecked />}
+                        label={msg("logoutOtherSessions")}
+                        className="checkbox"
+                        id="logout-sessions"
+                        name="logout-sessions"
+                        value="on"
                     />
                 </FormGroup>
             </div>

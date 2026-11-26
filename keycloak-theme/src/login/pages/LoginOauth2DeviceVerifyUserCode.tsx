@@ -43,7 +43,7 @@ export default function LoginOauth2DeviceVerifyUserCode(
                         type="text"
                         className={kcClsx("kcInputClass")}
                         autoFocus
-                        sx={{width: "100%"}}
+                        sx={{ width: "100%" }}
                     />
                 </div>
 
@@ -54,10 +54,13 @@ export default function LoginOauth2DeviceVerifyUserCode(
 
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
                         <div className={kcClsx("kcFormButtonsWrapperClass")}>
-                            <Button variant="contained"
-                                    sx={{width: "100%"}}
-                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                                    type="submit">{msgStr("doSubmit")}
+                            <Button
+                                variant="contained"
+                                sx={{ width: "100%" }}
+                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                                type="submit"
+                            >
+                                {msgStr("doSubmit")}
                             </Button>
                         </div>
                     </div>

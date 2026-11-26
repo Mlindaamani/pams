@@ -32,7 +32,7 @@ export default function LoginRecoveryAuthnCodeInput(props: PageProps<Extract<KcC
                 <div className={kcClsx("kcFormGroupClass")}>
                     <div className={kcClsx("kcInputWrapperClass")}>
                         <TextField
-                            label= {msg("auth-recovery-code-prompt", `${recoveryAuthnCodesInputBean.codeNumber}`)}
+                            label={msg("auth-recovery-code-prompt", `${recoveryAuthnCodesInputBean.codeNumber}`)}
                             variant="outlined"
                             tabIndex={1}
                             id="recoveryCodeInput"
@@ -43,16 +43,18 @@ export default function LoginRecoveryAuthnCodeInput(props: PageProps<Extract<KcC
                             className={kcClsx("kcInputClass")}
                             autoFocus
                             error={messagesPerField.existsError("recoveryCodeInput")}
-                            helperText={messagesPerField.existsError("recoveryCodeInput") && (
-                                <span
-                                    id="input-error"
-                                    className={kcClsx("kcInputErrorMessageClass")}
-                                    aria-live="polite"
-                                    dangerouslySetInnerHTML={{
-                                        __html: kcSanitize(messagesPerField.get("recoveryCodeInput"))
-                                    }}
-                                />
-                            )}
+                            helperText={
+                                messagesPerField.existsError("recoveryCodeInput") && (
+                                    <span
+                                        id="input-error"
+                                        className={kcClsx("kcInputErrorMessageClass")}
+                                        aria-live="polite"
+                                        dangerouslySetInnerHTML={{
+                                            __html: kcSanitize(messagesPerField.get("recoveryCodeInput"))
+                                        }}
+                                    />
+                                )
+                            }
                         />
                     </div>
                 </div>
@@ -62,12 +64,15 @@ export default function LoginRecoveryAuthnCodeInput(props: PageProps<Extract<KcC
                         <div className={kcClsx("kcFormOptionsWrapperClass")} />
                     </div>
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                        <Button variant="contained"
-                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                                name="login"
-                                id="kc-login"
-                                type="submit"
-                        >{msgStr("doLogIn")}</Button>
+                        <Button
+                            variant="contained"
+                            className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                            name="login"
+                            id="kc-login"
+                            type="submit"
+                        >
+                            {msgStr("doLogIn")}
+                        </Button>
                     </div>
                 </div>
             </form>

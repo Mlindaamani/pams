@@ -46,22 +46,22 @@ export default function IdpReviewUserProfile(props: IdpReviewUserProfileProps) {
                     kcClsx={kcClsx}
                     doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                 />
-                <Typography
-                    variant="caption"
-                    className="kc-caption-info"
-                >
-                    {"*"}{  msg("requiredFields")}
+                <Typography variant="caption" className="kc-caption-info">
+                    {"*"}
+                    {msg("requiredFields")}
                 </Typography>
                 <div className={kcClsx("kcFormGroupClass")}>
                     <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
                         <div className={kcClsx("kcFormOptionsWrapperClass")} />
                     </div>
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                        <Button variant="contained"
-                                disabled={!isFomSubmittable}
-                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                                type="submit"
-                        >{msgStr("doSubmit")}
+                        <Button
+                            variant="contained"
+                            disabled={!isFomSubmittable}
+                            className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                            type="submit"
+                        >
+                            {msgStr("doSubmit")}
                         </Button>
                     </div>
                 </div>

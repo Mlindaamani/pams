@@ -51,15 +51,9 @@ export default function FrontchannelLogout(props: PageProps<Extract<KcContext, {
                 ))}
             </ul>
             {logout.logoutRedirectUri !== undefined && (
-                <Button
-                id="continue"
-                sx={{ width: "100%" }}
-                className="btn btn-primary"
-                variant="outlined"
-                href={logout.logoutRedirectUri}
-        >
-            {msg("doContinue")}
-        </Button>
+                <Button id="continue" sx={{ width: "100%" }} className="btn btn-primary" variant="outlined" href={logout.logoutRedirectUri}>
+                    {msg("doContinue")}
+                </Button>
             )}
         </Template>
     );

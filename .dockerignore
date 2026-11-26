@@ -1,0 +1,13 @@
+.git
+.env*
+**/.env*
+.gitignore
+**/node_modules
+**/dist
+**/dist_keycloak
+**/target
+**/*.log
+frontend/playwright-report
+frontend/test-results
+frontend/coverage
+deploy

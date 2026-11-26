@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
@@ -196,14 +197,11 @@ export function ProfilePage() {
         title="My profile"
         actions={
           <Button
-            component="a"
-            href={accountSecurityUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
+            component={RouterLink}
+            to="/profile/security"
             size="small"
             variant="outlined"
             startIcon={<SecurityIcon />}
-            endIcon={<OpenInNewIcon fontSize="small" />}
           >
             Account security
           </Button>

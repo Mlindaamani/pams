@@ -40,13 +40,8 @@ export default function LoginPasskeysConditionalAuthenticate(
                     <div id="kc-registration">
                         <span>
                             ${msg("noAccount")}{" "}
-                            <Button
-                                sx={{ width: "100%" }}
-                                tabIndex={6}
-                                variant="contained"
-                                href={url.registrationUrl}
-                            >
-                                    {msg("doRegister")}
+                            <Button sx={{ width: "100%" }} tabIndex={6} variant="contained" href={url.registrationUrl}>
+                                {msg("doRegister")}
                             </Button>
                         </span>
                     </div>
@@ -62,7 +57,7 @@ export default function LoginPasskeysConditionalAuthenticate(
                 <input type="hidden" id="error" name="error" />
             </form>
 
-            <div className={kcClsx("kcFormGroupClass")} no-bottom-margin="true" style={{ marginBottom: 0 }}>
+            <div className={kcClsx("kcFormGroupClass")} style={{ marginBottom: 0 }}>
                 {authenticators !== undefined && Object.keys(authenticators).length !== 0 && (
                     <>
                         <form id="authn_select" className={kcClsx("kcFormClass")}>
@@ -81,7 +76,7 @@ export default function LoginPasskeysConditionalAuthenticate(
                                             <i
                                                 className={clsx(
                                                     (() => {
-                                                        const className = kcClsx(authenticator.transports.iconClass as any);
+                                                        const className = kcClsx(authenticator.transports.iconClass as never);
                                                         if (className === authenticator.transports.iconClass) {
                                                             return kcClsx("kcWebAuthnDefaultIcon");
                                                         }
@@ -135,9 +130,11 @@ export default function LoginPasskeysConditionalAuthenticate(
                                 style={{ display: "none" }}
                                 onSubmit={event => {
                                     try {
-                                        // @ts-expect-error
+                                        // @ts-expect-error -- Keycloak form element is not typed by the login context
                                         event.target.login.disabled = true;
-                                    } catch {}
+                                    } catch {
+                                        // The login control is absent when this fallback form is hidden.
+                                    }
 
                                     return true;
                                 }}
@@ -157,23 +154,28 @@ export default function LoginPasskeysConditionalAuthenticate(
                                             type={"text"}
                                             autoFocus
                                             error={messagesPerField.existsError("username")}
-                                            helperText={messagesPerField.existsError("username") && (
-                                                <span id="input-error-username" className={kcClsx("kcInputErrorMessageClass")} aria-live="polite">
-                                                {messagesPerField.get("username")}
-                                            </span>
-                                            )}
+                                            helperText={
+                                                messagesPerField.existsError("username") && (
+                                                    <span id="input-error-username" className={kcClsx("kcInputErrorMessageClass")} aria-live="polite">
+                                                        {messagesPerField.get("username")}
+                                                    </span>
+                                                )
+                                            }
                                         />
                                     </div>
                                 )}
                             </form>
                         )}
                         <div id="kc-form-passkey-button" className={kcClsx("kcFormButtonsClass")} style={{ display: "none" }}>
-                            <Button variant="contained"
-                                    id={authButtonId}
-                                    autoFocus
-                                    type="button"
-                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                            >{msgStr("passkey-doAuthenticate")}</Button>
+                            <Button
+                                variant="contained"
+                                id={authButtonId}
+                                autoFocus
+                                type="button"
+                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                            >
+                                {msgStr("passkey-doAuthenticate")}
+                            </Button>
                         </div>
                     </div>
                 </div>

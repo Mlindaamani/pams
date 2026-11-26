@@ -43,13 +43,9 @@ export default function SelectAuthenticator(props: PageProps<Extract<KcContext, 
             headerNode={msg("loginChooseAuthenticator")}
         >
             <form id="kc-select-credential-form" className={kcClsx("kcFormClass")} action={url.loginAction} method="post">
-                    <List className={kcClsx("kcSelectAuthListClass")}>
-
+                <List className={kcClsx("kcSelectAuthListClass")}>
                     {auth.authenticationSelections.map((authenticationSelection, i) => (
-                        <ListItem disablePadding
-                                  key={i}
-                                  className={kcClsx("kcSelectAuthListItemClass")}
-                                    >
+                        <ListItem disablePadding key={i} className={kcClsx("kcSelectAuthListItemClass")}>
                             <ListItemButton
                                 key={i}
                                 component="button"
@@ -58,9 +54,7 @@ export default function SelectAuthenticator(props: PageProps<Extract<KcContext, 
                                 value={authenticationSelection.authExecId}
                                 sx={{ borderRadius: 1, mb: 1 }}
                             >
-                                <ListItemIcon>
-                                    {getAuthenticatorIcon(authenticationSelection.iconCssClass)}
-                                </ListItemIcon>
+                                <ListItemIcon>{getAuthenticatorIcon(authenticationSelection.iconCssClass)}</ListItemIcon>
 
                                 <ListItemText
                                     primary={
@@ -70,9 +64,7 @@ export default function SelectAuthenticator(props: PageProps<Extract<KcContext, 
                                     }
                                     secondary={
                                         authenticationSelection.helpText ? (
-                                            <Typography variant="body2">
-                                                {advancedMsg(authenticationSelection.helpText)}
-                                            </Typography>
+                                            <Typography variant="body2">{advancedMsg(authenticationSelection.helpText)}</Typography>
                                         ) : null
                                     }
                                 />
@@ -81,7 +73,7 @@ export default function SelectAuthenticator(props: PageProps<Extract<KcContext, 
                             </ListItemButton>
                         </ListItem>
                     ))}
-            </List>
+                </List>
             </form>
         </Template>
     );

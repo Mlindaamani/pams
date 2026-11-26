@@ -3,10 +3,10 @@ import { kcSanitize } from "keycloakify/lib/kcSanitize";
 import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Button from '@mui/material/Button';
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Button from "@mui/material/Button";
 import { TextField, Typography } from "@mui/material";
 import "./LoginConfigTotp.css";
 
@@ -51,10 +51,7 @@ export default function LoginConfigTotp(props: PageProps<Extract<KcContext, { pa
                                     <span id="kc-totp-secret-key">{totp.totpSecretEncoded}</span>
                                 </p>
                                 <p>
-                                    <Button variant="text"
-                                            href={totp.qrUrl}
-                                            sx={{textTransform: 'none'}}
-                                            id="mode-barcode">
+                                    <Button variant="text" href={totp.qrUrl} sx={{ textTransform: "none" }} id="mode-barcode">
                                         {msg("loginTotpScanBarcode")}
                                     </Button>
                                 </p>
@@ -89,10 +86,8 @@ export default function LoginConfigTotp(props: PageProps<Extract<KcContext, { pa
                             <img id="kc-totp-secret-qr-code" src={`data:image/png;base64, ${totp.totpSecretQrCode}`} alt="Figure: Barcode" />
                             <br />
                             <p>
-                                <Button variant="text"
-                                        href={totp.manualUrl}
-                                        id="mode-manual"
-                                        sx={{textTransform: 'none'}}>{msg("loginTotpUnableToScan")}
+                                <Button variant="text" href={totp.manualUrl} id="mode-manual" sx={{ textTransform: "none" }}>
+                                    {msg("loginTotpUnableToScan")}
                                 </Button>
                             </p>
                         </li>
@@ -116,18 +111,19 @@ export default function LoginConfigTotp(props: PageProps<Extract<KcContext, { pa
                                 autoComplete="off"
                                 className={kcClsx("kcInputClass")}
                                 aria-invalid={messagesPerField.existsError("totp")}
-
                                 error={messagesPerField.existsError("totp")}
-                                helperText={messagesPerField.existsError("totp") && (
-                                    <span
-                                        id="input-error-otp-code"
-                                        className={kcClsx("kcInputErrorMessageClass")}
-                                        aria-live="polite"
-                                        dangerouslySetInnerHTML={{
-                                            __html: kcSanitize(messagesPerField.get("totp"))
-                                        }}
-                                    />
-                                )}
+                                helperText={
+                                    messagesPerField.existsError("totp") && (
+                                        <span
+                                            id="input-error-otp-code"
+                                            className={kcClsx("kcInputErrorMessageClass")}
+                                            aria-live="polite"
+                                            dangerouslySetInnerHTML={{
+                                                __html: kcSanitize(messagesPerField.get("totp"))
+                                            }}
+                                        />
+                                    )
+                                }
                             />
                         </div>
                         <input type="hidden" id="totpSecret" name="totpSecret" value={totp.totpSecret} />
@@ -137,7 +133,7 @@ export default function LoginConfigTotp(props: PageProps<Extract<KcContext, { pa
                     <div className={kcClsx("kcFormGroupClass")}>
                         <div className={kcClsx("kcInputWrapperClass")}>
                             <TextField
-                                label= {msg("loginTotpDeviceName")}
+                                label={msg("loginTotpDeviceName")}
                                 required={totp.otpCredentials.length >= 1}
                                 variant="outlined"
                                 type="text"
@@ -147,22 +143,22 @@ export default function LoginConfigTotp(props: PageProps<Extract<KcContext, { pa
                                 className={kcClsx("kcInputClass")}
                                 aria-invalid={messagesPerField.existsError("userLabel")}
                                 error={messagesPerField.existsError("userLabel")}
-                                helperText={messagesPerField.existsError("userLabel") && (
-                                    <span
-                                        id="input-error-otp-label"
-                                        className={kcClsx("kcInputErrorMessageClass")}
-                                        aria-live="polite"
-                                        dangerouslySetInnerHTML={{
-                                            __html: kcSanitize(messagesPerField.get("userLabel"))
-                                        }}
-                                    />
-                                )}
+                                helperText={
+                                    messagesPerField.existsError("userLabel") && (
+                                        <span
+                                            id="input-error-otp-label"
+                                            className={kcClsx("kcInputErrorMessageClass")}
+                                            aria-live="polite"
+                                            dangerouslySetInnerHTML={{
+                                                __html: kcSanitize(messagesPerField.get("userLabel"))
+                                            }}
+                                        />
+                                    )
+                                }
                             />
-                            <Typography
-                                variant="caption"
-                                className="kc-caption-info"
-                            >
-                                {"*"}{  msg("requiredFields")}
+                            <Typography variant="caption" className="kc-caption-info">
+                                {"*"}
+                                {msg("requiredFields")}
                             </Typography>
                         </div>
                     </div>
@@ -173,29 +169,38 @@ export default function LoginConfigTotp(props: PageProps<Extract<KcContext, { pa
 
                     {isAppInitiatedAction ? (
                         <>
-                            <Button variant="contained"
-                                    type="submit"
-                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                                    id="saveTOTPBtn"
-                                    sx={{width: "100%"}}
-                            >{msgStr("doSubmit")}</Button>
-                            <Button variant="outlined"
-                                    type="submit"
-                                    formNoValidate
-                                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass", "kcButtonLargeClass")}
-                                    id="cancelTOTPBtn"
-                                    name="cancel-aia"
-                                    value="true"
-                                    sx={{width: "100%"}}
-                            >{msg("doCancel")}</Button>
-                        </>
-                    ) : (
-                        <Button variant="contained"
+                            <Button
+                                variant="contained"
                                 type="submit"
                                 className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
                                 id="saveTOTPBtn"
-                                sx={{width: "100%"}}
-                        >{msgStr("doSubmit")}</Button>
+                                sx={{ width: "100%" }}
+                            >
+                                {msgStr("doSubmit")}
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                type="submit"
+                                formNoValidate
+                                className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass", "kcButtonLargeClass")}
+                                id="cancelTOTPBtn"
+                                name="cancel-aia"
+                                value="true"
+                                sx={{ width: "100%" }}
+                            >
+                                {msg("doCancel")}
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            type="submit"
+                            className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                            id="saveTOTPBtn"
+                            sx={{ width: "100%" }}
+                        >
+                            {msgStr("doSubmit")}
+                        </Button>
                     )}
                 </form>
             </>
@@ -212,12 +217,13 @@ function LogoutOtherSessions(props: { kcClsx: KcClsx; i18n: I18n }) {
         <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
             <div className={kcClsx("kcFormOptionsWrapperClass")}>
                 <FormGroup>
-                    <FormControlLabel control={<Checkbox defaultChecked />}
-                                      label={msg("logoutOtherSessions")}
-                                      className="checkbox"
-                                      id="logout-sessions"
-                                      name="logout-sessions"
-                                      value="on"
+                    <FormControlLabel
+                        control={<Checkbox defaultChecked />}
+                        label={msg("logoutOtherSessions")}
+                        className="checkbox"
+                        id="logout-sessions"
+                        name="logout-sessions"
+                        value="on"
                     />
                 </FormGroup>
             </div>

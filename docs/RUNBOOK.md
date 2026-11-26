@@ -42,6 +42,10 @@ docker compose up -d keycloak
 The Docker build compiles the theme inside the image. Host builds are optional
 (`make keycloak-theme-jar`) and require Node 22, Maven and a JDK.
 
+The SPA `Account security` page provides MUI password and authenticator actions through Keycloak
+application-initiated actions; sessions and connected applications remain available in the Keycloak
+account console, which uses the PAMS account theme CSS.
+
 Production deploys use the `PAMS_KEYCLOAK_IMAGE` image published by the release workflow. Rebuild and
 recreate Keycloak after changing login/theme files; account and email themes still come from
 `ops/keycloak/themes/pams/`.

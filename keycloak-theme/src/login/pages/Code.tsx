@@ -30,16 +30,18 @@ export default function Code(props: PageProps<Extract<KcContext, { pageId: "code
                 {code.success ? (
                     <>
                         <p>{msg("copyCodeInstruction")}</p>
-                        <TextField id="code"
-                                   className={kcClsx("kcTextareaClass")}
-                                   variant="outlined"
-                                   defaultValue={code.code}
-                                   sx={{width: '100%'}}
-                                   slotProps={{
-                                       input: {
-                                           readOnly: true,
-                                       },
-                                   }}/>
+                        <TextField
+                            id="code"
+                            className={kcClsx("kcTextareaClass")}
+                            variant="outlined"
+                            defaultValue={code.code}
+                            sx={{ width: "100%" }}
+                            slotProps={{
+                                input: {
+                                    readOnly: true
+                                }
+                            }}
+                        />
                     </>
                 ) : (
                     code.error && (

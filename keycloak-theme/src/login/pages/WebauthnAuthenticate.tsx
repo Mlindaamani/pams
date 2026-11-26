@@ -34,17 +34,12 @@ export default function WebauthnAuthenticate(props: PageProps<Extract<KcContext,
             displayInfo={realm.registrationAllowed && !registrationDisabled}
             infoNode={
                 <div id="kc-registration">
-                        <span>
-                            {msg("noAccount")}{" "}
-                            <Button
-                                sx={{ width: "100%" }}
-                                tabIndex={6}
-                                variant="outlined"
-                                href={url.registrationUrl}
-                            >
-                                    {msg("doRegister")}
-                            </Button>
-                        </span>
+                    <span>
+                        {msg("noAccount")}{" "}
+                        <Button sx={{ width: "100%" }} tabIndex={6} variant="outlined" href={url.registrationUrl}>
+                            {msg("doRegister")}
+                        </Button>
+                    </span>
                 </div>
             }
             headerNode={msg("webauthn-login-title")}
@@ -62,8 +57,8 @@ export default function WebauthnAuthenticate(props: PageProps<Extract<KcContext,
                     {authenticators && (
                         <>
                             <form id="authn_select" className={kcClsx("kcFormClass")}>
-                                {authenticators.authenticators.map(authenticator => (
-                                    <input type="hidden" name="authn_use_chk" value={authenticator.credentialId} />
+                                {authenticators.authenticators.map((authenticator, index) => (
+                                    <input key={index} type="hidden" name="authn_use_chk" value={authenticator.credentialId} />
                                 ))}
                             </form>
 
@@ -79,7 +74,7 @@ export default function WebauthnAuthenticate(props: PageProps<Extract<KcContext,
                                                     <i
                                                         className={clsx(
                                                             (() => {
-                                                                const className = kcClsx(authenticator.transports.iconClass as any);
+                                                                const className = kcClsx(authenticator.transports.iconClass as never);
                                                                 if (className === authenticator.transports.iconClass) {
                                                                     return kcClsx("kcWebAuthnDefaultIcon");
                                                                 }
@@ -130,11 +125,14 @@ export default function WebauthnAuthenticate(props: PageProps<Extract<KcContext,
                         </>
                     )}
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                        <Button variant="contained"
-                                id={authButtonId}
-                                type="button"
-                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                        >{msgStr("webauthn-doAuthenticate")}</Button>
+                        <Button
+                            variant="contained"
+                            id={authButtonId}
+                            type="button"
+                            className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                        >
+                            {msgStr("webauthn-doAuthenticate")}
+                        </Button>
                     </div>
                 </div>
             </div>

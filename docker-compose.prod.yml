@@ -39,7 +39,8 @@ services:
 
   keycloak:
     build:
-      context: ./keycloak-theme
+      context: .
+      dockerfile: keycloak-theme/Dockerfile
     image: ${PAMS_KEYCLOAK_IMAGE:-pams-keycloak}:${PAMS_IMAGE_TAG:-latest}
     command: ["start", "--import-realm", "--hostname-strict=false", "--http-enabled=true"]
     environment:
@@ -148,7 +149,8 @@ services:
 
   web:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
     image: ${PAMS_WEB_IMAGE:-pams-web}:${PAMS_IMAGE_TAG:-latest}
     environment:
       PAMS_API_BASE_URL: ${PAMS_PUBLIC_API_URL}

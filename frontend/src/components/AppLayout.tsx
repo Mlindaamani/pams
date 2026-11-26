@@ -676,7 +676,11 @@ export function AppLayout() {
               </Link>
               {activeGroup && <Typography color="text.secondary">{activeGroup.label}</Typography>}
               <Typography color="text.primary">
-                {location.pathname === '/profile' ? 'My profile' : (activeItem?.label ?? 'Details')}
+                {location.pathname === '/profile'
+                  ? 'My profile'
+                  : location.pathname === '/profile/security'
+                    ? 'Account security'
+                    : (activeItem?.label ?? 'Details')}
               </Typography>
             </Breadcrumbs>
           </Box>

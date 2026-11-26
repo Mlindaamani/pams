@@ -7,9 +7,9 @@ import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import Button from "@mui/material/Button";
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
 import "./UpdateEmail.css";
 import { Typography } from "@mui/material";
 
@@ -49,11 +49,9 @@ export default function UpdateEmail(props: UpdateEmailProps) {
                     onIsFormSubmittableValueChange={setIsFormSubmittable}
                     doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                 />
-                <Typography
-                    variant="caption"
-                    className="kc-caption-info"
-                >
-                    {"*"}{  msg("requiredFields")}
+                <Typography variant="caption" className="kc-caption-info">
+                    {"*"}
+                    {msg("requiredFields")}
                 </Typography>
 
                 <div className={kcClsx("kcFormGroupClass")}>
@@ -64,26 +62,31 @@ export default function UpdateEmail(props: UpdateEmailProps) {
                     <LogoutOtherSessions kcClsx={kcClsx} i18n={i18n} />
 
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                        <Button variant="contained"
-                                disabled={!isFormSubmittable}
-                                className={kcClsx(
-                                    "kcButtonClass",
-                                    "kcButtonPrimaryClass",
-                                    !isAppInitiatedAction && "kcButtonBlockClass",
-                                    "kcButtonLargeClass"
-                                )}
-                                type="submit"
-                                sx={{width: "100%"}}
-                        >{msgStr("doSubmit")}</Button>
+                        <Button
+                            variant="contained"
+                            disabled={!isFormSubmittable}
+                            className={kcClsx(
+                                "kcButtonClass",
+                                "kcButtonPrimaryClass",
+                                !isAppInitiatedAction && "kcButtonBlockClass",
+                                "kcButtonLargeClass"
+                            )}
+                            type="submit"
+                            sx={{ width: "100%" }}
+                        >
+                            {msgStr("doSubmit")}
+                        </Button>
                         {isAppInitiatedAction && (
-                            <Button variant="outlined"
-                                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                                    type="submit"
-                                    name="cancel-aia"
-                                    value="true"
-                                    sx={{width: "100%"}}
-                                    formNoValidate
-                            >{msg("doCancel")}
+                            <Button
+                                variant="outlined"
+                                className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                                type="submit"
+                                name="cancel-aia"
+                                value="true"
+                                sx={{ width: "100%" }}
+                                formNoValidate
+                            >
+                                {msg("doCancel")}
                             </Button>
                         )}
                     </div>
@@ -102,12 +105,13 @@ function LogoutOtherSessions(props: { kcClsx: KcClsx; i18n: I18n }) {
         <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
             <div className={kcClsx("kcFormOptionsWrapperClass")}>
                 <FormGroup>
-                    <FormControlLabel control={<Checkbox defaultChecked />}
-                                      label={msg("logoutOtherSessions")}
-                                      className="checkbox"
-                                      id="logout-sessions"
-                                      name="logout-sessions"
-                                      value="on"
+                    <FormControlLabel
+                        control={<Checkbox defaultChecked />}
+                        label={msg("logoutOtherSessions")}
+                        className="checkbox"
+                        id="logout-sessions"
+                        name="logout-sessions"
+                        value="on"
                     />
                 </FormGroup>
             </div>

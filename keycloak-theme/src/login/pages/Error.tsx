@@ -24,12 +24,7 @@ export default function Error(props: PageProps<Extract<KcContext, { pageId: "err
             <div id="kc-error-message">
                 <p className="instruction" dangerouslySetInnerHTML={{ __html: kcSanitize(message.summary) }} />
                 {!skipLink && client !== undefined && client.baseUrl !== undefined && (
-                    <Button
-                        id="backToApplication"
-                        variant="text"
-                        href={client.baseUrl}
-                        sx={{textTransform: 'none'}}
-                    >
+                    <Button id="backToApplication" variant="text" href={client.baseUrl} sx={{ textTransform: "none" }}>
                         {msg("backToApplication")}
                     </Button>
                 )}

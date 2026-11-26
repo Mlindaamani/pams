@@ -45,37 +45,39 @@ export default function LoginUpdateProfile(props: LoginUpdateProfileProps) {
                     onIsFormSubmittableValueChange={setIsFormSubmittable}
                     doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                 />
-                <Typography
-                    variant="caption"
-                    className="kc-caption-info"
-                >
-                    {"*"}{  msg("requiredFields")}
+                <Typography variant="caption" className="kc-caption-info">
+                    {"*"}
+                    {msg("requiredFields")}
                 </Typography>
                 <div className={kcClsx("kcFormGroupClass")}>
                     <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
                         <div className={kcClsx("kcFormOptionsWrapperClass")} />
                     </div>
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                        <Button variant="contained"
-                                disabled={!isFormSubmittable}
-                                className={kcClsx(
-                                    "kcButtonClass",
-                                    "kcButtonPrimaryClass",
-                                    !isAppInitiatedAction && "kcButtonBlockClass",
-                                    "kcButtonLargeClass"
-                                )}
-                                type="submit"
-                                sx={{width: "100%"}}
-                        >{msgStr("doSubmit")}
+                        <Button
+                            variant="contained"
+                            disabled={!isFormSubmittable}
+                            className={kcClsx(
+                                "kcButtonClass",
+                                "kcButtonPrimaryClass",
+                                !isAppInitiatedAction && "kcButtonBlockClass",
+                                "kcButtonLargeClass"
+                            )}
+                            type="submit"
+                            sx={{ width: "100%" }}
+                        >
+                            {msgStr("doSubmit")}
                         </Button>
                         {isAppInitiatedAction && (
-                            <Button variant="outlined"
-                                    sx={{width: "100%"}}
-                                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                                    type="submit"
-                                    name="cancel-aia"
-                                    value="true"
-                                    formNoValidate>
+                            <Button
+                                variant="outlined"
+                                sx={{ width: "100%" }}
+                                className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                                type="submit"
+                                name="cancel-aia"
+                                value="true"
+                                formNoValidate
+                            >
                                 {msg("doCancel")}
                             </Button>
                         )}

@@ -23,13 +23,18 @@ interface LocaleMenuProps {
     msgStr: MsgStr;
 }
 
-export function LocaleMenu({ enabledLanguages, currentLanguage, msgStr }: LocaleMenuProps) {
+export function LocaleMenu({
+    enabledLanguages,
+    currentLanguage,
+    msgStr
+}: LocaleMenuProps) {
     if (enabledLanguages.length <= 1) return null;
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
-    const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+    const handleClickListItem = (event: React.MouseEvent<HTMLElement>) =>
+        setAnchorEl(event.currentTarget);
     const handleClose = () => setAnchorEl(null);
     const handleMenuItemClick = (href?: string) => {
         if (href) window.location.href = href;
@@ -62,8 +67,8 @@ export function LocaleMenu({ enabledLanguages, currentLanguage, msgStr }: Locale
                 slotProps={{
                     list: {
                         "aria-labelledby": "kc-current-locale-link",
-                        role: "menu",
-                    },
+                        role: "menu"
+                    }
                 }}
             >
                 {enabledLanguages.map(({ languageTag, label, href }) => (

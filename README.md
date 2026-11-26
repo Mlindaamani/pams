@@ -83,6 +83,16 @@ make format   # apply formatting
 
 Tests use Testcontainers and therefore require a running Docker daemon. H2 is never used.
 
+Keycloak theme visual tests run against the local stack:
+
+```bash
+TENANT_ADMIN_USERNAME=admin@crdb.com TENANT_ADMIN_PASSWORD='rach,369' \
+  E2E_BROWSER_CHANNEL=chrome make web-e2e
+```
+
+The login snapshot always runs; the password-update snapshot is skipped when tenant credentials are
+not supplied.
+
 If you use the VS Code Java extension, disable its autobuild for this workspace
 (`"java.autobuild.enabled": false` in `.vscode/settings.json`) — the Eclipse-based language server
 may overwrite Maven's `target/classes` with partial ECJ output while you run the build.

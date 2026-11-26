@@ -2,7 +2,6 @@ import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import { KcPage } from "./kc.gen";
 
-
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         {!window.kcContext ? (

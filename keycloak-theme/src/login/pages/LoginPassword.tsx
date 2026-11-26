@@ -34,7 +34,7 @@ export default function LoginPassword(props: PageProps<Extract<KcContext, { page
     // Password visibility #start
     const [showPassword, setShowPassword] = React.useState(false);
 
-    const handleClickShowPassword = () => setShowPassword((show) => !show);
+    const handleClickShowPassword = () => setShowPassword(show => !show);
 
     const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();
@@ -66,9 +66,7 @@ export default function LoginPassword(props: PageProps<Extract<KcContext, { page
                         method="post"
                     >
                         <div className={clsx(kcClsx("kcFormGroupClass"), "no-bottom-margin")}>
-                            <FormControl variant="outlined"
-                                         error={messagesPerField.existsError("password")}
-                            sx={{width: '100%'}}>
+                            <FormControl variant="outlined" error={messagesPerField.existsError("password")} sx={{ width: "100%" }}>
                                 <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
                                 <OutlinedInput
                                     label={msg("password")}
@@ -76,15 +74,13 @@ export default function LoginPassword(props: PageProps<Extract<KcContext, { page
                                     id="password"
                                     className={kcClsx("kcInputClass")}
                                     name="password"
-                                    type={showPassword ? 'text' : 'password'}
+                                    type={showPassword ? "text" : "password"}
                                     autoComplete="on"
                                     aria-invalid={messagesPerField.existsError("username", "password")}
                                     endAdornment={
                                         <InputAdornment position="end">
                                             <IconButton
-                                                aria-label={
-                                                    showPassword ? 'hide the password' : 'display the password'
-                                                }
+                                                aria-label={showPassword ? "hide the password" : "display the password"}
                                                 onClick={handleClickShowPassword}
                                                 onMouseDown={handleMouseDownPassword}
                                                 onMouseUp={handleMouseUpPassword}
@@ -97,14 +93,14 @@ export default function LoginPassword(props: PageProps<Extract<KcContext, { page
                                 />
                                 {messagesPerField.existsError("password") && (
                                     <FormHelperText>
-                                            <span
-                                                id="input-error-password"
-                                                className={kcClsx("kcInputErrorMessageClass")}
-                                                aria-live="polite"
-                                                dangerouslySetInnerHTML={{
-                                                    __html: kcSanitize(messagesPerField.get("password"))
-                                                }}
-                                            />
+                                        <span
+                                            id="input-error-password"
+                                            className={kcClsx("kcInputErrorMessageClass")}
+                                            aria-live="polite"
+                                            dangerouslySetInnerHTML={{
+                                                __html: kcSanitize(messagesPerField.get("password"))
+                                            }}
+                                        />
                                     </FormHelperText>
                                 )}
                             </FormControl>
@@ -113,8 +109,7 @@ export default function LoginPassword(props: PageProps<Extract<KcContext, { page
                             <div id="kc-form-options" />
                             <div className={kcClsx("kcFormOptionsWrapperClass")}>
                                 {realm.resetPasswordAllowed && (
-                                    <Button tabIndex={5} variant="text" href={url.loginResetCredentialsUrl}
-                                            sx={{textTransform: 'none'}}>
+                                    <Button tabIndex={5} variant="text" href={url.loginResetCredentialsUrl} sx={{ textTransform: "none" }}>
                                         {msg("doForgotPassword")}
                                     </Button>
                                 )}

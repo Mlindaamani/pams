@@ -4,10 +4,10 @@ import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import Button from "@mui/material/Button";
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import KeyIcon from '@mui/icons-material/Key';
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import KeyIcon from "@mui/icons-material/Key";
 import "./WebauthnRegister.css";
 
 export default function WebauthnRegister(props: PageProps<Extract<KcContext, { pageId: "webauthn-register.ftl" }>, I18n>) {
@@ -36,7 +36,7 @@ export default function WebauthnRegister(props: PageProps<Extract<KcContext, { p
             headerNode={
                 <>
                     <span className="icon-wrapper">
-                     <KeyIcon fontSize="large" />
+                        <KeyIcon fontSize="large" />
                     </span>
                     <span>{msg("webauthn-registration-title")}</span>
                 </>
@@ -53,21 +53,28 @@ export default function WebauthnRegister(props: PageProps<Extract<KcContext, { p
                     <LogoutOtherSessions kcClsx={kcClsx} i18n={i18n} />
                 </div>
             </form>
-            <Button variant="contained"
-                    type="submit"
-                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                    id={authButtonId}
-            >{msgStr("doRegisterSecurityKey")}</Button>
+            <Button
+                variant="contained"
+                type="submit"
+                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                id={authButtonId}
+            >
+                {msgStr("doRegisterSecurityKey")}
+            </Button>
 
             {!isSetRetry && isAppInitiatedAction && (
                 <form action={url.loginAction} className={kcClsx("kcFormClass")} id="kc-webauthn-settings-form" method="post">
-                    <Button variant="outlined"
-                            type="submit"
-                            className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                            id="cancelWebAuthnAIA"
-                            name="cancel-aia"
-                            formNoValidate
-                            value="true">{msg("doCancel")}</Button>
+                    <Button
+                        variant="outlined"
+                        type="submit"
+                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                        id="cancelWebAuthnAIA"
+                        name="cancel-aia"
+                        formNoValidate
+                        value="true"
+                    >
+                        {msg("doCancel")}
+                    </Button>
                 </form>
             )}
         </Template>
@@ -83,12 +90,13 @@ function LogoutOtherSessions(props: { kcClsx: KcClsx; i18n: I18n }) {
         <div id="kc-form-options" className={kcClsx("kcFormOptionsClass")}>
             <div className={kcClsx("kcFormOptionsWrapperClass")}>
                 <FormGroup>
-                    <FormControlLabel control={<Checkbox defaultChecked />}
-                                      label={msg("logoutOtherSessions")}
-                                      className="checkbox"
-                                      id="logout-sessions"
-                                      name="logout-sessions"
-                                      value="on"
+                    <FormControlLabel
+                        control={<Checkbox defaultChecked />}
+                        label={msg("logoutOtherSessions")}
+                        className="checkbox"
+                        id="logout-sessions"
+                        name="logout-sessions"
+                        value="on"
                     />
                 </FormGroup>
             </div>

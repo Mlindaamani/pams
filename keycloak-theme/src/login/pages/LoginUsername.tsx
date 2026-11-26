@@ -53,7 +53,6 @@ export default function LoginUsername(props: PageProps<Extract<KcContext, { page
                                         <Button
                                             sx={{ width: "100%" }}
                                             variant="outlined"
-
                                             id={`social-${p.alias}`}
                                             className={kcClsx(
                                                 "kcFormSocialAccountListButtonClass",
@@ -61,10 +60,12 @@ export default function LoginUsername(props: PageProps<Extract<KcContext, { page
                                             )}
                                             type="button"
                                             href={p.loginUrl}
-                                            startIcon={p.iconClasses && <i className={clsx(kcClsx("kcCommonLogoIdP"), p.iconClasses)} aria-hidden="true"></i>}
+                                            startIcon={
+                                                p.iconClasses && <i className={clsx(kcClsx("kcCommonLogoIdP"), p.iconClasses)} aria-hidden="true"></i>
+                                            }
                                         >
-                                        {p.displayName}
-                                    </Button>
+                                            {p.displayName}
+                                        </Button>
                                     </span>
                                 ))}
                             </ul>
@@ -86,31 +87,35 @@ export default function LoginUsername(props: PageProps<Extract<KcContext, { page
                             method="post"
                         >
                             {!usernameHidden && (
-                            <div className={kcClsx("kcFormGroupClass")}>
-                                <TextField
-                                    label={!realm.loginWithEmailAllowed
-                                        ? msg("username")
-                                        : !realm.registrationEmailAsUsername
-                                            ? msg("usernameOrEmail")
-                                            : msg("email")}
-                                    variant="outlined"
-                                    tabIndex={2}
-                                    id="username"
-                                    defaultValue={login.username ?? ""}
-                                    type={"text"}
-                                    autoComplete={"username"}
-                                    autoFocus
-                                    aria-invalid={messagesPerField.existsError("username")}
-                                    className={kcClsx("kcInputClass")}
-                                    error={messagesPerField.existsError("username")}
-                                    helperText={messagesPerField.existsError("username") && (
-                                        <span id="input-error" className={kcClsx("kcInputErrorMessageClass")} aria-live="polite">
-                                            {messagesPerField.getFirstError("username")}
-                                        </span>
-                                    )}
-                                />
-                            </div>
-                        )}
+                                <div className={kcClsx("kcFormGroupClass")}>
+                                    <TextField
+                                        label={
+                                            !realm.loginWithEmailAllowed
+                                                ? msg("username")
+                                                : !realm.registrationEmailAsUsername
+                                                  ? msg("usernameOrEmail")
+                                                  : msg("email")
+                                        }
+                                        variant="outlined"
+                                        tabIndex={2}
+                                        id="username"
+                                        defaultValue={login.username ?? ""}
+                                        type={"text"}
+                                        autoComplete={"username"}
+                                        autoFocus
+                                        aria-invalid={messagesPerField.existsError("username")}
+                                        className={kcClsx("kcInputClass")}
+                                        error={messagesPerField.existsError("username")}
+                                        helperText={
+                                            messagesPerField.existsError("username") && (
+                                                <span id="input-error" className={kcClsx("kcInputErrorMessageClass")} aria-live="polite">
+                                                    {messagesPerField.getFirstError("username")}
+                                                </span>
+                                            )
+                                        }
+                                    />
+                                </div>
+                            )}
 
                             <div className={kcClsx("kcFormGroupClass", "kcFormSettingClass")}>
                                 <div id="kc-form-options">
@@ -120,7 +125,9 @@ export default function LoginUsername(props: PageProps<Extract<KcContext, { page
                                                 tabIndex={3}
                                                 id="rememberMe"
                                                 name="rememberMe"
-                                                control={<Checkbox defaultChecked={!!login.rememberMe} />} label={msg("rememberMe")} />
+                                                control={<Checkbox defaultChecked={!!login.rememberMe} />}
+                                                label={msg("rememberMe")}
+                                            />
                                         </FormGroup>
                                     )}
                                 </div>

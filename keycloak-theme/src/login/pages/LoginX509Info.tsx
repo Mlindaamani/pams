@@ -62,22 +62,24 @@ export default function LoginX509Info(props: PageProps<Extract<KcContext, { page
                     </div>
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
                         <div className={kcClsx("kcFormButtonsWrapperClass")}>
-                            <Button variant="contained"
-                                    className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                                    name="login"
-                                    id="kc-login"
-                                    type="submit"
-                                    sx={{ width: "100%" }}
+                            <Button
+                                variant="contained"
+                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                                name="login"
+                                id="kc-login"
+                                type="submit"
+                                sx={{ width: "100%" }}
                             >
                                 {msgStr("doContinue")}
                             </Button>
                             {x509.formData.isUserEnabled && (
-                                <Button variant="outlined"
-                                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                                        name="cancel"
-                                        id="kc-cancel"
-                                        type="submit"
-                                        sx={{ width: "100%" }}
+                                <Button
+                                    variant="outlined"
+                                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                                    name="cancel"
+                                    id="kc-cancel"
+                                    type="submit"
+                                    sx={{ width: "100%" }}
                                 >
                                     {msgStr("doIgnore")}
                                 </Button>

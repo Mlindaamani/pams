@@ -3,7 +3,7 @@ import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import Button from "@mui/material/Button";
-import LinearProgress from '@mui/material/LinearProgress';
+import LinearProgress from "@mui/material/LinearProgress";
 import "./SamlPostForm.css";
 
 export default function SamlPostForm(props: PageProps<Extract<KcContext, { pageId: "saml-post-form.ftl" }>, I18n>) {
@@ -38,9 +38,9 @@ export default function SamlPostForm(props: PageProps<Extract<KcContext, { pageI
                 {samlPost.relayState && <input type="hidden" name="RelayState" value={samlPost.relayState} />}
                 <noscript>
                     <p>{msg("saml.post-form.js-disabled")}</p>
-                    <Button variant="contained"
-                            type="submit"
-                    >{msgStr("doContinue")}</Button>
+                    <Button variant="contained" type="submit">
+                        {msgStr("doContinue")}
+                    </Button>
                 </noscript>
             </form>
         </Template>

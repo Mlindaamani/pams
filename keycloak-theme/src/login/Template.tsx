@@ -89,7 +89,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                         pointerEvents: "none",
                         bgcolor: "transparent",
                         "&.MuiLinearProgress-root": { height: 4 },
-                        "& .MuiLinearProgress-bar": { backgroundColor: "primary.main" },
+                        "& .MuiLinearProgress-bar": { backgroundColor: "primary.main" }
                     }}
                 />
                 <header className={kcClsx("kcFormHeaderClass")}>
@@ -129,11 +129,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                     <div id="kc-content-wrapper">
                         {/* App-initiated actions should not see warning messages about the need to complete the action during login. */}
                         {displayMessage && message !== undefined && (message.type !== "warning" || !isAppInitiatedAction) && (
-                            <Alert
-                                severity={message.type}
-                                variant="outlined"
-                                className={"kcAlertClass"}
-                            >
+                            <Alert severity={message.type} variant="outlined" className={"kcAlertClass"}>
                                 <span
                                     className={kcClsx("kcAlertTitleClass")}
                                     dangerouslySetInnerHTML={{
@@ -171,11 +167,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                     </div>
                     {enabledLanguages.length > 1 && (
                         <div className={kcClsx("kcLocaleMainClass")} id="kc-locale">
-                            <LocaleMenu
-                                enabledLanguages={enabledLanguages}
-                                currentLanguage={currentLanguage}
-                                msgStr={msgStr}
-                            />
+                            <LocaleMenu enabledLanguages={enabledLanguages} currentLanguage={currentLanguage} msgStr={msgStr} />
                         </div>
                     )}
                 </div>

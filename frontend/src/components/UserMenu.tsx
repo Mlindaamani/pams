@@ -109,20 +109,29 @@ export function UserMenu() {
             My profile
           </MenuItem>
         )}
-        <MenuItem
-          component="a"
-          href={accountSecurityUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={close}
-          sx={{ py: 1.1 }}
-        >
-          <ListItemIcon>
-            <SecurityIcon fontSize="small" />
-          </ListItemIcon>
-          {platformOnly ? 'Keycloak account' : 'Account security'}
-          <OpenInNewIcon sx={{ fontSize: 15, ml: 'auto', color: 'text.secondary' }} />
-        </MenuItem>
+        {platformOnly ? (
+          <MenuItem
+            component="a"
+            href={accountSecurityUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={close}
+            sx={{ py: 1.1 }}
+          >
+            <ListItemIcon>
+              <SecurityIcon fontSize="small" />
+            </ListItemIcon>
+            Keycloak account
+            <OpenInNewIcon sx={{ fontSize: 15, ml: 'auto', color: 'text.secondary' }} />
+          </MenuItem>
+        ) : (
+          <MenuItem component={RouterLink} to="/profile/security" onClick={close} sx={{ py: 1.1 }}>
+            <ListItemIcon>
+              <SecurityIcon fontSize="small" />
+            </ListItemIcon>
+            Account security
+          </MenuItem>
+        )}
         <Divider />
         <MenuItem
           onClick={() => {

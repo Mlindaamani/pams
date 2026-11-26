@@ -4,28 +4,28 @@
 
 /* Social providers section */
 .kcFormSocialAccountSectionClass {
-  margin-top: var(--kc-space-5);
+    margin-top: var(--kc-space-5);
 }
 
 .kcFormSocialAccountSectionClass h2 {
-  margin-bottom: var(--kc-space-3);
+    margin-bottom: var(--kc-space-3);
 }
 
 .kcFormSocialAccountListClass {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--kc-space-3);
-  padding: 0;
-  list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--kc-space-3);
+    padding: 0;
+    list-style: none;
 }
 
 /* When more than 3 providers, switch to grid layout */
 .kcFormSocialAccountListGridClass {
-  grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
 }
 
 @media (min-width: 560px) {
-  .kcFormSocialAccountListGridClass {
-    grid-template-columns: repeat(3, 1fr);
-  }
+    .kcFormSocialAccountListGridClass {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }

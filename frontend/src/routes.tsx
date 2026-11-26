@@ -26,6 +26,7 @@ import { WebhookFormPage } from '@/features/admin/WebhookFormPage';
 import { WebhookDetailPage } from '@/features/admin/WebhookDetailPage';
 import { DelegationsPage } from '@/features/approvals/DelegationsPage';
 import { ProfilePage } from '@/features/profile/ProfilePage';
+import { SecurityPage } from '@/features/profile/SecurityPage';
 import { SystemPage } from '@/features/system/SystemPage';
 import { RolesPermissionsPage } from '@/features/admin/RolesPermissionsPage';
 import { WorkflowPage } from '@/features/admin/WorkflowPage';
@@ -165,6 +166,7 @@ export const router = createBrowserRouter([
       },
       { path: 'delegations', element: guard('read', 'Delegation', <DelegationsPage />) },
       { path: 'profile', element: <ProfilePage /> },
+      { path: 'profile/security', element: <SecurityPage /> },
       { path: 'admin/users', element: guard('read', 'User', <UsersPage />) },
       {
         path: 'admin/users/new',

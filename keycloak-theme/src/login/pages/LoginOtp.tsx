@@ -5,10 +5,10 @@ import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import { Button, TextField } from "@mui/material";
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormControl from '@mui/material/FormControl';
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
 import "./LoginOtp.css";
 
 export default function LoginOtp(props: PageProps<Extract<KcContext, { pageId: "login-otp.ftl" }>, I18n>) {
@@ -100,13 +100,16 @@ export default function LoginOtp(props: PageProps<Extract<KcContext, { pageId: "
                         <div className={kcClsx("kcFormOptionsWrapperClass")}></div>
                     </div>
                     <div id="kc-form-buttons" className={kcClsx("kcFormButtonsClass")}>
-                        <Button variant="contained"
-                                className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                                name="login"
-                                id="kc-login"
-                                type="submit"
-                                disabled={isSubmitting}
-                        >{msgStr("doLogIn")}</Button>
+                        <Button
+                            variant="contained"
+                            className={kcClsx("kcButtonClass", "kcButtonPrimaryClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                            name="login"
+                            id="kc-login"
+                            type="submit"
+                            disabled={isSubmitting}
+                        >
+                            {msgStr("doLogIn")}
+                        </Button>
                     </div>
                 </div>
             </form>

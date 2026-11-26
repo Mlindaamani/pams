@@ -2303,3 +2303,24 @@ used by the PAMS SPA. A CSS-only theme could approximate the look but duplicated
 **Consequences.** The Keycloak form is now real MUI and visually aligned with the SPA. Theme changes
 require a Keycloak image rebuild rather than a CSS-only reload. The account console remains on the
 existing Keycloak account theme.
+
+---
+
+## ADR-116 — Shared PAMS theme and MUI account-security flows
+
+**Context.** The SPA and Keycloak login theme both use MUI, but maintained separate palette and
+component overrides. Password/MFA links also sent users to the PatternFly Keycloak account console.
+
+**Decision.**
+- Keep one shared theme-options module in `shared/pamsTheme.ts`, consumed by the SPA and Keycloakify
+  login theme. Branding and RTL direction remain parameters.
+- Serve account security within the SPA: password and authenticator setup use Keycloak
+  application-initiated actions through the MUI login pages; profile editing stays in the app.
+- Keep the Keycloak multi-page account console for sessions and connected applications, styled with
+  the PAMS account CSS until a full MUI account theme is justified.
+- Build the web and Keycloak images from the repository root so the shared theme is available in both
+  build contexts.
+
+**Consequences.** Login and common account-security tasks use the same MUI theme. Changing shared
+tokens updates both surfaces. Advanced account-console screens remain visually aligned but not
+component-level MUI.

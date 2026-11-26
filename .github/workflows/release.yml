@@ -18,10 +18,13 @@ jobs:
         include:
           - component: backend
             context: ./backend
+            dockerfile: backend/Dockerfile
           - component: web
-            context: ./frontend
+            context: .
+            dockerfile: frontend/Dockerfile
           - component: keycloak
-            context: ./keycloak-theme
+            context: .
+            dockerfile: keycloak-theme/Dockerfile
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +49,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           load: true
           tags: |
             ${{ env.IMAGE }}:${{ github.sha }}

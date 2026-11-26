@@ -21,22 +21,19 @@ export default function LoginIdpLinkConfirmOverride(props: PageProps<Extract<KcC
         <Template kcContext={kcContext} i18n={i18n} doUseDefaultCss={doUseDefaultCss} classes={classes} headerNode={msg("confirmOverrideIdpTitle")}>
             <form id="kc-register-form" action={url.loginAction} method="post">
                 {msg("pageExpiredMsg1")}{" "}
-                <Button
-                    id="loginRestartLink"
-                    variant="text"
-                    href={url.loginRestartFlowUrl}
-                    sx={{textTransform: 'none'}}
-                >
+                <Button id="loginRestartLink" variant="text" href={url.loginRestartFlowUrl} sx={{ textTransform: "none" }}>
                     {msg("doClickHere")}
                 </Button>
                 <br />
                 <br />
-                <Button variant="contained"
-                        type="submit"
-                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                        name="submitAction"
-                        id="confirmOverride"
-                        value="confirmOverride">
+                <Button
+                    variant="contained"
+                    type="submit"
+                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                    name="submitAction"
+                    id="confirmOverride"
+                    value="confirmOverride"
+                >
                     {msg("confirmOverrideIdpContinue", idpDisplayName)}
                 </Button>
             </form>

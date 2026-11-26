@@ -31,6 +31,7 @@ strategy and sequencing document; this file tracks concrete launch gaps.
 | Alert thresholds and incident-response runbook | Implemented in repository; paging/status accounts not configured |
 | RLS inventory guard and tenant table exceptions | Implemented and tested |
 | Keycloak login lockout | Enabled (10 failures / 12-hour window) |
+| Keycloak MUI login + app account-security flows | Implemented; advanced sessions/apps remain in Keycloak |
 | Audit-export documentation | Reconciled with the implemented feature |
 | Peak/headroom load-test script | Implemented; local smoke recorded, production-like run missing |
 | Phase A production launch gates | **Incomplete** |

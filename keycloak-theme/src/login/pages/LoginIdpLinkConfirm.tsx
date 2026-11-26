@@ -2,7 +2,7 @@ import { getKcClsx } from "keycloakify/login/lib/kcClsx";
 import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
-import Button from '@mui/material/Button';
+import Button from "@mui/material/Button";
 import "./LoginIdpLinkConfirm.css";
 
 export default function LoginIdpLinkConfirm(props: PageProps<Extract<KcContext, { pageId: "login-idp-link-confirm.ftl" }>, I18n>) {
@@ -21,22 +21,25 @@ export default function LoginIdpLinkConfirm(props: PageProps<Extract<KcContext, 
         <Template kcContext={kcContext} i18n={i18n} doUseDefaultCss={doUseDefaultCss} classes={classes} headerNode={msg("confirmLinkIdpTitle")}>
             <form id="kc-register-form" action={url.loginAction} method="post">
                 <div className={kcClsx("kcFormGroupClass")}>
-                    <Button variant="contained"
-                            sx={{width: "100%"}}
-                            type="submit"
-                            className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                            name="submitAction"
-                            id="updateProfile"
-                            value="updateProfile"
-                    >{msg("confirmLinkIdpReviewProfile")}
+                    <Button
+                        variant="contained"
+                        sx={{ width: "100%" }}
+                        type="submit"
+                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                        name="submitAction"
+                        id="updateProfile"
+                        value="updateProfile"
+                    >
+                        {msg("confirmLinkIdpReviewProfile")}
                     </Button>
-                    <Button variant="contained"
-                            sx={{width: "100%"}}
-                            type="submit"
-                            className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
-                            name="submitAction"
-                            id="linkAccount"
-                            value="linkAccount"
+                    <Button
+                        variant="contained"
+                        sx={{ width: "100%" }}
+                        type="submit"
+                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonBlockClass", "kcButtonLargeClass")}
+                        name="submitAction"
+                        id="linkAccount"
+                        value="linkAccount"
                     >
                         {msg("confirmLinkIdpContinue", idpAlias)}
                     </Button>

@@ -28,21 +28,25 @@ export default function Terms(props: PageProps<Extract<KcContext, { pageId: "ter
         >
             <div id="kc-terms-text">{msg("termsText")}</div>
             <form className="form-actions" action={url.loginAction} method="POST">
-                <Button variant="contained"
-                        sx={{ width: "100%" }}
-                        className={kcClsx("kcButtonClass", "kcButtonClass", "kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
-                        name="accept"
-                        id="kc-accept"
-                        type="submit"
-                >{msgStr("doAccept")}
+                <Button
+                    variant="contained"
+                    sx={{ width: "100%" }}
+                    className={kcClsx("kcButtonClass", "kcButtonClass", "kcButtonClass", "kcButtonPrimaryClass", "kcButtonLargeClass")}
+                    name="accept"
+                    id="kc-accept"
+                    type="submit"
+                >
+                    {msgStr("doAccept")}
                 </Button>
-                <Button variant="outlined"
-                        sx={{ width: "100%" }}
-                        className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
-                        name="cancel"
-                        id="kc-decline"
-                        type="submit"
-                >{msgStr("doDecline")}
+                <Button
+                    variant="outlined"
+                    sx={{ width: "100%" }}
+                    className={kcClsx("kcButtonClass", "kcButtonDefaultClass", "kcButtonLargeClass")}
+                    name="cancel"
+                    id="kc-decline"
+                    type="submit"
+                >
+                    {msgStr("doDecline")}
                 </Button>
             </form>
             <div className="clearfix" />
