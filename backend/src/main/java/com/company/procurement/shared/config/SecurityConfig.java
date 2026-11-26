@@ -1,10 +1,14 @@
 package com.company.procurement.shared.config;
 
+import com.company.procurement.shared.error.ProblemDetailFactory;
 import com.company.procurement.shared.error.SecurityProblemResponder;
 import com.company.procurement.shared.idempotency.IdempotencyFilter;
 import com.company.procurement.shared.tenant.TenantContextFilter;
 import com.company.procurement.shared.tenant.TenantSuspensionFilter;
+import com.company.procurement.shared.tenant.TenantWriteAccessFilter;
+import com.company.procurement.shared.tenant.TenantWriteAccessPort;
 import com.company.procurement.shared.web.RateLimitFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import org.springframework.context.annotation.Bean;
@@ -40,8 +44,13 @@ public class SecurityConfig {
       TenantSuspensionFilter tenantSuspensionFilter,
       IdempotencyFilter idempotencyFilter,
       RateLimitFilter rateLimitFilter,
-      SecurityProblemResponder problemResponder)
+      SecurityProblemResponder problemResponder,
+      TenantWriteAccessPort tenantWriteAccess,
+      ProblemDetailFactory problemDetailFactory,
+      ObjectMapper objectMapper)
       throws Exception {
+    TenantWriteAccessFilter tenantWriteAccessFilter =
+        new TenantWriteAccessFilter(tenantWriteAccess, problemDetailFactory, objectMapper);
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(Customizer.withDefaults())
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -73,7 +82,8 @@ public class SecurityConfig {
                             problemResponder.forbidden(request, response, ex)))
         .addFilterAfter(tenantContextFilter, BearerTokenAuthenticationFilter.class)
         .addFilterAfter(tenantSuspensionFilter, TenantContextFilter.class)
-        .addFilterAfter(idempotencyFilter, TenantContextFilter.class)
+        .addFilterAfter(tenantWriteAccessFilter, TenantSuspensionFilter.class)
+        .addFilterAfter(idempotencyFilter, TenantWriteAccessFilter.class)
         .addFilterAfter(rateLimitFilter, IdempotencyFilter.class);
     return http.build();
   }

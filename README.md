@@ -31,10 +31,9 @@ make up                 # PostgreSQL, Keycloak, MinIO, Mailpit, Redis and the we
 ./backend/mvnw -f backend/pom.xml spring-boot:run
 ```
 
-The API listens on `http://localhost:8080`; OpenAPI JSON is available at
-`http://localhost:8080/openapi.json` (or `/v3/api-docs`), Swagger UI at `/swagger-ui.html`, and
-Actuator (separate management port) at `http://localhost:9090/actuator`. The OpenAPI document is at
-`http://localhost:8080/openapi.json`.
+The API listens on `http://localhost:8080`; the OpenAPI schema is served at runtime on
+`/v3/api-docs` and `/openapi.json`, Swagger UI at `/swagger-ui.html`, and Actuator (separate
+management port) at `http://localhost:9090/actuator`.
 Keycloak is at `http://localhost:8081` (realm `pams`). The master admin comes from `KEYCLOAK_ADMIN`/`KEYCLOAK_ADMIN_PASSWORD` (`admin`/`admin` in `.env.example`).
 
 All API endpoints require a Keycloak bearer token. Demo users (password = username): `admin`

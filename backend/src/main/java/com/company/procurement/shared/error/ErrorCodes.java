@@ -16,6 +16,7 @@ public final class ErrorCodes {
   public static final String IDEMPOTENCY_KEY_REUSE = "idempotency-key-reuse";
   public static final String RATE_LIMITED = "rate-limited";
   public static final String TENANT_SUSPENDED = "tenant-suspended";
+  public static final String SUBSCRIPTION_INACTIVE = "subscription-inactive";
   public static final String RESOURCE_NOT_FOUND = "resource-not-found";
   public static final String CONFLICT = "conflict";
   public static final String ILLEGAL_STATE_TRANSITION = "illegal-state-transition";

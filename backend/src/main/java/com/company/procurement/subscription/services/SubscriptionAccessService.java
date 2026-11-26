@@ -1,6 +1,7 @@
 package com.company.procurement.subscription.services;
 
 import com.company.procurement.shared.error.BusinessRuleException;
+import com.company.procurement.shared.tenant.TenantWriteAccessPort;
 import com.company.procurement.shared.usage.TenantUsagePort;
 import com.company.procurement.subscription.repositories.TenantSubscriptionRepository;
 import java.time.Clock;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Enforces subscription status and plan entitlements. */
 @Service
-public class SubscriptionAccessService {
+public class SubscriptionAccessService implements TenantWriteAccessPort {
 
   private static final long MB = 1024L * 1024L;
   private static final long GRACE_DAYS = 7;
@@ -33,6 +34,7 @@ public class SubscriptionAccessService {
     return subscriptions.hasFeature(organizationId, featureCode);
   }
 
+  @Override
   @Transactional(readOnly = true)
   public void assertWriteAllowed(UUID organizationId) {
     SubscriptionLimit limit = subscription(organizationId);

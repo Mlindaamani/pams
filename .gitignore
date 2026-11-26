@@ -44,3 +44,4 @@ backups/
 # Local Maven cache for the source-mounted backend container
 .m2/*
 !.m2/.gitkeep
+openapi.json

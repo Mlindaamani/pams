@@ -10,6 +10,7 @@ import com.company.procurement.platform.api.dto.PlatformTenantResponse;
 import com.company.procurement.platform.api.dto.UpdateTenantRequest;
 import com.company.procurement.platform.services.CreateTenantCommand;
 import com.company.procurement.platform.services.PlatformTenantService;
+import com.company.procurement.platform.services.TenantDeletionService;
 import com.company.procurement.platform.services.TenantExportService;
 import com.company.procurement.platform.services.UpdateTenantCommand;
 import com.company.procurement.shared.api.PageResponse;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,12 +49,17 @@ public class PlatformTenantController {
 
   private final PlatformTenantService tenants;
   private final TenantExportService tenantExports;
+  private final TenantDeletionService tenantDeletion;
   private final OrganizationMapper mapper;
 
   public PlatformTenantController(
-      PlatformTenantService tenants, TenantExportService tenantExports, OrganizationMapper mapper) {
+      PlatformTenantService tenants,
+      TenantExportService tenantExports,
+      TenantDeletionService tenantDeletion,
+      OrganizationMapper mapper) {
     this.tenants = tenants;
     this.tenantExports = tenantExports;
+    this.tenantDeletion = tenantDeletion;
     this.mapper = mapper;
   }
 
@@ -141,6 +148,14 @@ public class PlatformTenantController {
     return ResponseEntity.ok()
         .eTag(ConditionalRequests.etag(updated.getVersion()))
         .body(mapper.toResponse(updated));
+  }
+
+  @DeleteMapping("/{id}")
+  @PreAuthorize("@permissions.has('platform:tenant_manage')")
+  public ResponseEntity<Void> delete(
+      @PathVariable UUID id, @RequestParam String confirmSlug, HttpServletRequest request) {
+    tenantDeletion.delete(id, ConditionalRequests.requireIfMatch(request), confirmSlug);
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/{id}/administrator-invite")

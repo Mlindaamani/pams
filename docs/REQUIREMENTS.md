@@ -238,7 +238,7 @@ Migrations:
 - **Optimistic concurrency for clients:** return `ETag` (version) on GET; require `If-Match` on PUT/PATCH/actions that mutate; return `412`/`409` on mismatch.
 - **Idempotency:** `Idempotency-Key` header required on `POST` create/submit/approve/PO endpoints. Store key + request hash + response for 24h; replay returns the stored response; same key with different payload → `422`.
 - **Dates/money:** ISO-8601 UTC strings; money as `{ "amount": "1234.5000", "currency": "TZS" }` (string amount to avoid float issues).
-- **OpenAPI:** springdoc-openapi generates the spec; every endpoint documented with examples, error responses and security requirements. The spec is published at `/v3/api-docs` and committed as `openapi.json` in CI for client generation.
+- **OpenAPI:** springdoc-openapi generates the spec; every endpoint documented with examples, error responses and security requirements. The spec is published at runtime on `/v3/api-docs` (with `/openapi.json` as a stable alias) and consumed directly by client generation.
 - **Versioning:** URI versioning; deprecations announced via `Deprecation`/`Sunset` headers.
 - **Rate limiting:** Bucket4j (or gateway-level) per user/IP on auth-sensitive and write endpoints; return `429` with `Retry-After`.
 - **Compression and caching headers:** enable response compression; `Cache-Control: no-store` on sensitive responses.

@@ -82,12 +82,16 @@ Implemented:
 - Platform admins can export a tenant ZIP from the tenant detail page or
   `GET /api/v1/platform/tenants/{id}/export`. It contains tenant JSON, one JSON file per
   tenant-owned table, manifest/checksums and available MinIO assets.
+- Suspended tenants can be permanently deleted from the tenant detail page or
+  `DELETE /api/v1/platform/tenants/{id}?confirmSlug=...`. Deletion requires `If-Match`, removes
+  tenant data in dependency order, then cleans up Keycloak users and MinIO assets after commit.
+- Inactive subscriptions (`CANCELED`, `UNPAID`, expired trial, past-due beyond grace) block tenant
+  writes with `422 subscription-inactive` while reads remain available. Subscription checkout,
+  portal, preview and Stripe webhook routes are exempt so tenants can restore billing.
 
 Still outstanding:
 
-- Cancel a subscription while retaining a defined read-only window.
-- Delete or anonymize tenant data on request.
-- Document seat/overage handling.
+- Seat/overage policy.
 
 Do not begin paid acquisition until export, deletion and restore procedures are credible.
 

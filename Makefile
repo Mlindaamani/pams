@@ -2,7 +2,7 @@ SHELL := /bin/bash
 BACKEND := ./backend
 MVN := $(BACKEND)/mvnw -f $(BACKEND)/pom.xml
 
-.PHONY: up down logs test build lint format migrate openapi keycloak-verify keycloak-orphans backend-compile web-build web-test web-lint web-e2e stripe-test-clock k6 prod-build prod-up backup prod-backup restore prod-restore clean
+.PHONY: up down logs test build lint format migrate api-types keycloak-verify keycloak-orphans backend-compile web-build web-test web-lint web-e2e stripe-test-clock k6 prod-build prod-up backup prod-backup restore prod-restore clean
 
 up:
 	docker compose up -d
@@ -28,8 +28,8 @@ format:
 migrate:
 	docker compose --profile tools run --rm flyway
 
-openapi:
-	curl -fsS http://localhost:8080/v3/api-docs -o openapi.json
+api-types:
+	cd frontend && npm run api:generate
 
 keycloak-verify:
 	ops/keycloak/verify-admin-client.sh

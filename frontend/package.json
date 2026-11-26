@@ -14,8 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "api:spec": "curl -fsS http://localhost:8080/v3/api-docs -o ../openapi.json",
-    "api:generate": "openapi-typescript ../openapi.json -o src/api/schema.d.ts"
+    "api:generate": "openapi-typescript http://localhost:8080/openapi.json -o src/api/schema.d.ts"
   },
   "dependencies": {
     "@casl/ability": "^6.7.3",

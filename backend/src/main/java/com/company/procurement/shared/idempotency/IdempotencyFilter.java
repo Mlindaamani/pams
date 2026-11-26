@@ -46,8 +46,6 @@ public class IdempotencyFilter extends OncePerRequestFilter {
       Pattern.compile("^/api/v1/vendor-invoices/[^/]+/(approve|reject|dispute|void)$");
   private static final Pattern VENDOR_PAYMENT_PATH =
       Pattern.compile("^/api/v1/vendor-payments(/[^/]+/(approve|pay|cancel))?$");
-  private static final Pattern PLATFORM_TENANT_PATH =
-      Pattern.compile("^/api/v1/platform/tenants(/[^/]+/(suspend|activate))?$");
   private static final Pattern WEBHOOK_PATH =
       Pattern.compile(
           "^/api/v1/webhooks(/[^/]+/(rotate-secret|test-event|deliveries)|/deliveries/[^/]+/retry)?$");
@@ -78,7 +76,6 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         || PURCHASE_ORDER_PATH.matcher(path).matches()
         || VENDOR_INVOICE_ACTION_PATH.matcher(path).matches()
         || VENDOR_PAYMENT_PATH.matcher(path).matches()
-        || PLATFORM_TENANT_PATH.matcher(path).matches()
         || "/api/v1/webhooks".equals(path)
         || WEBHOOK_PATH.matcher(path).matches());
   }

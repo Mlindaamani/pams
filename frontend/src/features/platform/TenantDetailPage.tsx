@@ -8,8 +8,13 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   Stack,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -21,6 +26,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import ApprovalIcon from '@mui/icons-material/Approval';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Can } from '@/auth/AbilityProvider';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Loading, PageHeader } from '@/components/Page';
@@ -29,6 +35,7 @@ import { problemMessage } from '@/api/client';
 import { dateOnly, dateTime } from '@/lib/format';
 import {
   activateTenant,
+  deleteTenant,
   exportTenant,
   getTenantDetail,
   retryTenantProvisioning,
@@ -52,6 +59,8 @@ export function TenantDetailPage() {
     enabled: Boolean(id),
   });
   const [confirmStatus, setConfirmStatus] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteSlug, setDeleteSlug] = useState('');
 
   const tenant = detail.data?.tenant;
   const subscription = detail.data?.subscription;
@@ -83,6 +92,18 @@ export function TenantDetailPage() {
       link.click();
       URL.revokeObjectURL(url);
       toast.success('Tenant export downloaded.');
+    },
+    onError: (error) => toast.error(problemMessage(error)),
+  });
+  const remove = useMutation({
+    mutationFn: () => deleteTenant(id, tenant?.version ?? 0, deleteSlug),
+    onSuccess: () => {
+      toast.success('Tenant deleted.');
+      void queryClient.invalidateQueries({ queryKey: ['platform-tenants'] });
+      void queryClient.invalidateQueries({ queryKey: ['platform-subscriptions'] });
+      void queryClient.invalidateQueries({ queryKey: ['platform-billing-metrics'] });
+      void queryClient.invalidateQueries({ queryKey: ['platform-dashboard'] });
+      navigate('/platform/tenants');
     },
     onError: (error) => toast.error(problemMessage(error)),
   });
@@ -337,6 +358,75 @@ export function TenantDetailPage() {
           </Card>
         </Grid>
       </Grid>
+
+      <Card sx={{ borderColor: 'error.main', mb: 2 }}>
+        <CardContent>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="h6" color="error.main">
+                Delete tenant
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Permanently removes tenant data, identities and stored files. Suspend the tenant
+                first and export its data before deleting.
+              </Typography>
+            </Box>
+            <Can I="manage" a="Tenant">
+              <Button
+                color="error"
+                variant="outlined"
+                startIcon={<DeleteOutlineIcon />}
+                disabled={tenant.status !== 'SUSPENDED'}
+                onClick={() => {
+                  setDeleteSlug('');
+                  setDeleteOpen(true);
+                }}
+              >
+                Delete tenant
+              </Button>
+            </Can>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Delete {tenant.name}?</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="error">
+              This permanently deletes the tenant, users, requests, approvals, purchase orders,
+              invoices, payments and stored files. It cannot be undone.
+            </Alert>
+            {tenant.status !== 'SUSPENDED' && (
+              <Alert severity="warning">Suspend the tenant before deleting it.</Alert>
+            )}
+            <TextField
+              label={`Type ${tenant.slug} to confirm`}
+              value={deleteSlug}
+              onChange={(event) => setDeleteSlug(event.target.value)}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteOpen(false)}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={
+              remove.isPending || tenant.status !== 'SUSPENDED' || deleteSlug !== tenant.slug
+            }
+            onClick={() => remove.mutate()}
+          >
+            {remove.isPending ? 'Deleting…' : 'Delete tenant'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ConfirmDialog
         open={confirmStatus}

@@ -195,6 +195,13 @@ endpoints with `p95 < 300ms` and error-rate `< 1%` thresholds. Record results he
 - **Export data** on a tenant detail page downloads a ZIP with tenant JSON, per-table JSON and
   MinIO assets. The API is `GET /api/v1/platform/tenants/{id}/export` and requires tenant management
   permission. Transient outbox/idempotency records are intentionally excluded.
+- **Delete tenant** is irreversible. Suspend and export first. The UI requires typing the slug;
+  the API is `DELETE /api/v1/platform/tenants/{id}?confirmSlug=...` with `If-Match`. Tenant data is
+  removed in dependency order; Keycloak users and MinIO assets are cleaned up after commit on a
+  best-effort basis, with failures logged for operator follow-up.
+- **Inactive subscription:** tenants retain read-only access. Mutating requests return
+  `422 subscription-inactive`; subscription checkout/portal actions remain available for recovery.
+  Platform administration and Stripe webhooks are unaffected.
 
 ## SaaS subscriptions and onboarding
 

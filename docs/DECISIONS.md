@@ -488,7 +488,7 @@ hand-maintained API types.
 
 **Decision.** Vite + React 18 + TypeScript (strict), MUI, TanStack Query, React Hook Form + Zod,
 React Router, and OIDC Authorization Code + PKCE via `react-oidc-context`. The API client is
-generated from the committed `openapi.json` with `openapi-typescript`; `openapi-fetch` adds bearer
+generated from the runtime OpenAPI document with `openapi-typescript`; `openapi-fetch` adds bearer
 tokens and `X-Request-ID`, while mutations add `Idempotency-Key`/`If-Match` as required. Authorization
 uses CASL (`@casl/ability` + `@casl/react`): a role-to-ability map defines actions on subjects,
 `<Can>` gates controls, and `RequireAbility` guards routes. Ownership and tenant checks remain
@@ -2193,3 +2193,70 @@ without exposing another tenant’s data or relying on database access.
 **Consequences.** A tenant can be handed a portable archive without direct database access. The
 archive is a point-in-time best-effort read, encryption is the operator’s responsibility, and
 tenant deletion/anonymization remains a separate workflow.
+
+---
+
+## ADR-110 — Platform tenant actions are not tenant-idempotency scoped
+
+**Context.** Tenant idempotency records require `organization_id` and RLS. A SaaS Creator has no
+tenant context, so platform suspend/activate/create requests could not be stored in that table.
+
+**Decision.** Keep `Idempotency-Key` enforcement for tenant actions. Platform tenant administration
+is guarded by `platform:tenant_manage`, audit logging and optimistic `If-Match` where applicable,
+but does not use tenant-scoped idempotency records.
+
+**Consequences.** Platform administrators can perform tenant lifecycle operations without a tenant
+claim. Platform request replay protection remains a separate concern from tenant idempotency.
+
+---
+
+## ADR-111 — Tenant deletion is irreversible and confirmation-gated
+
+**Context.** Tenant offboarding must remove tenant business data, identities and files without
+manual SQL, while preventing accidental deletion.
+
+**Decision.**
+- A tenant must be suspended and the platform operator must type the exact tenant slug.
+- The API requires `If-Match`; the UI exposes a danger-zone dialog with the same confirmation.
+- Local data is deleted in dependency order across every table carrying `organization_id`, followed
+  by the organization row.
+- Keycloak identities and MinIO assets are cleaned up after the database commit through a
+  transactional event; failures are logged for operator follow-up.
+- Platform audit records the deletion. Tenant idempotency keys are not used for platform actions
+  because a SaaS Creator has no tenant context.
+
+**Consequences.** Offboarding is repeatable and avoids direct SQL. Deletion is irreversible, so the
+export + suspend + slug confirmation workflow is mandatory. External cleanup is best-effort; the
+organization row is already gone if Keycloak or object-storage cleanup fails.
+
+---
+
+## ADR-112 — Inactive subscriptions enforce read-only access at the edge
+
+**Context.** Cancellation, unpaid invoices and expired trials must stop new spend while still
+letting tenants inspect historical data and restore billing. Existing checks covered only user,
+department, request-submit and attachment paths.
+
+**Decision.** A servlet filter runs after tenant suspension and before idempotency. For tenant
+requests using `POST`, `PUT`, `PATCH` or `DELETE`, it calls `SubscriptionAccessService` and returns
+`422 subscription-inactive` when writes are not allowed. Reads and `/api/v1/subscription/*`,
+platform administration and the Stripe webhook are exempt.
+
+**Consequences.** The read-only window is consistent across all tenant write endpoints without
+annotating every controller. Each tenant write performs a subscription lookup; service-level checks
+remain as defence in depth.
+
+---
+
+## ADR-113 — OpenAPI is served at runtime, not committed as a file
+
+**Context.** Springdoc already publishes the current schema, and a checked-in `openapi.json` drifts
+from the running API and requires a manual refresh before client generation.
+
+**Decision.** Do not commit `openapi.json`. Expose the schema at `/v3/api-docs` and keep
+`/openapi.json` as a stable alias. `npm run api:generate` reads the alias directly from the running
+API; `make api-types` wraps that command. Swagger UI remains at `/swagger-ui.html`.
+
+**Consequences.** Generated types always match the running API. Client generation requires a running
+backend, and CI/deployments must generate or validate types against a live schema endpoint instead of
+a repository file.

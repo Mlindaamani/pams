@@ -1368,6 +1368,89 @@ class ReferenceDataApiIntegrationTest {
         .andExpect(status().isForbidden());
   }
 
+  @Test
+  void platformAdminCanDeleteSuspendedTenantAfterSlugConfirmation() throws Exception {
+    String slug = "delete-" + UUID.randomUUID().toString().substring(0, 8);
+    UUID tenantId = createPlatformTenant(slug, "GROWTH");
+
+    mockMvc
+        .perform(
+            delete("/api/v1/platform/tenants/{id}", tenantId)
+                .param("confirmSlug", slug)
+                .with(tokenWithoutTenant("PLATFORM_ADMIN"))
+                .header("If-Match", "\"0\""))
+        .andExpect(status().isUnprocessableEntity());
+
+    MvcResult suspended =
+        mockMvc
+            .perform(
+                post("/api/v1/platform/tenants/{id}/suspend", tenantId)
+                    .with(tokenWithoutTenant("PLATFORM_ADMIN"))
+                    .header("If-Match", "\"0\"")
+                    .header("Idempotency-Key", "delete-tenant-suspend"))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    mockMvc
+        .perform(
+            delete("/api/v1/platform/tenants/{id}", tenantId)
+                .param("confirmSlug", "wrong-slug")
+                .with(tokenWithoutTenant("PLATFORM_ADMIN"))
+                .header("If-Match", suspended.getResponse().getHeader("ETag")))
+        .andExpect(status().isUnprocessableEntity());
+
+    mockMvc
+        .perform(
+            delete("/api/v1/platform/tenants/{id}", tenantId)
+                .param("confirmSlug", slug)
+                .with(tokenWithoutTenant("PLATFORM_ADMIN"))
+                .header("If-Match", suspended.getResponse().getHeader("ETag")))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(
+            get("/api/v1/platform/tenants/{id}/detail", tenantId)
+                .with(token(orgA, "PLATFORM_ADMIN")))
+        .andExpect(status().isNotFound());
+
+    for (String table :
+        List.of(
+            "organization",
+            "tenant_subscription",
+            "tenant_provisioning",
+            "department",
+            "user_profile")) {
+      String column = "organization".equals(table) ? "id" : "organization_id";
+      assertEquals(
+          0,
+          jdbcTemplate.queryForObject(
+              "select count(*) from " + table + " where " + column + " = ?",
+              Integer.class,
+              tenantId));
+    }
+  }
+
+  @Test
+  void inactiveSubscriptionBlocksTenantWritesButAllowsReads() throws Exception {
+    String slug = "readonly-" + UUID.randomUUID().toString().substring(0, 8);
+    UUID tenantId = createPlatformTenant(slug, "GROWTH");
+    jdbcTemplate.update(
+        "update tenant_subscription set status = 'CANCELED' where organization_id = ?", tenantId);
+
+    mockMvc
+        .perform(
+            post("/api/v1/departments")
+                .with(token(tenantId, "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("name", "Blocked department"))))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.code").value("subscription-inactive"));
+
+    mockMvc
+        .perform(get("/api/v1/departments").with(token(tenantId, "ADMIN")))
+        .andExpect(status().isOk());
+  }
+
   private UUID createPlatformTenant(String slug, String planCode) throws Exception {
     MvcResult result =
         mockMvc

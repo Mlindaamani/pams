@@ -70,6 +70,19 @@ export async function exportTenant(id: string): Promise<Blob> {
   ) as Promise<Blob>;
 }
 
+export async function deleteTenant(
+  id: string,
+  version: number,
+  confirmSlug: string,
+): Promise<void> {
+  await unwrap(
+    api.DELETE('/api/v1/platform/tenants/{id}', {
+      params: { path: { id }, query: { confirmSlug } },
+      headers: { 'If-Match': etag(version) },
+    }),
+  );
+}
+
 export async function suspendTenant(id: string, version: number): Promise<TenantRecord> {
   return unwrap(
     api.POST('/api/v1/platform/tenants/{id}/suspend', {
