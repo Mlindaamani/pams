@@ -45,3 +45,6 @@ backups/
 .m2/*
 !.m2/.gitkeep
 openapi.json
+.env.production
+.deploy/
+load-test-summary.json

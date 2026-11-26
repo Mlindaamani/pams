@@ -22,7 +22,16 @@ The script writes a timestamped directory containing:
 - `minio-data.tar.gz` — attachments, logos and favicons
 - `SHA256SUMS` and `manifest.txt`
 
-Archives are verified immediately. Keep backups encrypted at rest and off the application host.
+Archives are verified immediately. Re-verify any backup without restoring it:
+
+```bash
+BACKUP_DIR=/var/backups/pams/20261126T120000Z ops/backup/verify.sh
+# Production compose:
+COMPOSE_FILE=docker-compose.prod.yml BACKUP_DIR=/var/backups/pams/20261126T120000Z \
+  ops/backup/verify.sh
+```
+
+Keep backups encrypted at rest and off the application host.
 
 ### Target RPO / RTO
 
@@ -64,6 +73,7 @@ secure cookies and request-size limits at the edge. The app containers do not te
 - Ship JSON logs to a central store with PII redaction and retention.
 - Configure uptime checks for `web`, API readiness, Keycloak and object storage.
 - Configure error tracking with release/version tags derived from `PAMS_IMAGE_TAG`.
+- Set alert thresholds and on-call routing from `docs/INCIDENT_RESPONSE.md`.
 - Set OTLP tracing sampling explicitly when a collector is available.
 
 ## Security checks
@@ -95,12 +105,27 @@ Still outstanding:
 
 Do not begin paid acquisition until export, deletion and restore procedures are credible.
 
+## Deployments and load tests
+
+- `.github/workflows/release.yml` builds, scans and publishes immutable SHA/version images to GHCR.
+- `.github/workflows/deploy.yml` deploys to a GitHub Environment (`staging` or `production`) over SSH.
+  Configure required reviewers on the production environment and these environment secrets:
+  `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_SSH_KEY`,
+  `DEPLOY_KNOWN_HOSTS`.
+- `ops/production/deploy.sh` pulls the immutable tag, waits for health and rolls back if readiness
+  fails. `ops/production/rollback.sh` restores the previous recorded tag.
+- Configure `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE` and an immutable `PAMS_IMAGE_TAG` in the host's
+  secret-managed `.env.production`.
+- Run `ops/backup/verify.sh` after each backup and record load-test results in `docs/RUNBOOK.md`.
+- CI/CD workflow code is present; staging/production accounts, SSH targets and required reviewers
+  are still operational configuration.
+
 ## Remaining operational tasks
 
-- Separate staging and production accounts.
+- Separate staging and production accounts and set the GitHub Environment secrets above.
 - Managed PostgreSQL with automated PITR; managed Redis with an HA decision.
 - Object-storage versioning/lifecycle and encrypted backup storage.
-- Status page, incident response runbook, on-call routing and alerting.
-- Load test at expected peak plus headroom and record results in `docs/RUNBOOK.md`.
-- CI/CD staging promotion, rollback procedure and release notes.
+- Status page, on-call routing and external monitoring/error-tracking accounts.
+- Run the peak/headroom load test against production-like staging and record results.
+- Release notes and customer communication process.
 - DPA, privacy policy, terms of service, retention policy and audit-access policy.

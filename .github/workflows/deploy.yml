@@ -1,0 +1,102 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [staging, production]
+      mode:
+        description: Operation
+        required: true
+        default: deploy
+        type: choice
+        options: [deploy, rollback]
+      image_tag:
+        description: Immutable image tag (required for deploy)
+        required: false
+        type: string
+      git_ref:
+        description: Git ref checked out on the deployment host
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: ${{ inputs.mode }} ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Validate inputs
+        env:
+          MODE: ${{ inputs.mode }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          GIT_REF: ${{ inputs.git_ref }}
+        run: |
+          case "$MODE" in deploy|rollback) ;; *) echo "Invalid mode" >&2; exit 1 ;; esac
+          if [[ -n "$IMAGE_TAG" && ! "$IMAGE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "Invalid image_tag" >&2
+            exit 1
+          fi
+          if [[ "$MODE" == "deploy" && -z "$IMAGE_TAG" ]]; then
+            echo "image_tag is required for deploy" >&2
+            exit 1
+          fi
+          if [[ "$IMAGE_TAG" == "latest" ]]; then
+            echo "Refusing latest; use the release SHA or version tag" >&2
+            exit 1
+          fi
+          if [[ ! "$GIT_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid git_ref" >&2
+            exit 1
+          fi
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+
+      - name: Deploy on host
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+          MODE: ${{ inputs.mode }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          GIT_REF: ${{ inputs.git_ref }}
+        run: |
+          ssh -i "$HOME/.ssh/id_ed25519" -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' DEPLOY_ENVIRONMENT='$DEPLOY_ENVIRONMENT' MODE='$MODE' IMAGE_TAG='$IMAGE_TAG' GIT_REF='$GIT_REF' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          git fetch --tags --prune origin
+          git checkout "$GIT_REF"
+          if [[ "$MODE" == "deploy" ]]; then
+            ./ops/production/deploy.sh \
+              --tag "$IMAGE_TAG" \
+              --env-file .env.production \
+              --environment "$DEPLOY_ENVIRONMENT"
+          else
+            ./ops/production/rollback.sh \
+              --env-file .env.production \
+              --environment "$DEPLOY_ENVIRONMENT"
+          fi
+          REMOTE

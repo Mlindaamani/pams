@@ -6,7 +6,8 @@ receiving → reporting, with a complete audit trail.
 This repository is built phase by phase following `docs/REQUIREMENTS.md`. Architecture decisions
 and trade-offs are recorded in `docs/DECISIONS.md`. The commercial build, go-to-market and
 SaaS metrics plan is in `docs/SAAS_ROADMAP.md`. Subscription and Stripe capabilities are documented
-in `docs/SUBSCRIPTION_BILLING.md`.
+in `docs/SUBSCRIPTION_BILLING.md`; production operations and incidents are covered in
+`docs/PRODUCTION_READINESS.md`, `docs/RUNBOOK.md` and `docs/INCIDENT_RESPONSE.md`.
 
 ## Repository layout
 

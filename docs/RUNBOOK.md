@@ -124,6 +124,12 @@ BACKUP_ROOT=/var/backups/pams BACKUP_RETENTION_DAYS=30 ops/backup/backup.sh
 COMPOSE_FILE=docker-compose.prod.yml BACKUP_ROOT=/var/backups/pams ops/backup/backup.sh
 ```
 
+Verify a backup without restoring:
+
+```bash
+BACKUP_DIR=/var/backups/pams/20261126T120000Z ops/backup/verify.sh
+```
+
 Restores are destructive and require explicit confirmation:
 
 ```bash
@@ -137,16 +143,30 @@ See `docs/PRODUCTION_READINESS.md` for target RPO/RTO, restore drills, secrets/T
 requirements. Back up `pams` and `keycloak` together: the application profiles reference Keycloak
 subject IDs. Flyway migrations run on startup; never edit an applied migration.
 
-## Production
+## Production release, deploy and rollback
+
+Tagged releases (`v*`) build, scan and publish immutable images to GHCR. Deploy through the
+environment-gated GitHub workflow, or run the host scripts directly:
 
 ```bash
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
+PAMS_BACKEND_IMAGE=ghcr.io/org/pams-backend \
+PAMS_WEB_IMAGE=ghcr.io/org/pams-web \
+PAMS_IMAGE_TAG=<git-sha> \
+  ./ops/production/deploy.sh --env-file .env.production --environment production --tag <git-sha>
+
+./ops/production/rollback.sh --env-file .env.production --environment production
 ```
 
+The deploy script pulls only the API/web images, waits for readiness, records current/previous tags
+under `.deploy/` and rolls back automatically if readiness fails. The host must be logged in to the
+registry and must keep `.env.production` in its secret store. Migrations are forward-only; use a
+verified database backup restore if a bad migration was applied.
+
+Local/air-gapped build remains available with
+`docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d`.
 Required environment: `POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_PASSWORD`, `KEYCLOAK_ISSUER_URI`,
 `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MAIL_*`, `PAMS_PUBLIC_API_URL`, `PAMS_PUBLIC_OIDC_AUTHORITY`,
-`PAMS_APP_URL`, `OTLP_TRACING_ENDPOINT`.
+`PAMS_APP_URL`, `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE`, `PAMS_IMAGE_TAG`.
 
 The API image runs as a non-root user with a layered jar, graceful shutdown and a readiness
 healthcheck. Tag images with the git SHA/semantic version; never deploy `latest`.
@@ -154,17 +174,22 @@ healthcheck. Tag images with the git SHA/semantic version; never deploy `latest`
 ## Performance
 
 ```bash
-k6 run ops/k6/pams-smoke.js   # VUS=20 DURATION=60s to stress
+make k6                         # 10 VUs / 30s smoke
+PEAK_VUS=50 make load-test      # ramp to 50, then 1.5x headroom
 ```
 
-The script logs in with a Keycloak password grant, then hits request, vendor and spend-report
-endpoints with `p95 < 300ms` and error-rate `< 1%` thresholds. Record results here per release.
+`ops/k6/pams-load.js` logs in with a Keycloak password grant and exercises request, vendor, budget
+and spend-report reads. It ramps to `PEAK_VUS`, holds, then ramps to `HEADROOM_VUS` (default 1.5x).
+Thresholds are `p95 < 500ms`, `p99 < 1s` and error rate `< 1%`. Run against production-like staging,
+not against live customer traffic. Record results per release:
 
-| Date | Version | VUs | Duration | p95 | Error rate | Notes |
+| Date | Version | Peak / headroom VUs | p95 | p99 | Error rate | Notes |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | Pending first production-like run |
+| — | — | — | — | — | — | Pending production-like run |
 
 ## Incident checklist
+
+See `docs/INCIDENT_RESPONSE.md` for severities, alerts, status-page communications and postmortems.
 
 1. Check `/admin/system` and readiness.
 2. Inspect API logs by `traceId`/`requestId`.

@@ -2260,3 +2260,25 @@ API; `make api-types` wraps that command. Swagger UI remains at `/swagger-ui.htm
 **Consequences.** Generated types always match the running API. Client generation requires a running
 backend, and CI/deployments must generate or validate types against a live schema endpoint instead of
 a repository file.
+
+---
+
+## ADR-114 — Immutable image deployments with environment-gated promotion
+
+**Context.** Production releases need reproducible images, staging promotion, a manual production
+gate and a rollback path without rebuilding on the host.
+
+**Decision.**
+- Tagged releases build backend/web images, scan them with Trivy, and publish immutable SHA and
+  version tags to GHCR.
+- Deployment uses GitHub Environments (`staging`, `production`) with production required reviewers.
+  A `workflow_dispatch` workflow checks out the release ref on the host and invokes host scripts.
+- `ops/production/deploy.sh` pulls only API/web images, waits for readiness, records current and
+  previous tags, and auto-rolls back to the previous tag if readiness fails.
+- `ops/production/rollback.sh` restores the previous recorded tag.
+- Images are selected with `PAMS_BACKEND_IMAGE`, `PAMS_WEB_IMAGE` and `PAMS_IMAGE_TAG`; `latest` is
+  rejected.
+
+**Consequences.** Deployments are reproducible and reversible at the image level. The host must be
+logged in to the registry and keep `.env.production` in a secret store. Database migrations remain
+forward-only; a bad migration still requires a verified backup restore.

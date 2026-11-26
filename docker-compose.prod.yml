@@ -87,7 +87,7 @@ services:
   api:
     build:
       context: ./backend
-    image: pams-backend:${PAMS_IMAGE_TAG:-latest}
+    image: ${PAMS_BACKEND_IMAGE:-pams-backend}:${PAMS_IMAGE_TAG:-latest}
     environment:
       SPRING_PROFILES_ACTIVE: prod
       PAMS_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pams}
@@ -146,7 +146,7 @@ services:
   web:
     build:
       context: ./frontend
-    image: pams-web:${PAMS_IMAGE_TAG:-latest}
+    image: ${PAMS_WEB_IMAGE:-pams-web}:${PAMS_IMAGE_TAG:-latest}
     environment:
       PAMS_API_BASE_URL: ${PAMS_PUBLIC_API_URL}
       PAMS_OIDC_AUTHORITY: ${PAMS_PUBLIC_OIDC_AUTHORITY}

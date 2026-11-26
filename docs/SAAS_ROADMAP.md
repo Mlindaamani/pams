@@ -203,7 +203,7 @@ flowchart LR
 
 - [ ] Production and staging environments separated
 - [ ] Managed PostgreSQL with automated backups and point-in-time recovery
-- [ ] Tested restore procedure and documented RPO/RTO
+- [x] Tested restore procedure and documented RPO/RTO
 - [ ] MinIO/object-storage backup and lifecycle policy
 - [ ] Redis persistence/HA decision documented
 - [ ] Secrets manager or encrypted secret store; no production secrets in `.env`
@@ -216,7 +216,7 @@ flowchart LR
 - [ ] Centralized logs with retention and PII redaction
 - [ ] Status page and incident response runbook
 - [ ] Load test at expected peak plus headroom
-- [ ] CI/CD with staging promotion and rollback procedure
+- [x] CI/CD with staging promotion and rollback procedure
 
 ### 5.2 Security and Compliance
 
