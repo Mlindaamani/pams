@@ -192,6 +192,9 @@ endpoints with `p95 < 300ms` and error-rate `< 1%` thresholds. Record results he
   Activate it to restore access.
 - Platform analytics is aggregate-only, multi-currency (no FX conversion) and cached briefly.
 - Platform actions are recorded in `platform_audit_event`; tenant audit remains separate.
+- **Export data** on a tenant detail page downloads a ZIP with tenant JSON, per-table JSON and
+  MinIO assets. The API is `GET /api/v1/platform/tenants/{id}/export` and requires tenant management
+  permission. Transient outbox/idempotency records are intentionally excluded.
 
 ## SaaS subscriptions and onboarding
 

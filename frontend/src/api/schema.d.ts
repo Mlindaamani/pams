@@ -1860,6 +1860,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/platform/tenants/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platform/tenants/{id}/detail": {
         parameters: {
             query?: never;
@@ -2139,7 +2155,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["export"];
+        get: operations["export_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7679,6 +7695,26 @@ export interface operations {
             };
         };
     };
+    export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     detail: {
         parameters: {
             query?: never;
@@ -8048,7 +8084,7 @@ export interface operations {
             };
         };
     };
-    export: {
+    export_1: {
         parameters: {
             query?: {
                 aggregateType?: string;

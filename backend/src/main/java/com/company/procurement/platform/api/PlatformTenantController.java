@@ -10,17 +10,21 @@ import com.company.procurement.platform.api.dto.PlatformTenantResponse;
 import com.company.procurement.platform.api.dto.UpdateTenantRequest;
 import com.company.procurement.platform.services.CreateTenantCommand;
 import com.company.procurement.platform.services.PlatformTenantService;
+import com.company.procurement.platform.services.TenantExportService;
 import com.company.procurement.platform.services.UpdateTenantCommand;
 import com.company.procurement.shared.api.PageResponse;
 import com.company.procurement.shared.web.ConditionalRequests;
 import com.company.procurement.shared.web.PageRequests;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,10 +46,13 @@ public class PlatformTenantController {
   private static final Set<String> SORTABLE = Set.of("createdAt", "name", "slug", "status");
 
   private final PlatformTenantService tenants;
+  private final TenantExportService tenantExports;
   private final OrganizationMapper mapper;
 
-  public PlatformTenantController(PlatformTenantService tenants, OrganizationMapper mapper) {
+  public PlatformTenantController(
+      PlatformTenantService tenants, TenantExportService tenantExports, OrganizationMapper mapper) {
     this.tenants = tenants;
+    this.tenantExports = tenantExports;
     this.mapper = mapper;
   }
 
@@ -83,6 +90,17 @@ public class PlatformTenantController {
         detail.subscription(),
         detail.provisioning(),
         detail.usage());
+  }
+
+  @GetMapping("/{id}/export")
+  @PreAuthorize("@permissions.has('platform:tenant_manage')")
+  public void export(@PathVariable UUID id, HttpServletResponse response) throws IOException {
+    response.setContentType("application/zip");
+    response.setHeader(
+        HttpHeaders.CONTENT_DISPOSITION,
+        "attachment; filename=\"" + tenantExports.filename(id) + "\"");
+    tenantExports.writeArchive(id, response.getOutputStream());
+    response.flushBuffer();
   }
 
   @PostMapping

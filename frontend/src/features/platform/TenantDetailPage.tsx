@@ -20,13 +20,20 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ApprovalIcon from '@mui/icons-material/Approval';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { Can } from '@/auth/AbilityProvider';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Loading, PageHeader } from '@/components/Page';
 import { toast } from '@/components/Toast';
 import { problemMessage } from '@/api/client';
 import { dateOnly, dateTime } from '@/lib/format';
-import { activateTenant, getTenantDetail, retryTenantProvisioning, suspendTenant } from './api';
+import {
+  activateTenant,
+  exportTenant,
+  getTenantDetail,
+  retryTenantProvisioning,
+  suspendTenant,
+} from './api';
 
 const usd = (value?: number | null) =>
   new Intl.NumberFormat('en-US', {
@@ -66,6 +73,19 @@ export function TenantDetailPage() {
     },
     onError: (error) => toast.error(problemMessage(error)),
   });
+  const exportData = useMutation({
+    mutationFn: () => exportTenant(id),
+    onSuccess: (blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tenant-${tenant?.slug ?? id}-export.zip`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Tenant export downloaded.');
+    },
+    onError: (error) => toast.error(problemMessage(error)),
+  });
   const changeStatus = useMutation({
     mutationFn: () =>
       tenant?.status === 'SUSPENDED'
@@ -95,6 +115,14 @@ export function TenantDetailPage() {
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Button component={Link} to={`/platform/tenants/${id}/edit`} variant="outlined">
                 Edit
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<FileDownloadOutlinedIcon />}
+                disabled={exportData.isPending}
+                onClick={() => exportData.mutate()}
+              >
+                {exportData.isPending ? 'Exporting…' : 'Export data'}
               </Button>
               <Button
                 variant="outlined"

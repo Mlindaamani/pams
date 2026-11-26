@@ -2172,3 +2172,24 @@ storage to be consistent. Manual ad-hoc dumps are easy to skip or mix from diffe
 **Consequences.** A single command produces a restorable backup and restore drills are repeatable.
 The scripts do not replace managed database PITR, encrypted off-site storage or production access
 controls.
+
+---
+
+## ADR-109 — Tenant export is a platform-owned ZIP archive
+
+**Context.** Tenant offboarding requires a usable export of business data, configuration and files
+without exposing another tenant’s data or relying on database access.
+
+**Decision.**
+- Platform tenant detail exposes `GET /api/v1/platform/tenants/{id}/export`, guarded by
+  `platform:tenant_manage`.
+- The response is a ZIP containing organization JSON, one JSON file per tenant-owned table,
+  manifest metadata and MinIO assets referenced by the tenant.
+- Tables are discovered from `organization_id` columns; transient outbox and idempotency records are
+  excluded.
+- Exports stream through the API, are audit-logged and are subject to the export rate limit.
+- Restore/backup remains a separate full-stack procedure.
+
+**Consequences.** A tenant can be handed a portable archive without direct database access. The
+archive is a point-in-time best-effort read, encryption is the operator’s responsibility, and
+tenant deletion/anonymization remains a separate workflow.

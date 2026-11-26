@@ -61,6 +61,15 @@ export async function updateTenant(
   );
 }
 
+export async function exportTenant(id: string): Promise<Blob> {
+  return unwrap(
+    api.GET('/api/v1/platform/tenants/{id}/export', {
+      params: { path: { id } },
+      parseAs: 'blob',
+    }),
+  ) as Promise<Blob>;
+}
+
 export async function suspendTenant(id: string, version: number): Promise<TenantRecord> {
   return unwrap(
     api.POST('/api/v1/platform/tenants/{id}/suspend', {

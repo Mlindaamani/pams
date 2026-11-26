@@ -21,11 +21,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.persistence.EntityManagerFactory;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
@@ -1333,6 +1337,35 @@ class ReferenceDataApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].adminName").exists());
     assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(4);
+  }
+
+  @Test
+  void tenantDataExportIsPlatformAdminOnlyAndContainsTenantArchive() throws Exception {
+    MvcResult exported =
+        mockMvc
+            .perform(
+                get("/api/v1/platform/tenants/{id}/export", orgA)
+                    .with(token(orgA, "PLATFORM_ADMIN")))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Content-Type", "application/zip"))
+            .andExpect(header().string("Content-Disposition", containsString("tenant-org-a-")))
+            .andReturn();
+
+    Map<String, String> entries = new java.util.HashMap<>();
+    try (ZipInputStream zip =
+        new ZipInputStream(
+            new ByteArrayInputStream(exported.getResponse().getContentAsByteArray()))) {
+      ZipEntry entry;
+      while ((entry = zip.getNextEntry()) != null) {
+        entries.put(entry.getName(), new String(zip.readAllBytes(), StandardCharsets.UTF_8));
+      }
+    }
+    assertThat(entries).containsKeys("manifest.json", "tenant.json", "data/user_profile.json");
+    assertThat(entries.get("manifest.json")).contains("\"formatVersion\":1");
+
+    mockMvc
+        .perform(get("/api/v1/platform/tenants/{id}/export", orgA).with(token(orgA, "ADMIN")))
+        .andExpect(status().isForbidden());
   }
 
   private UUID createPlatformTenant(String slug, String planCode) throws Exception {

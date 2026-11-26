@@ -77,9 +77,14 @@ secure cookies and request-size limits at the edge. The app containers do not te
 
 ## Tenant lifecycle
 
-The offboarding workflow is still outstanding:
+Implemented:
 
-- Export all tenant data in a usable format.
+- Platform admins can export a tenant ZIP from the tenant detail page or
+  `GET /api/v1/platform/tenants/{id}/export`. It contains tenant JSON, one JSON file per
+  tenant-owned table, manifest/checksums and available MinIO assets.
+
+Still outstanding:
+
 - Cancel a subscription while retaining a defined read-only window.
 - Delete or anonymize tenant data on request.
 - Document seat/overage handling.

@@ -225,7 +225,8 @@ flowchart LR
 - [ ] RLS enabled and verified on every tenant-owned table
 - [ ] Audit-log retention and access policy
 - [ ] DPA, privacy policy and terms of service
-- [ ] Data export and tenant deletion/anonymization
+- [x] Tenant data export
+- [ ] Tenant deletion/anonymization
 - [ ] Backup encryption and restore access audit
 - [x] Dependency and container scanning in CI
 - [ ] Rate limits for login, invitations, uploads and exports
@@ -244,7 +245,7 @@ flowchart LR
 
 ### 5.4 Tenant Lifecycle
 
-- [ ] Export all tenant data in a usable format
+- [x] Export all tenant data in a usable format
 - [ ] Cancel subscription and retain read-only access policy
 - [ ] Delete/anonymize tenant data on request
 - [x] Restore accidentally suspended tenants
