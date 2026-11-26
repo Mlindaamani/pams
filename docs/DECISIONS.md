@@ -2147,5 +2147,8 @@ change.
 - `set_config` for tenant/RLS setup remains in tenant infrastructure.
 
 **Consequences.** Persistence is discoverable per module and reusable outside HTTP flows. The
-migration is phased: low-risk configuration and branding first, then subscriptions, approvals,
-payments, reporting and analytics. ArchUnit prevents SQL and Spring Data repositories from entering API controllers and services.
+migration is complete: services and API controllers contain no JDBC, `EntityManager` or inline SQL,
+and ArchUnit prevents them from coming back. Remaining SQL is limited to repository adapters and
+infrastructure: `set_config` tenant/session setup, outbox `FOR UPDATE SKIP LOCKED`, atomic sequence
+upserts, Stripe event idempotency and PostgreSQL reporting/projection queries. Those exceptions are
+covered by integration tests.

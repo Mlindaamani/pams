@@ -19,6 +19,12 @@ public class WorkflowActionRuleRepositoryAdapter implements WorkflowActionRuleRe
   }
 
   @Override
+  public List<WorkflowActionRule> findByEntityTypeAndFromStatus(
+      String entityType, String fromStatus) {
+    return jpa.findByIdEntityTypeAndIdFromStatusOrderByIdActionCodeAsc(entityType, fromStatus);
+  }
+
+  @Override
   public List<WorkflowActionRule> saveAll(List<WorkflowActionRule> rules) {
     return jpa.saveAll(rules);
   }

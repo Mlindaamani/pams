@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,19 +25,16 @@ public class OutboxDispatcher {
   private final OutboxEventRepository events;
   private final List<OutboxEventHandler> handlers;
   private final ObjectMapper objectMapper;
-  private final JdbcTemplate jdbcTemplate;
   private final Clock clock;
 
   public OutboxDispatcher(
       OutboxEventRepository events,
       List<OutboxEventHandler> handlers,
       ObjectMapper objectMapper,
-      JdbcTemplate jdbcTemplate,
       Clock clock) {
     this.events = events;
     this.handlers = handlers;
     this.objectMapper = objectMapper;
-    this.jdbcTemplate = jdbcTemplate;
     this.clock = clock;
   }
 
@@ -53,10 +49,7 @@ public class OutboxDispatcher {
       }
       UUID previousTenant = TenantContext.get().orElse(null);
       TenantContext.set(event.getOrganizationId());
-      jdbcTemplate.queryForObject(
-          "select set_config('app.current_org', ?, false)",
-          String.class,
-          event.getOrganizationId().toString());
+      events.useTenant(event.getOrganizationId());
       try {
         Map<String, Object> payload =
             objectMapper.readValue(event.getPayload(), new TypeReference<>() {});

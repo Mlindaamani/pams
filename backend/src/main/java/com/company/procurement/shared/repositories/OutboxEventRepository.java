@@ -16,4 +16,6 @@ public interface OutboxEventRepository {
   long countPending();
 
   long countDeadLettered();
+
+  void useTenant(java.util.UUID organizationId);
 }

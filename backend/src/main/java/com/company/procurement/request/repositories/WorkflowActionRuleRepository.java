@@ -8,6 +8,8 @@ public interface WorkflowActionRuleRepository {
 
   List<WorkflowActionRule> findByEntityType(String entityType);
 
+  List<WorkflowActionRule> findByEntityTypeAndFromStatus(String entityType, String fromStatus);
+
   List<WorkflowActionRule> saveAll(List<WorkflowActionRule> rules);
 
   void deleteByEntityType(String entityType);

@@ -40,6 +40,14 @@ public class OutboxEventRepositoryAdapter implements OutboxEventRepository {
   }
 
   @Override
+  public void useTenant(java.util.UUID organizationId) {
+    jdbcTemplate.queryForObject(
+        "select set_config('app.current_org', ?, false)",
+        String.class,
+        organizationId == null ? "" : organizationId.toString());
+  }
+
+  @Override
   public long countPending() {
     return jpa.countByProcessedAtIsNullAndDeadLetteredAtIsNull();
   }

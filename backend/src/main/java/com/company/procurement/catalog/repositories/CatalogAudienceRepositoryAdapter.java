@@ -29,14 +29,14 @@ public class CatalogAudienceRepositoryAdapter implements CatalogAudienceReposito
   public void replaceDepartments(
       UUID organizationId, UUID catalogItemId, Collection<UUID> departmentIds) {
     departments.deleteByCatalogItem(organizationId, catalogItemId);
-    if (departmentIds == null || departmentIds.isEmpty())
-      return;
+    if (departmentIds == null || departmentIds.isEmpty()) return;
     departments.saveAll(
         new LinkedHashSet<>(departmentIds)
             .stream()
-            .map(
-                departmentId -> new CatalogItemDepartment(organizationId, catalogItemId, departmentId))
-            .toList());
+                .map(
+                    departmentId ->
+                        new CatalogItemDepartment(organizationId, catalogItemId, departmentId))
+                .toList());
   }
 
   @Override
@@ -51,11 +51,9 @@ public class CatalogAudienceRepositoryAdapter implements CatalogAudienceReposito
   public Map<UUID, List<UUID>> departmentIdsForItems(
       UUID organizationId, Collection<UUID> catalogItemIds) {
     Map<UUID, List<UUID>> result = new HashMap<>();
-    if (catalogItemIds == null || catalogItemIds.isEmpty())
-      return result;
+    if (catalogItemIds == null || catalogItemIds.isEmpty()) return result;
     for (CatalogItemDepartment item : departments.findByIdCatalogItemIdIn(catalogItemIds)) {
-      if (!item.getOrganizationId().equals(organizationId))
-        continue;
+      if (!item.getOrganizationId().equals(organizationId)) continue;
       result
           .computeIfAbsent(item.getId().getCatalogItemId(), ignored -> new ArrayList<>())
           .add(item.getId().getDepartmentId());

@@ -1,5 +1,6 @@
 package com.company.procurement;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -11,7 +12,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,11 +20,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +82,8 @@ class ReferenceDataApiIntegrationTest {
   @Autowired private ObjectMapper objectMapper;
 
   @Autowired private JdbcTemplate jdbcTemplate;
+
+  @Autowired private EntityManagerFactory entityManagerFactory;
 
   @Autowired
   private com.company.procurement.subscription.services.SubscriptionLifecycleService
@@ -1301,6 +1306,33 @@ class ReferenceDataApiIntegrationTest {
         .perform(get("/api/v1/notifications/unread-count").with(token(orgA, "ADMIN")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.unread").value(0));
+  }
+
+  @Test
+  void platformTenantListLoadsAdministratorContactsInOneBatch() throws Exception {
+    for (int i = 0; i < 5; i++) {
+      UUID tenantId =
+          createPlatformTenant(
+              "contact-" + i + "-" + UUID.randomUUID().toString().substring(0, 8), "GROWTH");
+      jdbcTemplate.update(
+          """
+          insert into tenant_provisioning
+              (organization_id, admin_email, admin_name, status, created_at, updated_at)
+          values (?, ?, ?, 'ACTIVE', now(), now())
+          """,
+          tenantId,
+          "admin" + i + "@example.com",
+          "Admin " + i);
+    }
+
+    Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+    statistics.clear();
+    mockMvc
+        .perform(
+            get("/api/v1/platform/tenants").param("size", "20").with(token(orgA, "PLATFORM_ADMIN")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content[0].adminName").exists());
+    assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(4);
   }
 
   private UUID createPlatformTenant(String slug, String planCode) throws Exception {

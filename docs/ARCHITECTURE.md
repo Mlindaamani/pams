@@ -30,6 +30,12 @@ Each feature uses `api` (HTTP/DTO/mappers), `services` (use cases/transactions),
 (aggregates/rules/events), `repositories` (ports/JPA adapters) and `infrastructure` (non-repository
 adapters). ArchUnit verifies dependencies.
 
+All business persistence goes through repository ports. Simple reads use derived queries, dynamic
+filters use Specifications and complex reads use repository `@Query` projections. Services and
+controllers contain no JDBC, `EntityManager` or inline SQL. Remaining native SQL is limited to
+repository adapters for tenant `set_config`, outbox skip-locked locking, atomic sequence upserts,
+Stripe idempotency and PostgreSQL reporting queries.
+
 ## Key flows
 
 - **Request submit**: validates ownership/state → reserves budget atomically → resolves policy →

@@ -14,6 +14,9 @@ public interface JpaWorkflowActionRuleRepository
   List<WorkflowActionRule> findByIdEntityTypeOrderByIdFromStatusAscIdActionCodeAsc(
       String entityType);
 
+  List<WorkflowActionRule> findByIdEntityTypeAndIdFromStatusOrderByIdActionCodeAsc(
+      String entityType, String fromStatus);
+
   @Modifying
   @Query("delete from WorkflowActionRule r where r.id.entityType = :entityType")
   int deleteByEntityType(@Param("entityType") String entityType);
